@@ -1,0 +1,21 @@
+#summary Steps required to build tugnsten-replicator
+#labels Build,Featured,Phase-Deploy
+
+*Important Note:*
+Due to copyright issues, it is currently not possible for anyone-else than Continuent staff to build the replicator. We are working on this - stay tuned!
+
+Here are the steps to build the replicator:
+ * `svn co http://tungsten-replicator.googlecode.com/svn/trunk/builder`
+ * `cd builder`
+ * `./build.sh`
+
+This will create a `../sources` directory where all required components will be checked-out and build
+
+If you want to modify directories, URLs, skip the checkout, compilation or source generation, it is strongly discouraged to edit `config` directly. Rather create a `config.local` file (it is already in svn:ignore) and override flags there.
+Example:
+{{{
+# cat config.local
+SKIP_CHECKOUT=1
+SKIP_BUILD=0
+SKIP_SOURCE=0
+}}}
