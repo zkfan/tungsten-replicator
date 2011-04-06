@@ -1,4 +1,4 @@
-# Tungsten Replicator Release Notes
+#summary Tungsten Replicator Release Notes
 
 = Tungsten Replicator Release Notes =
 
