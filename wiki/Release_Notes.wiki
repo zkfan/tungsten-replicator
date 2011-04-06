@@ -1,4 +1,5 @@
 #summary Tungsten Replicator Release Notes
+#labels Featured
 
 = Tungsten Replicator Release Notes =
 
