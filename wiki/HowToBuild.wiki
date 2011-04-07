@@ -6,7 +6,9 @@ Tungsten Replicator 2.0 is 100% open source.  You can build it yourself!  Here a
  * `cd builder`
  * `./build.sh`
 
-This will create a `../sources` directory where all required components will be checked-out and build
+This will create a `../sources` directory where all required components will check out and build.  
+
+The build locations and outputs are controlled by the config file.  The contents are more or less self-explanatory. 
 
 If you want to modify directories, URLs, skip the checkout, compilation or source generation, it is strongly discouraged to edit `config` directly. Rather create a `config.local` file (it is already in svn:ignore) and override flags there.
 Example:
