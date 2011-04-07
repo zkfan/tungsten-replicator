@@ -25,4 +25,4 @@ Continuent offers commercial support and feature development for Tungsten Replic
 
 == What are the birds on the site logo? ==
 
-Those are the "Tungsten Swans."  Swans are the symbol of Finland, where Continuent originated and a symbol of beauty and grace.  They are not geese.  They are really not ducks. 
+Those are the "Tungsten Swans."  Swans are the symbol of Finland, where Continuent originated, and are a symbol of beauty and grace.  They are not geese.  They are _really_ not ducks. 
