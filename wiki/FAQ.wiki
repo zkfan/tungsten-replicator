@@ -10,13 +10,19 @@ This is a list of frequently asked questions about Tungsten.
 Tungsten Replicator is a full application with replication features such as filters, seamless failover, parallel and multi-master replication.
 Tungsten Enterprise is a management framework that builds on top of Tungsten Replicator. While the Replicator is free, the Enterprise edition is a commercial package, available to customers only.
 
-
 == Is Tungsten Replicator free? ==
 Yes. It is free to use and modify under the terms of the GPL v2 license.
 
+== Where is the code? ==
+The code is [http://code.google.com/p/tungsten-replicator/source/checkout here]
 
 == Is Tungsten Replicator supported? ==
 Yes. We support Tungsten Replicator in open source terms. You can report bugs and expect the same order of responsiveness that you get from any open source project.
 
-== Where is the code? ==
-The code is [http://code.google.com/p/tungsten-replicator/source/checkout here]
+== Where can I get more help? ==
+
+Continuent offers commercial support and feature development for Tungsten Replicator 2.0.  Visit us at [http://www.continuent.com our website] for more information. 
+
+== What are the birds on the site logo? ==
+
+Those are the "Tungsten Swans."  Swans are the symbol of Finland, where Continuent originated and a symbol of beauty and grace.  They are not geese.  They are really not ducks. 
