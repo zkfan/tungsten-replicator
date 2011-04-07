@@ -1,10 +1,7 @@
 #summary Steps required to build tugnsten-replicator
 #labels Build,Featured,Phase-Deploy
 
-*Important Note:*
-Due to copyright issues, it is currently not possible for anyone-else than Continuent staff to build the replicator. We are working on this - stay tuned!
-
-Here are the steps to build the replicator:
+Tungsten Replicator 2.0 is 100% open source.  You can build it yourself!  Here are the steps: 
  * `svn co http://tungsten-replicator.googlecode.com/svn/trunk/builder`
  * `cd builder`
  * `./build.sh`
