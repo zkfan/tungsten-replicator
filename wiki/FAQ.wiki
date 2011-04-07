@@ -7,11 +7,11 @@ This is a list of frequently asked questions about Tungsten.
 
 
 == What is the difference between Tungsten Replicator and Tungsten Enterprise? ==
-Tungsten Replicator is a full application with replication features such as filters, seamless failover, parallel and multi-master replication.
-Tungsten Enterprise is a management framework that builds on top of Tungsten Replicator. While the Replicator is free, the Enterprise edition is a commercial package, available to customers only.
+Tungsten Replicator is an advanced product for database replication with features such as filters, seamless failover, parallel and multi-master replication.
+[http://www.continuent.com/solutions/tungsten-enterprise Tungsten Enterprise] is a database clustering product that builds on top of Tungsten Replicator. While the Replicator is free, the Enterprise edition is a commercial package, available to customers only.
 
 == Is Tungsten Replicator free? ==
-Yes. It is free to use and modify under the terms of the GPL v2 license.
+Yes. It is free to use and modify under the terms of the GPL V2 license.
 
 == Where is the code? ==
 The code is [http://code.google.com/p/tungsten-replicator/source/checkout here]
@@ -25,4 +25,4 @@ Continuent offers commercial support and feature development for Tungsten Replic
 
 == What are the birds on the site logo? ==
 
-Those are the "Tungsten Swans."  Swans are the symbol of Finland, where Continuent originated, and are a symbol of beauty and grace.  They are not geese.  They are _really_ not ducks. 
+Those are the "Tungsten Swans."  The [http://en.wikipedia.org/wiki/Whooper_Swan Whooper Swan] is the national bird of Finland, where Continuent originated.  Swans are also a symbol of beauty and grace.  Ours are replicated of course.  Also, our swans are _not_ geese.  And they are _really not_ ducks. 
