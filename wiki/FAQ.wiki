@@ -16,6 +16,12 @@ Yes. It is free to use and modify under the terms of the GPL V2 license.
 == Where is the code? ==
 The code is [http://code.google.com/p/tungsten-replicator/source/checkout here]
 
+== What happened to the old Continuent Community? ==
+
+It is now here.  We do not have a community offering for the enterprise features any more.  Instead, we have open sourced 100% of the Tungsten Replicator.  You can get code downloads, log issues, and ask questions.  
+
+If you need to get to the old Tungsten forums, you can reach them [http://www.continuent.com/forum here].  
+
 == Is Tungsten Replicator supported? ==
 Yes. We support Tungsten Replicator in open source terms. You can report bugs and expect the same order of responsiveness that you get from any open source project.
 
