@@ -3,8 +3,7 @@
 
 = Frequently Asked Questions =
 
-This is a list of frequently asked questions about Tungsten.
-
+This page answers frequently asked questions about Tungsten.  
 
 == What is the difference between Tungsten Replicator and Tungsten Enterprise? ==
 Tungsten Replicator is an advanced product for database replication with features such as filters, seamless failover, parallel and multi-master replication.
