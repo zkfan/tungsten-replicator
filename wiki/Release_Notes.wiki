@@ -9,6 +9,8 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.0.1 ==
 
+This release is a binary build from the enterprise sources prior to full open source release.  It is free for use while we are getting code properly merged to code.google.com.
+
   * TUC-211 - Slave replicator freezes after going online following master restart
   * TUC-249 - Replicator consistency checks fail with NullPointerException when replicator is offline
   * TUC-266 - Parallel apply performance is unexpectedly slow when using direct pipeline
@@ -20,4 +22,22 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.0.2 ==
 
-To be added. 
+This release is our first full open source release and contains a couple of critical bug fixes for parallel and multi-master replication as well as a number of smaller fixes to correct problems with installations.  Logs and other data structures are backwards-compatible with version 2.0.1. 
+
+Issue 1 - Clean up javadoc build warnings
+
+Issue 2 - Configure script does not set up disk log
+
+Issue 3 - Integrate Hudson build number to release tarball
+
+Issue 5 - Replicator does not correctly assign #UNKNOWN shard when updates cross schema boundaries within a single transaction
+
+Issue 6 - When using disk logs, thl list can show a NullPointerException error    
+
+Issue 11 - Add a timestamp column into trep_commit_seqno table in order to know when this table was updated
+
+Issue 15 - Some records get lost in multiple master replication    
+
+Issue 19 - Thl unable to read disk log
+
+Issue 20 - Need installation support for direct pipeline where master is on a remote host 
