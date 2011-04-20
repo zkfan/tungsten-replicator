@@ -7,19 +7,6 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
-== Tungsten Replicator 2.0.1 ==
-
-This release is a binary build from the enterprise sources prior to full open source release.  It is free for use while we are getting code properly merged to code.google.com.
-
-  * TUC-211 - Slave replicator freezes after going online following master restart
-  * TUC-249 - Replicator consistency checks fail with NullPointerException when replicator is offline
-  * TUC-266 - Parallel apply performance is unexpectedly slow when using direct pipeline
-  * TUC-267 - Tungsten Replicator tasks improperly commit current block on interruption, which causes a restart failure
-  * TUC-268 - race condition with DDL immediately after Tungsten starts
-  * TUC-269 - Possible loop with multi-master topology due to block commit
-  * TUC-270 - Simple SQL sequence causes UNKNOWN shards
-  * TUC-271 - Tungsten 2.0 installation does not work properly for off-board replication
-
 == Tungsten Replicator 2.0.2 ==
 
 This release is our first full open source release and contains a couple of critical bug fixes for parallel and multi-master replication as well as a number of smaller fixes to correct problems with installations.  Logs and other data structures are backwards-compatible with version 2.0.1. 
@@ -41,3 +28,17 @@ Issue 15 - Some records get lost in multiple master replication
 Issue 19 - Thl unable to read disk log
 
 Issue 20 - Need installation support for direct pipeline where master is on a remote host 
+
+
+== Tungsten Replicator 2.0.1 ==
+
+This release is a binary build from the enterprise sources prior to full open source release.  It is free for use while we are getting code properly merged to code.google.com.
+
+  * TUC-211 - Slave replicator freezes after going online following master restart
+  * TUC-249 - Replicator consistency checks fail with NullPointerException when replicator is offline
+  * TUC-266 - Parallel apply performance is unexpectedly slow when using direct pipeline
+  * TUC-267 - Tungsten Replicator tasks improperly commit current block on interruption, which causes a restart failure
+  * TUC-268 - race condition with DDL immediately after Tungsten starts
+  * TUC-269 - Possible loop with multi-master topology due to block commit
+  * TUC-270 - Simple SQL sequence causes UNKNOWN shards
+  * TUC-271 - Tungsten 2.0 installation does not work properly for off-board replication
