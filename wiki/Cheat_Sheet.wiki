@@ -23,6 +23,7 @@ This is work in progress. Please check this page from time to time as we will ad
 || *Action* || *MySQL* || *Tungsten* ||
 || Checking master status || `SHOW MASTER STATUS` || `trepctl -host master_host status`||
 || Checking slave status || `SHOW SLAVE STATUS` || `trepctl -host slave_host status` ||
+|| Purging binary logs || `PURGE BINARY LOGS` || change replicator.store.thl.log_file_retention in the property file ||
 || " || " || `trepctl status -name shards` ||
 || " || " || `trepctl status -name tasks` ||
 || inspecting a binary log || `mysqlbinlog binlog_name` || `mysqlbinlog binlog_name` ||
