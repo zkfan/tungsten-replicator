@@ -1,0 +1,149 @@
+#labels Featured,Phase-Requirements,Phase-Design,Phase-QA
+#Proposal for the new installation interface
+
+----
+WORK IN PROGRESS
+----
+
+= Tungsten Installation friendlier interface =
+
+The current installation process for Tungsten Replicator is far from being friendly. This proposal wants to improve the overall user experience and enhance the installer features. 
+Our ultimate goal is to make the simple tasks very easy to perform, and make the difficult tasks easy to understand.
+
+== Current situation ==
+
+Tungsten installation (as of version 3.0.3) is long and cumbersome.
+  * There are many requirements that users need to check before starting the installation itself. 
+  * The first operation is a _configure_ script that, having been inherited from previous versions with less features, is quite stretched;
+  * The second operation is _configure-service_, which almost does what users need, but clashes with some of the things that are badly defined in _configure_;
+  * Furthermore, for really complex operations, users need to modify a configuration file, which is intimidating to say the least;
+  *Finally, when installing to multiple servers, users need to repeat all of the above several times, changing details from master to slave as needed.
+
+
+== Installation design goals ==
+
+The new process wants to achieve the following:
+  * Help the user to check the requirements and suggest how to meet them;
+  * Make simple installations a breeze, compared to setting MySQL native replication;
+  * Make cluster installation a simple operation, where the options are defined once, and the installation performed remotely without human assistance;
+  * Make complex installations (like multiple masters) easy to design and eventually modify.
+
+==Installation components==
+
+  * dataservers
+  * tungsten-installer
+  * configure 
+  * configure-service
+  * configuration files
+
+===dataservers===
+
+Every entity that sends or receives data in a replication topology is called a dataserver. It could be a database server in a dedicated host, or it could be one of many instances of MySQL in a host.
+The dataserver is identified by several attributes:
+  * hostname (or ip address)
+  * port (default 3306)
+  * data directort (default: /var/lib/mysql)
+  * username of the account used to connect to such server
+  * password for the above user.
+
+=== tungsten-installer ===
+At the highest level, the users should only invoke a script named _tungsten-installer_, which will take care of calling and modifying the other components when necessary.
+
+The installer wants to ask the user for the minimal amount of information, and then invoke other tools and/or modify the configuration file to instantiate Tungsten.
+
+A full call of the installer will look like this one: 
+
+{{{
+./tungsten-installer \
+   --master-host=host1.someserver.com \
+   --master-port=3306 \
+   --master-user=tungsten_slave \
+   --master-password=secret \
+   --master-log-file=mysql-bin.000001 \
+   --master-log-pos=1 \
+   --master-datadir=/var/lib/mysql \
+   --slave-host=host2.someserver.com \
+   --slave-port=3306 \
+   --slave-user=tungsten \
+   --slave-password=secret \
+   --slave-datadir=/var/lib/mysql \
+   --channels=10 \
+   --service-name=foundry
+}}}
+
+The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because, while CMT is invoked inside the slave, which thus knows everything about the slave location, Tungsten Replicator is an external application that needs also the coordinates of the dataserver that will receive the data replicated from the master.
+The above instructions will create two dataservers, one for the master and one for the slave. They will get a name based on the service name, unless explicitly named, and stored in the configuration file. 
+Then the appropriate configure and configure-service will be invoked, and a service named "foundry" will be created. The service will be online using the master log file and position indicated.
+
+
+An installer can be called with fewer options, in which case a default will be used. 
+
+{{{
+./tungsten-installer \
+   --master-host=host1.someserver.com \
+   --master-user=tungsten_slave \
+   --master-password=secret \
+   --slave-host=host2.someserver.com \
+   --slave-user=tungsten \
+   --slave-password=secret \
+   --service-name=foundry
+}}}
+
+
+===Configure===
+
+There is still a _configure_ script that acts more or less like before. It will collect the data needed to create the Tungsten instance.
+Users should not need to invoke this script themselves, except when trying to achieve very advanced goals.
+
+
+===Configure Service===
+
+# Replicate from a Tungsten master on alpha to a Tungsten slave on bravo
+  alpha$ ./tools/configure-service \
+    --local-service-name=foundry \
+    --master-host=alpha \
+    --dataserver=alpha \
+    --role=master foundry
+
+   bravo$ ./tools/configure-service \
+      --local-service-name=foundry \
+      --master-host=alpha \
+      --dataserver=bravo \
+      --role=slave foundry
+
+# Setup two services to ready relay logs from the MySQL server on prodserver and apply to alpha and bravo
+# prodserver must be defined as a dataserver during the configure script
+
+{{{
+alpha$ ./tools/configure-service \
+    --local-service-name=prod_to_alpha \
+    --mode=direct --master-dataserver=prodserver \
+    --dataserver=alpha prod_to_alpha
+
+alpha$ ./tools/configure-service \
+    --local-service-name=prod_to_bravo \
+    --mode=direct \
+    --master-dataserver=prodserver \
+    --dataserver=bravo prod_to_bravo
+
+  ./tools/configure-service [-CDU] (options) service_name
+
+    Options:
+    --local-service-name
+    --mode=[master-slave|direct] (Default: master-slave)
+    --master-host (Required if mode equals master-slave)
+    --master-port (Required if mode equals master-slave)
+    --master-dataserver (Required if mode equals direct)
+    --dataserver
+    --role (Required if mode equals master-slave)
+    --auto-enable (Default: true)
+    --buffer-size (Default: 10)
+    --channels (Default: 1)
+    --thl-port (Default: 2112)
+    --use-drizzle (Default: true)
+    --shard-default-db (Default: stringent)
+    --allow-bidi-unsafe (Default: false)
+    --allow-any-remote-service (Default: false)
+
+    ./tools/configure-service -D default
+}}}
