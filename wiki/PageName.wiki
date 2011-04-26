@@ -1,4 +1,0 @@
-#summary One-sentence summary of this page.
-
-[FAQ#Old_Continuent_Community_releases] 
-[FAQ#Is_Tungsten_Replicator_free?]
