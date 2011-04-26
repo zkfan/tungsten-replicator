@@ -89,6 +89,23 @@ An installer can be called with fewer options, in which case a default will be u
    --service-name=foundry
 }}}
 
+Another way of calling the installer is by indicating the cluster components, and letting the installation scripts do the local and remote work for you.
+
+{{{
+./tungsten-installer \
+--cluster-hosts=host1.simple.com,host2.simple.com,host3.simple.com,host4.simple.com \
+   --user=tungsten \
+   --datadir=/usr/local/storage \
+   --password=secret \
+   --service-name=foundry
+}}}
+
+In this call, host1 will be master, host2, host3, and host4 will be slaves, using defaults for all the values, except the data directory, which is in an uncommon location.
+
+
+===Configuration files ===
+Instead of the current flat value pairs files, the new Tungsten will use JSON files, which has the advantage of being structured, so that compound objects (like connections with depending datasources) can be easily designed, stored, and modified.
+
 
 ===Configure===
 
