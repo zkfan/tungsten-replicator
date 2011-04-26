@@ -102,7 +102,6 @@ Another way of calling the installer is by indicating the cluster components, an
 
 In this call, host1 will be master, host2, host3, and host4 will be slaves, using defaults for all the values, except the data directory, which is in an uncommon location.
 
-
 ===Configuration files ===
 Instead of the current flat value pairs files, the new Tungsten will use JSON files, which has the advantage of being structured, so that compound objects (like connections with depending datasources) can be easily designed, stored, and modified.
 
@@ -116,6 +115,7 @@ Users should not need to invoke this script themselves, except when trying to ac
 ===Configure Service===
 
 # Replicate from a Tungsten master on alpha to a Tungsten slave on bravo
+{{{
   alpha$ ./tools/configure-service \
     --local-service-name=foundry \
     --master-host=alpha \
@@ -127,6 +127,7 @@ Users should not need to invoke this script themselves, except when trying to ac
       --master-host=alpha \
       --dataserver=bravo \
       --role=slave foundry
+}}}
 
 # Setup two services to ready relay logs from the MySQL server on prodserver and apply to alpha and bravo
 # prodserver must be defined as a dataserver during the configure script
