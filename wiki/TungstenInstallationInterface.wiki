@@ -30,16 +30,16 @@ The new process wants to achieve the following:
 
 ==Installation components==
 
-  * dataservers
+  * datasources
   * tungsten-installer
   * configure 
   * configure-service
   * configuration files
 
-===dataservers===
+===datasources===
 
-Every entity that sends or receives data in a replication topology is called a dataserver. It could be a database server in a dedicated host, or it could be one of many instances of MySQL in a host.
-The dataserver is identified by several attributes:
+Every entity that sends or receives data in a replication topology is called a datasource. It could be a database server in a dedicated host, or it could be one of many instances of MySQL in a host.
+The datasource is identified by several attributes:
   * hostname (or ip address)
   * port (default 3306)
   * data directort (default: /var/lib/mysql)
@@ -72,8 +72,8 @@ A full call of the installer will look like this one:
    --service-name=foundry
 }}}
 
-The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because, while CMT is invoked inside the slave, which thus knows everything about the slave location, Tungsten Replicator is an external application that needs also the coordinates of the dataserver that will receive the data replicated from the master.
-The above instructions will create two dataservers, one for the master and one for the slave. They will get a name based on the service name, unless explicitly named, and stored in the configuration file. 
+The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because, while CMT is invoked inside the slave, which thus knows everything about the slave location, Tungsten Replicator is an external application that needs also the coordinates of the datasource that will receive the data replicated from the master.
+The above instructions will create two datasources, one for the master and one for the slave. They will get a name based on the service name, unless explicitly named, and stored in the configuration file. 
 Then the appropriate configure and configure-service will be invoked, and a service named "foundry" will be created. The service will be online using the master log file and position indicated.
 
 
@@ -120,30 +120,30 @@ Users should not need to invoke this script themselves, except when trying to ac
   alpha$ ./tools/configure-service \
     --local-service-name=foundry \
     --master-host=alpha \
-    --dataserver=alpha \
+    --datasource=alpha \
     --role=master foundry
 
    bravo$ ./tools/configure-service \
       --local-service-name=foundry \
       --master-host=alpha \
-      --dataserver=bravo \
+      --datasource=bravo \
       --role=slave foundry
 }}}
 
 # Setup two services to ready relay logs from the MySQL server on prodserver and apply to alpha and bravo
-# prodserver must be defined as a dataserver during the configure script
+# prodserver must be defined as a datasource during the configure script
 
 {{{
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_alpha \
-    --mode=direct --master-dataserver=prodserver \
-    --dataserver=alpha prod_to_alpha
+    --mode=direct --master-datasource=prodserver \
+    --datasource=alpha prod_to_alpha
 
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_bravo \
     --mode=direct \
-    --master-dataserver=prodserver \
-    --dataserver=bravo prod_to_bravo
+    --master-datasource=prodserver \
+    --datasource=bravo prod_to_bravo
 
   ./tools/configure-service [-CDU] (options) service_name
 
@@ -152,8 +152,8 @@ alpha$ ./tools/configure-service \
     --mode=[master-slave|direct] (Default: master-slave)
     --master-host (Required if mode equals master-slave)
     --master-port (Required if mode equals master-slave)
-    --master-dataserver (Required if mode equals direct)
-    --dataserver
+    --master-datasource (Required if mode equals direct)
+    --datasource
     --role (Required if mode equals master-slave)
     --auto-enable (Default: true)
     --buffer-size (Default: 10)
