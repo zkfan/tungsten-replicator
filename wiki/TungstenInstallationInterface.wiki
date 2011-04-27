@@ -69,6 +69,7 @@ A full call of the installer will look like this one:
    --slave-password=secret \
    --slave-datadir=/var/lib/mysql \
    --channels=10 \
+   --use-drizzle=true \
    --service-name=foundry
 }}}
 
@@ -94,10 +95,11 @@ Another way of calling the installer is by indicating the cluster components, an
 
 {{{
 ./tungsten-installer \
---cluster-hosts=host1.simple.com,host2.simple.com,host3.simple.com,host4.simple.com \
+   --cluster-hosts=host1.simple.com,host2.simple.com,host3.simple.com,host4.simple.com \
    --user=tungsten \
-   --datadir=/usr/local/storage \
+   --home-directory=/usr/local/storage \
    --password=secret \
+   --use-drizzle=true \
    --service-name=foundry
 }}}
 
@@ -136,12 +138,12 @@ Users should not need to invoke this script themselves, except when trying to ac
 {{{
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_alpha \
-    --mode=direct --master-datasource=prodserver \
+    --role=direct --master-datasource=prodserver \
     --datasource=alpha prod_to_alpha
 
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_bravo \
-    --mode=direct \
+    --role=direct \
     --master-datasource=prodserver \
     --datasource=bravo prod_to_bravo
 
@@ -149,17 +151,15 @@ alpha$ ./tools/configure-service \
 
     Options:
     --local-service-name
-    --mode=[master-slave|direct] (Default: master-slave)
+    --role=[master|slave|direct] (Default: slave)
     --master-host (Required if mode equals master-slave)
     --master-port (Required if mode equals master-slave)
     --master-datasource (Required if mode equals direct)
     --datasource
-    --role (Required if mode equals master-slave)
     --auto-enable (Default: true)
     --buffer-size (Default: 10)
     --channels (Default: 1)
     --thl-port (Default: 2112)
-    --use-drizzle (Default: true)
     --shard-default-db (Default: stringent)
     --allow-bidi-unsafe (Default: false)
     --allow-any-remote-service (Default: false)
