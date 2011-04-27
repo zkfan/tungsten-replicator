@@ -152,9 +152,9 @@ alpha$ ./tools/configure-service \
     Options:
     --local-service-name
     --role=[master|slave|direct] (Default: slave)
-    --master-host (Required if mode equals master-slave)
-    --master-port (Required if mode equals master-slave)
-    --master-datasource (Required if mode equals direct)
+    --master-host (Required if role equals slave)
+    --master-port (Required if role equals slave)
+    --master-datasource (Required if role equals direct)
     --datasource
     --auto-enable (Default: true)
     --buffer-size (Default: 10)
