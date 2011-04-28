@@ -19,7 +19,6 @@ Tungsten installation (as of version 3.0.3) is long and cumbersome.
   * Furthermore, for really complex operations, users need to modify a configuration file, which is intimidating to say the least;
   *Finally, when installing to multiple servers, users need to repeat all of the above several times, changing details from master to slave as needed.
 
-
 == Installation design goals ==
 
 The new process wants to achieve the following:
@@ -36,133 +35,265 @@ The new process wants to achieve the following:
   * configure-service
   * configuration files
 
-===datasources===
+===Datasources===
 
-Every entity that sends or receives data in a replication topology is called a datasource. It could be a database server in a dedicated host, or it could be one of many instances of MySQL in a host.
+Every database instance that sends or receives data in a replication topology is called a datasource. It could be a database server in a dedicated host, or it could be one of many instances of MySQL in a host.
 The datasource is identified by several attributes:
   * hostname (or ip address)
   * port (default 3306)
-  * data directort (default: /var/lib/mysql)
+  * data directory (default: /var/lib/mysql)
   * username of the account used to connect to such server
-  * password for the above user.
+  * password for the above user
 
-=== tungsten-installer ===
-At the highest level, the users should only invoke a script named _tungsten-installer_, which will take care of calling and modifying the other components when necessary.
+=== Tungsten Installer ===
+At the highest level, users should only invoke a script named _tungsten-installer_, which will take care of calling and modifying the other components when necessary.
 
 The installer wants to ask the user for the minimal amount of information, and then invoke other tools and/or modify the configuration file to instantiate Tungsten.
 
-A full call of the installer will look like this one: 
+{{{
+./tungsten-installer [--direct|--master-slave] (options)
+
+  Options --direct:
+  --dbms-type=mysql           [mysql]
+      Database platform (mysql|postgresql)
+  --master-alias              []
+      Internal alias for the master datasource
+  --master-host               [] Required
+  --master-port               [3306]
+  --master-user               [Current Username]
+  --master-password           []
+  --master-log-file           []
+      Binary log file for starting replication
+  --master-log-pos            []
+      Binary log position for starting replication
+  --slave-alias               []
+      Internal alias for the slave datasource
+  --slave-host                [Current Hostname]
+  --slave-port                [3306]
+  --slave-user                [Current Username]
+  --slave-password            []
+  --slave-thl-mode            [disk]
+      @TODO What are the other options here?
+  --slave-thl-directory       [/opt/continuent/logs]
+  --buffer-size               [10]
+  --shard-default-db          [stringent]
+  --allow-bidi-unsafe         [false]
+  --allow-any-remote-service  [false]
+  --channels                  [1]
+  --start                     [false]
+  --validate-only             [false]
+  --service-name              [] Required
+
+  Options --master-slave:
+  --dbms-type=mysql           [mysql]
+      Database platform (mysql|postgresql)
+  --cluster-hosts             [] Required
+      Deploy Tungsten to these hosts
+  --master-host               [] Required
+  --user                      [Current Username]
+      System user for deploying Tungsten on remote hosts
+  --home-directory            [/opt/continuent]
+  --datasource-port           [3306]
+  --datasource-user           [Current Username]
+  --datasource-password       []
+  --datasource-log-directory  [/var/lib/mysql]
+      Directory for reading master binary logs
+  --datasource-log-pattern    [mysql-bin]
+      Binary log file prefix
+  --master-log-file           []
+      Binary log file for starting replication
+  --master-log-pos            []
+      Binary log position for starting replication
+  --datasource-transfer-logs  [false]
+      Transfer binary logs to a staging directory prior 
+      to reading them. (true|false)
+  --thl-directory             [/opt/continuent/thl]
+      Storage directory for THL files
+  --buffer-size               [10]
+  --shard-default-db          [stringent]
+  --allow-bidi-unsafe         [false]
+  --allow-any-remote-service  [false]
+  --channels                  [1]
+  --start                     [false]
+  --validate-only             [false]
+  --service-name              [] Required
+}}}
+
+The _--direct_ replication service only requires a single Tungsten replication service to read events from the master host and apply them to the slave.  The _--master-slave_ replication service requires a replication service that reads events from the master and a second replication service that applies those events to the slave.
+
+@TODO: What are the benefits of each method
+
+The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because CMT is invoked inside the slave thus knows everything about the slave location.  Tungsten Replicator is an external application that needs also the coordinates of the datasource that will receive the data replicated from the master.
+
+==== Minimal Examples ====
+
+{{{
+./tungsten-installer --direct \
+  --master-host=prodserver \
+  --service-name=prod_to_alpha
+}}}
+
+{{{
+./tungsten-installer --master-slave \
+  --cluster-hosts=alpha,bravo,charlie \
+  --master-host=alpha \
+  --service-name=abcservice
+}}}
+
+==== Expanded Examples ====
+{{{
+./tungsten-installer --direct \
+  --master-host=alpha \
+  --slave-host=alpha \
+  --slave-port=3307 \
+  --channels=5 \
+  --master-log-file=mysql-bin.000005 \
+  --master-log-pos=549 \
+  --start \
+  --service-name=a1_to_a2
+}}}
+
+{{{
+./tungsten-installer --direct \
+  --master-host=alpha \
+  --master-port=3307 \
+  --slave-host=alpha \
+  --channels=5 \
+  --master-log-file=mysql-bin.000002 \
+  --master-log-pos=826 \
+  --start \
+  --service-name=a2_to_a1
+}}}
+
+Create two services to do bi-directional replication between a database at alpha:3306 and alpha:3307.  Replication will start from the specified log position and continue using 5 parallel apply channels.
 
 {{{
 ./tungsten-installer \
-   --master-host=host1.someserver.com \
-   --master-port=3306 \
-   --master-user=tungsten_slave \
-   --master-password=secret \
-   --master-log-file=mysql-bin.000001 \
-   --role=direct \
-   --master-log-pos=1 \
-   --master-datadir=/var/lib/mysql \
-   --slave-host=host2.someserver.com \
-   --slave-port=3306 \
-   --slave-user=tungsten \
-   --slave-password=secret \
-   --slave-datadir=/var/lib/mysql \
-   --channels=10 \
-   --use-drizzle=true \
-   --service-name=foundry
+  --cluster-hosts=alpha,bravo,charlie \
+  --master-host=alpha \
+  --user=tungsten \
+  --home-directory=/opt/tungsten \
+  --thl-directory=/mnt/bigdisk/tungsten-thl \
+  --start \
+  --service-name=foundry
 }}}
 
-The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because, while CMT is invoked inside the slave, which thus knows everything about the slave location, Tungsten Replicator is an external application that needs also the coordinates of the datasource that will receive the data replicated from the master.
-The above instructions will create two datasources, one for the master and one for the slave. They will get a name based on the service name, unless explicitly named, and stored in the configuration file. 
-Then the appropriate configure and configure-service will be invoked, and a service named "foundry" will be created. The service will be online using the master log file and position indicated.
-
-
-An installer can be called with fewer options, in which case a default will be used. 
-
-{{{
-./tungsten-installer \
-   --master-host=host1.someserver.com \
-   --master-user=tungsten_slave \
-   --master-password=secret \
-   --slave-host=host2.someserver.com \
-   --slave-user=tungsten \
-   --slave-password=secret \
-   --service-name=foundry
-}}}
-
-Another way of calling the installer is by indicating the cluster components, and letting the installation scripts do the local and remote work for you.
-
-{{{
-./tungsten-installer \
-   --cluster-hosts=host1.simple.com,host2.simple.com,host3.simple.com,host4.simple.com \
-   --user=tungsten \
-   --home-directory=/usr/local/storage \
-   --password=secret \
-   --use-drizzle=true \
-   --service-name=foundry
-}}}
-
-In this call, host1 will be master, host2, host3, and host4 will be slaves, using defaults for all the values, except the data directory, which is in an uncommon location.
+In this call, alpha will be master, bravo and charlie will be slaves, using defaults for most of the values, except the home and thl directories.
 
 ===Configuration files ===
 Instead of the current flat value pairs files, the new Tungsten will use JSON files, which has the advantage of being structured, so that compound objects (like connections with depending datasources) can be easily designed, stored, and modified.
 
-
 ===Configure===
 
-There is still a _configure_ script that acts more or less like before. It will collect the data needed to create the Tungsten instance.
-Users should not need to invoke this script themselves, except when trying to achieve very advanced goals.
+There is still a _configure_ script that acts more or less like before. It will collect the data needed to create the Tungsten instance. Users should not need to invoke this script themselves, except when trying to achieve very advanced goals.
 
+  * Database type
+  * Cluster name
+  * Cluster hosts
+    * Hostname
+    * IP address
+    * User
+    * Home directory
+    * Temp directory
+    * Install OS services
+    * Start Tungsten services
+    * MySQL: THL storage type
+    * MySQL: THL directory
+    * MySQL: THL checksum policy
+    * MySQL: THL timeout
+    * MySQL: THL retention policy
+    * MySQL: THL consistency policy
+    * MySQL: THL file size
+    * MySQL: Tungsten transferred binary log directory
+    * PG: Use streaming replication
+    * Java memory allocation
+    * RMI port
+    * Backup method
+    * Backup storage directory
+    * Backup temp directory
+    * Backup retention
+    * Backup script: Path
+    * Backup script: Use sudo
+    * Backup script: Allow online backup
+  * Datasources
+    * Hostname
+    * Port
+    * User
+    * Password
+    * init.d script
+    * MySQL: Use transferred binary logs for this datasource
+    * MySQL: Binlog directory
+    * MySQL: Binlog pattern
+    * MySQL: Use the Drizzle driver for this datasource
+    * PG: Root directory
+    * PG: Data directory
+    * PG: Configuration file
+    * PG: Archive directory
+    * PG: Archive timeout
 
 ===Configure Service===
 
-# Replicate from a Tungsten master on alpha to a Tungsten slave on bravo
 {{{
-  alpha$ ./tools/configure-service \
-    --local-service-name=foundry \
-    --master-host=alpha \
-    --datasource=alpha \
-    --role=master foundry
+./tools/configure-service [-C|-D|-U] (options) service_name
 
-   bravo$ ./tools/configure-service \
-      --local-service-name=foundry \
-      --master-host=alpha \
-      --datasource=bravo \
-      --role=slave foundry
+  Options:
+  --local-service-name            []
+  --role                          [slave]
+      Must be master, slave or direct
+  --master-host                   [] Required if role equals slave
+  --master-port                   [2112]
+  --datasource                    [] Required if role equals master or slave
+  --direct-datasource             [] Required if role equals direct
+  --auto-enable                   [true]
+  --buffer-size                   [10]
+  --channels                      [1]
+  --thl-port                      [2112]
+  --shard-default-db              [stringent]
+  --allow-bidi-unsafe             [false]
+  --allow-any-remote-service      [false]
+  --start                         [false]
+  --validate-only                 [false]
 }}}
 
-# Setup two services to ready relay logs from the MySQL server on prodserver and apply to alpha and bravo
-# prodserver must be defined as a datasource during the configure script
+@TODO: Do we need to have service-type here?
+
+Replicate from a Tungsten master on alpha to a Tungsten slave on bravo
+
+{{{
+alpha$ ./tools/configure-service \
+  --local-service-name=foundry \
+  --role=master \
+  --master-datasource=alpha \
+  --start \
+  foundry
+
+bravo$ ./tools/configure-service \
+  --local-service-name=foundry \
+  --role=slave \
+  --master-host=alpha \
+  --slave-datasource=bravo \
+  --start \
+  foundry
+}}}
+
+Setup two services to read binary logs from the MySQL server on prodserver and apply to alpha and bravo.  prodserver must be defined as a datasource during the configure script.
 
 {{{
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_alpha \
-    --role=direct --master-datasource=prodserver \
-    --datasource=alpha prod_to_alpha
+    --role=direct \
+    --master-datasource=prodserver \
+    --slave-datasource=alpha \
+    prod_to_alpha
 
 alpha$ ./tools/configure-service \
     --local-service-name=prod_to_bravo \
     --role=direct \
     --master-datasource=prodserver \
-    --datasource=bravo prod_to_bravo
+    --slave-datasource=bravo \
+    prod_to_bravo
+}}}
 
-  ./tools/configure-service [-CDU] (options) service_name
-
-    Options:
-    --local-service-name
-    --role=[master|slave|direct] (Default: slave)
-    --master-host (Required if role equals slave)
-    --master-port (Required if role equals slave)
-    --master-datasource (Required if role equals direct)
-    --datasource
-    --auto-enable (Default: true)
-    --buffer-size (Default: 10)
-    --channels (Default: 1)
-    --thl-port (Default: 2112)
-    --shard-default-db (Default: stringent)
-    --allow-bidi-unsafe (Default: false)
-    --allow-any-remote-service (Default: false)
-
-    ./tools/configure-service -D default
+{{{
+bravo$ ./tools/configure-service -D foundry
 }}}
