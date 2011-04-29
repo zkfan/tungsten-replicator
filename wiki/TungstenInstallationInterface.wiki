@@ -22,7 +22,7 @@ Tungsten installation (as of version 3.0.3) is long and cumbersome.
 == Installation design goals ==
 
 The new process wants to achieve the following:
-  * Help the user to check the requirements and suggest how to meet them;
+  * Help the user to validate the requirements and suggest how to meet them;
   * Make simple installations a breeze, compared to setting MySQL native replication;
   * Make cluster installation a simple operation, where the options are defined once, and the installation performed remotely without human assistance;
   * Make complex installations (like multiple masters) easy to design and eventually modify.
@@ -125,7 +125,10 @@ The installer wants to ask the user for the minimal amount of information, and t
 
 The _--direct_ replication service only requires a single Tungsten replication service to read events from the master host and apply them to the slave.  The _--master-slave_ replication service requires a replication service that reads events from the master and a second replication service that applies those events to the slave.
 
-@TODO: What are the benefits of each method
+The _--direct_ method is used when the user needs only the benefit of a specific feature on the slave side, such as parallel replication or filtering.
+
+The _--master-slave_ method, in addition to the slave side advantages, allows users to switch easily between masters and slave, can install multiple master topologies, and it is easier to monitor using Tungsten tools.
+
 
 The main options are similar to the ones used in MySQL _CHANGE MASTER TO_(CMT). The additional ones are required because CMT is invoked inside the slave thus knows everything about the slave location.  Tungsten Replicator is an external application that needs also the coordinates of the datasource that will receive the data replicated from the master.
 
