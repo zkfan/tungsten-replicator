@@ -1,0 +1,50 @@
+#summary Tungsten Replicator JSON for JMX interface
+
+= Introduction =
+
+Tungsten Replicator has an API, which can be accessed via JMX (convenient if using JAVA) or JSON (convenient for any client which can talk via a REST-like protocol). JSON interface is exposed via HTTP or HTTPS protocol, running in the Replicator itself.
+
+= Details =
+
+Replicator uses [http://www.jolokia.org Jolokia] to front-end JSON interface. Minimal configuration is needed to enable HTTP access, a bit more - to enable secure HTTPS.
+
+= Enabling JSON =
+
+== JSON over HTTP ==
+
+  # Open `tungsten-replicator/conf/wrapper.conf` configuration file;
+  # Find a line similar to the following:
+    {{{#wrapper.java.additional.4=-javaagent:../../tungsten-replicator/lib/jolokia-jvm-jdk6-<VERSION>-agent.jar=port=19999,host=localhost,user=tungsten,password=secret}}}
+  # Uncomment it by removing "#" at the beginning, which will enable:
+    * Plain HTTP protocol, if only `port` and `host` options are specified;
+    * HTTP Authentication protocol, if `user` and `password` are specified too.
+  # Restart Replicator to enable changes.
+
+Description of the options:
+
+  * `port=19999` - port HTTP server is listening on;
+  * `host=localhost` - host HTTP server is listening on;
+  * `user` and `password` - HTTP Authentication credentials.
+
+== JSON over HTTPS _(recommended)_ ==
+
+Opening up JSON interface allows full control over the Replicator, thus security measures must be implemented.
+
+In order to enable secure HTTPS protocol follow the same steps as in the chapter above, but, additionally, append and customize the following options:
+
+{{{protocol=https,keystore=/opt/keystore.jks,keystorePassword=secret}}}
+
+A complete example:
+
+{{{wrapper.java.additional.4=-javaagent:../../tungsten-replicator/lib/jolokia-jvm-jdk6-<VERSION>-agent.jar=port=19999,host=localhost,user=tungsten,password=secret,protocol=https,keystore=/opt/keystore.jks,keystorePassword=secret}}}
+
+Description of the options:
+
+  * `protocol=https` - enables HTTPS processing;
+  * `keystore=/path/to/keystore` - must point to an existig keystore, holding the server side certificate. Eg. of how to generate a self-signed certificate:
+  {{{keytool -genkey -keyalg RSA -alias selfsigned -keystore keystore.jks -storepass password -validity 360 -keysize 2048}}}
+  * `keystorePassword=password` - a password used during generation of the keystore.
+
+== Usage ==
+
+TODO
