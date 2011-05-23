@@ -52,22 +52,23 @@ import com.continuent.tungsten.replicator.plugin.PluginContext;
  */
 public class SingleThreadStageTask implements Runnable
 {
-    private static Logger   logger          = Logger
-                                                    .getLogger(SingleThreadStageTask.class);
-    private Stage           stage;
-    private int             taskId;
-    private Extractor       extractor;
-    private List<Filter>    filters;
-    private Applier         applier;
-    private String          loggingPrefix   = "[]";
-    private boolean         usingBlockCommit;
-    private int             blockCommitRowsCount;
-    private EventDispatcher eventDispatcher;
-    private Schedule        schedule;
-    private String          name;
+    private static Logger    logger          = Logger.getLogger(SingleThreadStageTask.class);
+    private Stage            stage;
+    private int              taskId;
+    private Extractor        extractor;
+    private List<Filter>     filters;
+    private Applier          applier;
+    private String           loggingPrefix   = "[]";
+    private boolean          usingBlockCommit;
+    private int              blockCommitRowsCount;
+    private EventDispatcher  eventDispatcher;
+    private Schedule         schedule;
+    private String           name;
 
-    private long            blockEventCount = 0;
-    private TaskProgress    taskProgress;
+    private long             blockEventCount = 0;
+    private TaskProgress     taskProgress;
+
+    private volatile boolean cancelled       = false;
 
     public SingleThreadStageTask(Stage stage, int taskId)
     {
@@ -138,6 +139,14 @@ public class SingleThreadStageTask implements Runnable
     }
 
     /**
+     * Cancel a currently running task.
+     */
+    public void cancel()
+    {
+        cancelled = true;
+    }
+
+    /**
      * Perform thread processing logic.
      */
     public void run()
@@ -191,7 +200,7 @@ public class SingleThreadStageTask implements Runnable
             boolean syncTHLWithExtractor = stage.getPipeline()
                     .syncTHLWithExtractor();
 
-            while (!Thread.currentThread().isInterrupted())
+            while (!cancelled)
             {
                 // If we have a pending currentEvent from the last iteration,
                 // we should log it now, then test to see whether the task has
@@ -245,7 +254,7 @@ public class SingleThreadStageTask implements Runnable
                 }
 
                 // Issue #15. If we detect a change in the service name, we
-                // should commit now to prevent merging of transactions from 
+                // should commit now to prevent merging of transactions from
                 // different services in block commit.
                 if (usingBlockCommit && genericEvent instanceof ReplDBMSEvent)
                 {
@@ -257,14 +266,13 @@ public class SingleThreadStageTask implements Runnable
                     else if (!currentService.equals(newService))
                     {
                         // We assume changes in service only happen on the first
-                        // fragment.  Warn if this assumption is violated. 
+                        // fragment. Warn if this assumption is violated.
                         if (re.getFragno() == 0)
                         {
                             if (logger.isDebugEnabled())
                             {
                                 String msg = String
-                                        .format(
-                                                "Committing due to service change: prev svc=%s seqno=%d new_svc=%s\n",
+                                        .format("Committing due to service change: prev svc=%s seqno=%d new_svc=%s\n",
                                                 currentService, re.getSeqno(),
                                                 newService);
                                 logger.debug(msg);
@@ -275,10 +283,9 @@ public class SingleThreadStageTask implements Runnable
                         else
                         {
                             String msg = String
-                                    .format(
-                                            "Service name change between fragments: prev svc=%s seqno=%d fragno=%d new_svc=%s\n",
-                                            currentService, re.getSeqno(), re
-                                                    .getFragno(), newService);
+                                    .format("Service name change between fragments: prev svc=%s seqno=%d fragno=%d new_svc=%s\n",
+                                            currentService, re.getSeqno(),
+                                            re.getFragno(), newService);
                             logger.warn(msg);
                         }
                     }
@@ -323,10 +330,8 @@ public class SingleThreadStageTask implements Runnable
                 event = (ReplDBMSEvent) genericEvent;
                 if (logger.isDebugEnabled())
                 {
-                    logger
-                            .debug(loggingPrefix + "Extracted event: seqno="
-                                    + event.getSeqno() + " fragno="
-                                    + event.getFragno());
+                    logger.debug(loggingPrefix + "Extracted event: seqno="
+                            + event.getSeqno() + " fragno=" + event.getFragno());
                 }
                 currentEvent = event;
 
@@ -475,8 +480,7 @@ public class SingleThreadStageTask implements Runnable
             }
             catch (InterruptedException e1)
             {
-                logWarn(
-                        "Task cancelled while trying to rollback following cancellation",
+                logWarn("Task cancelled while trying to rollback following cancellation",
                         null);
             }
         }
@@ -518,8 +522,7 @@ public class SingleThreadStageTask implements Runnable
         if (header == null)
         {
             if (logger.isDebugEnabled())
-                logger
-                        .debug("Unable to update position due to null event value");
+                logger.debug("Unable to update position due to null event value");
             return;
         }
 

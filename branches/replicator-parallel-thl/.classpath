@@ -9,11 +9,12 @@
 	<classpathentry kind="lib" path="lib/classes12.jar"/>
 	<classpathentry kind="lib" path="lib/js.jar"/>
 	<classpathentry kind="lib" path="lib/mongo-2.5.3.jar"/>
+	<classpathentry kind="lib" path="lib/protobuf-java-2.3.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/commons"/>
 	<classpathentry kind="lib" path="lib/tungsten-fsm-0.5.jar"/>
-	<classpathentry kind="lib" path="/commons/lib/protobuf-java-2.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.6WithEscapeProcessingFix-bin.jar"/>
 	<classpathentry kind="lib" path="lib/drizzle-jdbc-0.9-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/commons/lib/protobuf-java-2.3.0.jar"/>
 	<classpathentry kind="output" path="build/java/classes"/>
 </classpath>

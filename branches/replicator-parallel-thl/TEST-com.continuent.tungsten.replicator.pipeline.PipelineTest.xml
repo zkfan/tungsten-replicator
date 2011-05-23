@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="0" failures="0" hostname="hartzpass.local" name="com.continuent.tungsten.replicator.pipeline.PipelineTest" tests="12" time="163.138" timestamp="2011-05-22T20:00:55">
+  <properties>
+    <property name="java.vendor" value="Apple Inc." />
+    <property name="sun.java.launcher" value="SUN_STANDARD" />
+    <property name="jikes.class.path" value=":/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/alt-rt.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/alt-string.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/charsets.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/classes.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/dt.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/jce.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/jconsole.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/jsse.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/management-agent.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/../Classes/ui.jar" />
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Server Compiler" />
+    <property name="os.name" value="Mac OS X" />
+    <property name="sun.boot.class.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsfd.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Resources/Java/JavaRuntimeSupport.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/ui.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/laf.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/sunrsasign.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsse.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jce.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/charsets.jar" />
+    <property name="javac.target" value="1.5" />
+    <property name="app.description" value="Database-neutral master/slave replication" />
+    <property name="java.vm.specification.vendor" value="Sun Microsystems Inc." />
+    <property name="ant.home" value="/usr/share/ant" />
+    <property name="specification.vendor" value="Continuent" />
+    <property name="java.runtime.version" value="1.6.0_24-b07-334-10M3326" />
+    <property name="user.name" value="rhodges" />
+    <property name="test.classes.dir" value="build/test/classes" />
+    <property name="awt.nativeDoubleBuffering" value="true" />
+    <property name="deploy.dir" value="/Users/rhodges/tungsten" />
+    <property name="build.dir" value="build" />
+    <property name="deploy.host" value="localhost" />
+    <property name="javac.deprecation" value="true" />
+    <property name="replicator.log.dir" value="." />
+    <property name="specification.title" value="Tungsten App Server" />
+    <property name="user.language" value="en" />
+    <property name="samples.dir" value="samples" />
+    <property name="sun.boot.library.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries" />
+    <property name="ant.project.default-target" value="all" />
+    <property name="app.long.name" value="Tungsten Replicator Service" />
+    <property name="ant.project.name" value="tungsten_replicator" />
+    <property name="project.commons.services" value="../commons-services" />
+    <property name="java.version" value="1.6.0_24" />
+    <property name="version" value="1.0.3" />
+    <property name="user.timezone" value="" />
+    <property name="sun.arch.data.model" value="64" />
+    <property name="commons.classes.dir" value="../commons/build/java/classes" />
+    <property name="build.jar" value="build/jars/tungsten-replicator.jar" />
+    <property name="test.src.dir" value="test/java" />
+    <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16" />
+    <property name="java.endorsed.dirs" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/endorsed" />
+    <property name="sun.cpu.isalist" value="" />
+    <property name="sun.jnu.encoding" value="MacRoman" />
+    <property name="file.encoding.pkg" value="sun.io" />
+    <property name="lib-ext.dir" value="lib-ext" />
+    <property name="file.separator" value="/" />
+    <property name="java.specification.name" value="Java Platform API Specification" />
+    <property name="ant.file.tungsten_replicator" value="/Users/rhodges/workspaces/google2/sources/replicator/build.xml" />
+    <property name="ant.file.type.tungsten_replicator" value="file" />
+    <property name="classes.dir" value="build/java/classes" />
+    <property name="java.class.version" value="50.0" />
+    <property name="project.commons" value="../commons" />
+    <property name="user.country" value="US" />
+    <property name="java.home" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home" />
+    <property name="dist.dir" value="build/tungsten-replicator" />
+    <property name="java.vm.info" value="mixed mode" />
+    <property name="ant.file" value="/Users/rhodges/workspaces/google2/sources/replicator/build.xml" />
+    <property name="os.version" value="10.6.6" />
+    <property name="test.reports" value="build/reports" />
+    <property name="javac.source" value="1.5" />
+    <property name="javac.debug" value="true" />
+    <property name="path.separator" value=":" />
+    <property name="java.vm.version" value="19.1-b02-334" />
+    <property name="ant.library.dir" value="/usr/share/ant/lib" />
+    <property name="java.awt.printerjob" value="apple.awt.CPrinterJob" />
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle" />
+    <property name="awt.toolkit" value="apple.awt.CToolkit" />
+    <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16" />
+    <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16" />
+    <property name="user.home" value="/Users/rhodges" />
+    <property name="commons.build.dir" value="../commons/build" />
+    <property name="java.specification.vendor" value="Sun Microsystems Inc." />
+    <property name="java.library.path" value=".:/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java" />
+    <property name="java.vendor.url" value="http://www.apple.com/" />
+    <property name="gopherProxySet" value="false" />
+    <property name="bin.dir" value="bin" />
+    <property name="java.vm.vendor" value="Apple Inc." />
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment" />
+    <property name="ant.version" value="Apache Ant(TM) version 1.8.2 compiled on February 28 2011" />
+    <property name="java.class.path" value="/Users/rhodges/workspaces/google2/sources/replicator/build/test/classes:/Users/rhodges/workspaces/google2/sources/commons/build/java/classes:/Users/rhodges/workspaces/google2/sources/replicator/lib/classes12.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/drizzle-jdbc-0.9-SNAPSHOT-sources.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/drizzle-jdbc-0.9-SNAPSHOT.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/jolokia-jvm-jdk6-0.90-agent.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/js.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/mongo-2.5.3.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/mysql-connector-java-5.1.6WithEscapeProcessingFix-bin.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/postgresql-8.4-701.jdbc3.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/protobuf-java-2.3.0.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/tungsten-fsm-0.5-src.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib/tungsten-fsm-0.5.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/commons-logging-1.1.1.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/hedera-2.0.1.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/jbosscache-core.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/jbosscache-pojo.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/jgroups-all.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/jline-0.9.94.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/log4j-1.2.15.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/protobuf-java-2.2.0-sources.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/protobuf-java-2.2.0.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/protobuf-java-2.3.0.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/xpp3_min-1.1.4c.jar:/Users/rhodges/workspaces/google2/sources/commons/lib/xstream-1.3.1.jar:/Users/rhodges/workspaces/google2/sources/commons/lib.tools/antlrall-2.7.6.jar:/Users/rhodges/workspaces/google2/sources/replicator/build/java/classes:/Users/rhodges/workspaces/google2/sources/commons/lib-test/drizzle-jdbc-0.6.jar:/Users/rhodges/workspaces/google2/sources/commons/lib-test/junit-4.4.jar:/Users/rhodges/workspaces/google2/sources/commons/lib-test/mysql-connector-java-5.1.13-bin.jar:/Users/rhodges/workspaces/google2/sources/replicator/lib-ext/derby.jar:/usr/share/java/ant-1.8.2/lib/ant-launcher.jar:/usr/share/ant/lib/ant.jar:/usr/share/ant/lib/ant-junit.jar:/usr/share/ant/lib/ant-junit4.jar" />
+    <property name="test.class" value="com.continuent.tungsten.replicator.pipeline.PipelineTest" />
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification" />
+    <property name="app.name" value="trepsvc" />
+    <property name="ant.file.type" value="file" />
+    <property name="jars.dir" value="build/jars" />
+    <property name="java.vm.specification.version" value="1.0" />
+    <property name="sun.cpu.endian" value="little" />
+    <property name="sun.os.patch.level" value="unknown" />
+    <property name="java.io.tmpdir" value="/var/folders/NR/NRNxbis-GV4crAxBRGoSG++++TI/-Tmp-/" />
+    <property name="javac.nowarn" value="false" />
+    <property name="java.vendor.url.bug" value="http://bugreport.apple.com/" />
+    <property name="javac.encoding" value="UTF-8" />
+    <property name="conf.dir" value="conf" />
+    <property name="mrj.build" value="10M3326" />
+    <property name="java.awt.graphicsenv" value="apple.awt.CGraphicsEnvironment" />
+    <property name="os.arch" value="x86_64" />
+    <property name="java.ext.dirs" value="/Library/Java/Extensions:/System/Library/Java/Extensions:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/ext" />
+    <property name="mrj.version" value="1060.1.6.0_24-334" />
+    <property name="user.dir" value="/Users/rhodges/workspaces/google2/sources/replicator/build/work" />
+    <property name="line.separator" value="&#xa;" />
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM" />
+    <property name="basedir" value="/Users/rhodges/workspaces/google2/sources/replicator" />
+    <property name="ant.java.version" value="1.6" />
+    <property name="ant.core.lib" value="/usr/share/ant/lib/ant.jar" />
+    <property name="file.encoding" value="MacRoman" />
+    <property name="javac.verbose" value="false" />
+    <property name="test.work" value="build/work" />
+    <property name="java.specification.version" value="1.6" />
+    <property name="java.src.dir" value="src/java" />
+    <property name="build.name" value="tungsten-replicator" />
+    <property name="ant.project.invoked-targets" value="test-one" />
+  </properties>
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testSimplePipeline" time="0.064" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testStartStopPipeline" time="0.021" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testSeqnoTracking" time="1.009" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testSeqnoSkip" time="1.025" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testRunToSeqno" time="1.015" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testRunToEventId" time="1.006" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testPipelineShutdownAfterEvent" time="1.008" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testActivePipelineShutdownAtSeqno" time="16.119" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testWaitSeqno" time="2.064" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testTwoStages" time="0.051" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testFragmentHandling" time="0.011" />
+  <testcase classname="com.continuent.tungsten.replicator.pipeline.PipelineTest" name="testManyEvents" time="139.658" />
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[log4j:WARN No appenders could be found for logger (com.continuent.tungsten.replicator.pipeline.PipelineConfigBuilder).
+log4j:WARN Please initialize the log4j system properly.
+]]></system-err>
+</testsuite>

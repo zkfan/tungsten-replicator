@@ -298,7 +298,10 @@ public class StageTaskGroup implements ReplicatorPlugin
                     // We have to interrupt for non-parallel store or if
                     // this an immediate shutdown.
                     if (immediate || parallelStore == null)
+                    {
+                        task.cancel();
                         stageThread.interrupt();
+                    }
                     stageThread.join();
                 }
                 catch (InterruptedException e)
