@@ -49,28 +49,36 @@ Description of the options:
 
 Below is a list of examples that map common `trepctl` calls to JSON HTTP requests.
 
-Calls to JMX methods that accept simple arguments (eg. int, String) can be encoded via URL GET request, but for more complex methods (eg. which take Map as an argument) POST request is required. Command line `curl` tool is used for the following illustration, as it supports both.
+Calls to JMX methods that accept simple arguments (eg. int, String) can be encoded via URL GET request; for more complex methods (eg. which take Map as an argument) POST request is utilized. Command line `curl` tool is used for the following illustration, as it supports both.
 
   * `trepctl -service SERVICE_NAME online`
   `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/online"`
   * `trepctl -service SERVICE_NAME offline`
   `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/offline"`
   * `trepctl -host HOST_NAME -service SERVICE_NAME setrole -role master`
-  `curl "http://tungsten:secret@HOST_NAME:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=default/setRole(java.lang.String,java.lang.String)/master/thl:/--/MASTER_HOST:2112"`
+  `curl "http://tungsten:secret@HOST_NAME:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=default/setRole/master/thl:/--/MASTER_HOST:2112"`
   * `trepctl -host HOST_NAME -service SERVICE_NAME setrole -role slave -uri thl://MASTER_HOST:2112`
-  `curl "http://tungsten:secret@HOST_NAME:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=default/setRole(java.lang.String,java.lang.String)/slave/thl:/--/master_host:2112"`
+  `curl "http://tungsten:secret@HOST_NAME:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=default/setRole/slave/thl:/--/master_host:2112"`
   * `trepctl -service SERVICE_NAME  status -names tasks`
   `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/statusList/tasks"`
   * `trepctl -service SERVICE_NAME status -names shards`
   `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/statusList/shards"`
   * `trepctl -service SERVICE_NAME  status -names stores`
   `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/statusList/stores"`
-  * `trepctl -service SERVICE_NAME  online -seqno XXX`
+  * `trepctl -service SERVICE_NAME  online -seqno SEQNO`
+  `curl -d '{"type":"EXEC","mbean":"com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME","operation":"online2","arguments":[{"toSeqno":SEQNO}]}' http://tungsten:secret@localhost:19999/jolokia/`
   * `trepctl -service SERVICE_NAME  online -event EVENT`
-  * `trepctl -service SERVICE_NAME  offline-deferred -seqno XXX`
-  * `trepctl -service SERVICE_NAME  wait -state s`
-  * `trepctl -service SERVICE_NAME  wait -applied N -limit X`
+  `curl -d '{"type":"EXEC","mbean":"com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME","operation":"online2","arguments":[{"toEventId":"EVENT"}]}' http://tungsten:secret@localhost:19999/jolokia/`
+  * `trepctl -service SERVICE_NAME  offline-deferred -seqno SEQNO`
+  `curl -d '{"type":"EXEC","mbean":"com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME","operation":"offlineDeferred","arguments":[{"atSeqno":SEQNO}]}' http://tungsten:secret@localhost:19999/jolokia/`
+  * `trepctl -service SERVICE_NAME  wait -state STATE -limit SECONDS`
+  `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=SERVICE_NAME/waitForState/STATE/SECONDS"`
+  * `trepctl -service SERVICE_NAME  wait -applied N -limit SECONDS`
+  `curl "http://tungsten:secret@localhost:19999/jolokia/exec/com.continuent.tungsten.replicator.management.OpenReplicatorManager:type=default/waitForAppliedSequenceNumber/N/SECONDS"`
 
 Notes:
   # "`/--/`" - is an escape sequence for a double slash (i.e. “//”).
+  # HOST_NAME, MASTER_HOST, SERVICE_NAME, SEQNO, EVENT, STATE, N, SECONDS  are variables to be replaced with corresponding values.
   # Remote Replicators can be controlled by changing the “@localhost” part of the URL to the remote host name. However, Jolokia must be configured to listen on this public host name rather than the localhost (see the "`host=`" option in `wrapper.conf` above).
+
+For more operations see `com.continuent.tungsten.replicator.management.OpenReplicatorManagerMBean` and `com.continuent.tungsten.replicator.management.ReplicationServiceManagerMBean` interfaces in the code line.
