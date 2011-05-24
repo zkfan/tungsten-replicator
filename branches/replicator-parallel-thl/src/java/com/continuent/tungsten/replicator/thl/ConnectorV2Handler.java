@@ -20,7 +20,7 @@
  * Contributor(s): Robert Hodges
  */
 
-package com.continuent.tungsten.replicator.thl.log;
+package com.continuent.tungsten.replicator.thl;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -31,15 +31,7 @@ import org.apache.log4j.Logger;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 import com.continuent.tungsten.replicator.plugin.ReplicatorPlugin;
-import com.continuent.tungsten.replicator.thl.ConnectorHandler;
-import com.continuent.tungsten.replicator.thl.ProtocolHandshakeResponse;
-import com.continuent.tungsten.replicator.thl.ProtocolHandshakeResponseValidator;
-import com.continuent.tungsten.replicator.thl.ProtocolReplEventRequest;
-import com.continuent.tungsten.replicator.thl.Server;
-import com.continuent.tungsten.replicator.thl.THL;
-import com.continuent.tungsten.replicator.thl.THLBinaryEvent;
-import com.continuent.tungsten.replicator.thl.THLEvent;
-import com.continuent.tungsten.replicator.thl.THLException;
+import com.continuent.tungsten.replicator.thl.log.ProtocolV2;
 import com.continuent.tungsten.replicator.util.AtomicCounter;
 
 /**

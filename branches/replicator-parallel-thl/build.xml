@@ -153,7 +153,7 @@
 
     <target name="test" depends="compile-test,setup-test" description="--> run all unit tests">
         <junit printsummary="yes" haltonfailure="no" fork="yes"
-          dir="${test.work}" failureproperty="tests.failed">
+          dir="${test.work}" failureproperty="tests.failed" maxmemory="512m">
             <jvmarg value="-Dreplicator.log.dir=." />
             <classpath>
                 <pathelement location="${test.classes.dir}"/>

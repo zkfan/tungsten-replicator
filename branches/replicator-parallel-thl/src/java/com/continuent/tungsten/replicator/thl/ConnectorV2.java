@@ -20,7 +20,7 @@
  * Contributor(s):
  */
 
-package com.continuent.tungsten.replicator.thl.log;
+package com.continuent.tungsten.replicator.thl;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -32,10 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplEvent;
-import com.continuent.tungsten.replicator.thl.Connector;
-import com.continuent.tungsten.replicator.thl.Protocol;
-import com.continuent.tungsten.replicator.thl.SeqNoRange;
-import com.continuent.tungsten.replicator.thl.THLException;
+import com.continuent.tungsten.replicator.thl.log.ProtocolV2;
 
 /**
  * This class defines a Connector
