@@ -1,0 +1,13 @@
+#THL Architecture, Implementation, and Detailed Management
+
+= Overview =
+
+The Transaction History Log, or THL, provides persistent storage of transactions.  It enables very fast transfer of transactions between locations while at the same time preventing data loss due to failures of hosts, processes, and DBMS software. 
+
+= Architecture =
+
+= Configuration and Management = 
+
+= File Formats = 
+
+= Internal APIs = 
