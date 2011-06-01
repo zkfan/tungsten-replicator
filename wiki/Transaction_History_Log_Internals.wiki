@@ -6,8 +6,20 @@ The Transaction History Log, or THL, provides persistent storage of transactions
 
 = Architecture =
 
+== Embedded Execution Model ==
+
+== Log Organization ==
+
+=== File Layout ===
+
+=== Record Formats === 
+
+=== Indexing ===
+
 = Configuration and Management = 
 
-= File Formats = 
+== Configuration Parameters ==
 
-= Internal APIs = 
+== 'thl' Utility ==
+
+= APIs = 
