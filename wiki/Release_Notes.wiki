@@ -11,7 +11,7 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 This release contains a beta version of the new command line installer, a prototype applier for MySQL to MongoDB replication, and numerous bug fixes.   
 
-Logs and other data structures should be backwards-compatible with version 2.0.2.  If you run into log compatibility problems, please log them as bugs.  If in doubt, quiesce the master(s), allow all slaves to catch up, and clear THL files before continuing.  
+Logs and other data structures should be backwards-compatible with version 2.0.2.  If you run into log compatibility problems, please log them as bugs.  If in doubt, quiesce the master(s), allow all slaves to catch up, and clear THL files before upgrading.  
 
 Issue 18 - Tungsten replicator with binary support enabled fails on MySQL 5.5   
 
