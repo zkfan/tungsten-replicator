@@ -7,6 +7,84 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.0.3 ==
+
+This release contains a beta version of the new command line installer, a prototype applier for MySQL to MongoDB replication, and numerous bug fixes.   
+
+Logs and other data structures should be backwards-compatible with version 2.0.2.  If you run into log compatibility problems, please log them as bugs.  If in doubt, quiesce the master(s), allow all slaves to catch up, and clear THL files before continuing.  
+
+Issue 18 - Tungsten replicator with binary support enabled fails on MySQL 5.5   
+
+Issue 22 - Missing option in configure script to set RMI port
+
+Issue 23 - Missing options to set the applier in configure-service
+
+Issue 24 - Replicator start in sandbox fails due to non-standard ports
+
+Issue 25 - Provide JSON scripting API for replicator             
+
+Issue 29 - Replication failure after long delay between queries...
+
+Issue 30 - WARNING from running trepctl services         
+
+Issue 32 - Tungsten slaves react poorly when they cannot obtain needed sequence number from master 
+
+Issue 34 - Use buffered I/O more effectively when extracting from MySQL binlog
+
+Issue 35 - Clean up Tungten release directory structure
+
+Issue 37 - Tungsten Replicator fails to extract from MySQL 5.5 binlog if clients use utf8mb4 character set
+
+Issue 38 - THL connection URL is not set correctly when using off-board replication
+
+Issue 41 - tungsten-installer does not check if a given directory name is a regular file
+
+Issue 43 - Installation fails with tungsten-installer
+
+Issue 44 - tungsten-installer does not accept --verbose, no-validation and --validate-only unless they are on top
+
+Issue 45 - tungsten-installer creates directories without asking and without options to modify the defaults
+
+Issue 46 - tungsten-installer missing option : --start
+
+Issue 47 - Option names for the same thing should be common to all modes and have a unique name
+
+Issue 48 - tungsten-installer does not check that master and slave have different sources
+
+Issue 49 - Missing option in tungsten-installer in --direct-mode for master-log-directory and master-log-pattern
+
+Issue 50 - tungsten-installer does not require slave-password as mandatory
+
+Issue 54 - Provide a filter that extracts table columns names on the extractor side
+
+Issue 55 - Create Basic MongoDB Applier
+
+Issue 56 - tungsten-installer help should be shortened
+
+Issue 57 - tungsten-installer should not display the full help after an error
+
+Issue 59 - Setting two slaves in direct role with the same master fails
+
+Issue 64 - Add a check to ensure that a master replicator does not have unapplied data in its history log (THL)
+
+Issue 65 - Unable to create RMI listener due to bad IP in /etc/hosts
+
+Issue 68 - After using tungsten-installer with the --direct option, thl does not work 
+
+Issue 69 - ./tools/configure fails when star with a custom made cfg file
+
+Issue 70 - Merge improvements from Tungsten 1.3.x
+
+Issue 72 - RMI port option is not applied
+
+Issue 75 - tungsten-installer fails to notice that the replicator is already started
+
+Issue 76 - Installer with --start-and-report fails to start correctly
+
+Issue 84 - Add options for sandbox installation to master-slave   
+
+Issue 91 - Provide version information for replicator in easy-to-find location
+
 == Tungsten Replicator 2.0.2 ==
 
 This release is our first full open source release and contains a couple of critical bug fixes for parallel and multi-master replication as well as a number of smaller fixes to correct problems with installations.  Logs and other data structures are backwards-compatible with version 2.0.1. 
