@@ -47,7 +47,7 @@ The shard catalog table is named trep_shard.  It is automatically created in the
 The trep_shard table contains the following columns. 
 
 || *Name*      || *Type*       || *Key* || *Description* ||
-|| shard_id    || varchar(128) || PRI   || Shard name      ||
+|| name        || varchar(128) || PRI   || Shard name      ||
 || critical    || char(1)      ||       || If true, must serialize ||
 || disposition || varchar(30)  ||       || How to filter the shard ||
 || channel     || int(11)      ||       || Explicit channel or null ||
@@ -59,3 +59,92 @@ The disposition affects how the shard is processed by the shard filter.  The fol
 || Drop   || Drop the transaction    ||
 || Warn   || Drop transaction and generate a warning in the log ||
 || Error  || Signal a replication error and go offline || 
+
+== JMX API ==
+
+Each replication service will offer an additional JMX MBean named ShardManagementMBean that contains operations for shard management.  The MBean will be published using a name derived from the service OpenReplicatorManagerMBean so that it is easy to find.  
+
+The shard management JMX interface is designed to be extremely simple.  There are four basic operations:  add, update, delete, and list.  These use list structures that contain a list of shards, where the shards themselves are stored as name-value pairs. 
+
+The ShardManagementMBean interfaces are described below. 
+
+{{{
+public interface ShardManagerMBean
+{
+    /**
+     * Returns true so that clients can confirm connection liveness.
+     * 
+     * @return true if the service is up and running, false otherwise
+     */
+    public boolean isAlive();
+
+    /**
+     * Inserts a list of shards into the shard table. Each shard will be a map
+     * of name-value parameters, for example, name -> my_shard, channel -> 2.
+     * 
+     * @param params a list of shards to be inserted
+     */
+    public void insert(List<Map<String, String>> params);
+
+    /**
+     * Updates a list of shards into the shard table. Each shard will be a map
+     * of name-value parameters, for example, name -> my_shard, channel -> 2,
+     * the key to be used to update being the shard name.
+     * 
+     * @param params a list of shards to be updated
+     */
+    public void update(List<Map<String, String>> params);
+
+    /**
+     * Deletes a list of shards based on shard ids (aka shard name). The list
+     * will only contain shard ids.
+     * 
+     * @param params
+     */
+    public void delete(List<Map<String, String>> params);
+
+    /**
+     * Deletes all shards from the shard table.
+     */
+    public void deleteAll();
+
+    /**
+     * List all shards definitions
+     * 
+     * @returns A list of shards represented by maps of name-value.
+     */
+    public List<Map<String, String>> list();
+
+}
+}}}
+
+Here is a simple example of usage. 
+{{{
+        // Shard management MBean and some data structures.  
+        ShardManagementMBean mbean; 
+        HashMap<String,String> shard;
+        List<Map<String,String>> args = new ArrayList<Map<String,String>>();
+
+        // ...look up mbean and connect. 
+         
+        // Insert a shard. 
+        shard = new HashMap<String,String>();
+        shard.put("name", "test");
+        shard.put("critical", "false");
+        shard.put("disposition", "accept");
+        args.add(shard);
+        mbean.insert(args);
+        
+        // Update a shard to add the channel number. 
+        args.clear();
+        shard.put("channel", "7");
+        args.add(shard);
+        mbean.update(args);
+        
+        // Delete the shard. 
+        args.clear();
+        shard = new HashMap<String,String>();
+        shard.put("name", "test");
+        args.add(shard);
+        mbean.delete(args);
+}}}
