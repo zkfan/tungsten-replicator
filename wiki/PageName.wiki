@@ -1,0 +1,61 @@
+#summary Shard Management API Design
+
+= Introduction =
+
+Tungsten Replicator tags each transaction with a shard ID on extraction, which is then used in features like shard-based replication.  Shard properties are currently controlled using a file named shard.list, which is simple to understand but not manageable either remotely nor in a dynamic fashion.   
+
+This design describes a shard management interface that allows users to specify key shard properties dynamically through APIs.  Users may change shard properties on the fly and have them take effect through network calls only.  The shard management API also introduces the ability to drop or forward shards implemented by a specialized filter that reads shard management metadata. 
+
+= Detailed Requirements =
+
+The shard management API includes the following deliverables.  
+
+  # A permanent shard management catalog for each Tungsten replication service that stores current disposition of shards.  The shard disposition will be “forward” or “drop”.  
+
+  # A network API to manage the shard catalog will be added.  It will allow users to add, edit, or remove shard definitions. 
+
+  # Corresponding trepctl commands to make shard management easily accessible to scripts. 
+
+  # A shard filter that manages transactions of particular shards.  This filter can be added to any replicator pipeline.  The shard filter will read the shard catalog each time the pipeline goes online.  The shard filter will support the following dispositions of shard transactions: 
+
+  ## Accept.  Forward the transaction normally. 
+  ## Drop.  Drop the transaction. 
+  ## Warn.  Drop the transaction and generate a warning in the log. 
+  ## Error.  Signal a replication error.  This will cause the replicator to go offline. 
+
+  # Options to set the disposition of new shards.  These will be added automatically to the shard catalog with one of the options described.  
+
+  # One or more status commands to dump the current state of the shard catalog and any relevant shard processing diagnostics.  These will be extensions to the current ‘trepctl status –name shards’ command.  
+
+  # Updates to Tungsten documentation to cover management of shards and use of the provided interfaces.  
+
+  # Configuration recommendations for setup of all shard management features and to ensure that Tungsten replicator can process a shard catalog change within 15 seconds on a loaded system. 
+
+= Implementation = 
+== Architecture == 
+
+Shard management includes the following key components.  
+
+  * A new shard catalog table stored in the service database to track shards. 
+  * A new JMX MBean API for shard management with associated trepctl options to invoke APIs from scripts
+  * A simple shard filter that processes shards based on shard metadata.  The shard filter implements options for generating new shard options. 
+
+== Shard Catalog Table == 
+
+The shard catalog table is named trep_shard.  It is automatically created in the service database used for replication if it does not exist.  
+
+The trep_shard table contains the following columns. 
+
+|| *Name*      || *Type*       || *Key* || *Description* ||
+|| shard_id    || varchar(128) || PRI   || Shard name      ||
+|| critical    || char(1)      ||       || If true, must serialize ||
+|| disposition || varchar(30)  ||       || How to filter the shard ||
+|| channel     || int(11)      ||       || Explicit channel or null ||
+
+The disposition affects how the shard is processed by the shard filter.  The following values are allowed.  
+
+|| *Value* || *Description*          ||
+|| Accept || Forward the transaction ||
+|| Drop   || Drop the transaction    ||
+|| Warn   || Drop transaction and generate a warning in the log ||
+|| Error  || Signal a replication error and go offline || 
