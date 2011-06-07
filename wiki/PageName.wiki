@@ -120,31 +120,62 @@ public interface ShardManagerMBean
 
 Here is a simple example of usage. 
 {{{
-        // Shard management MBean and some data structures.  
-        ShardManagementMBean mbean; 
-        HashMap<String,String> shard;
-        List<Map<String,String>> args = new ArrayList<Map<String,String>>();
+    // Shard management MBean and some data structures.  
+    ShardManagementMBean mbean; 
+    HashMap<String,String> shard;
+    List<Map<String,String>> args = new ArrayList<Map<String,String>>();
 
-        // ...look up mbean and connect. 
+    // ...look up mbean and connect. 
          
-        // Insert a shard. 
-        shard = new HashMap<String,String>();
-        shard.put("name", "test");
-        shard.put("critical", "false");
-        shard.put("disposition", "accept");
-        args.add(shard);
-        mbean.insert(args);
+    // Insert a shard. 
+    shard = new HashMap<String,String>();
+    shard.put("name", "test");
+    shard.put("critical", "false");
+    shard.put("disposition", "accept");
+    args.add(shard);
+    mbean.insert(args);
         
-        // Update a shard to add the channel number. 
-        args.clear();
-        shard.put("channel", "7");
-        args.add(shard);
-        mbean.update(args);
+    // Update a shard to add the channel number. 
+    args.clear();
+    shard.put("channel", "7");
+    args.add(shard);
+    mbean.update(args);
         
-        // Delete the shard. 
-        args.clear();
-        shard = new HashMap<String,String>();
-        shard.put("name", "test");
-        args.add(shard);
-        mbean.delete(args);
+    // Delete the shard. 
+    args.clear();
+    shard = new HashMap<String,String>();
+    shard.put("name", "test");
+    args.add(shard);
+    mbean.delete(args);
 }}}
+
+== Trepctl Additions for Shard Processing ==
+
+The trepctl utility will be extended to add support for shard management.  There will be a new "shard" command with the following syntax: 
+
+{{{
+trepctl [-service name] shard { -insert | -update | -delete | -list}
+}}}
+
+The -list command lists all shards using a CSV format that looks like the following.  The first line is a comment with header values, while subsequent lines are whitespace-separated values. 
+
+{{{
+# name    critical    disposition    channel
+db1       true        ENABLE         1
+db2       false       WARN           3
+}}}
+
+The -insert, -update, and -delete options accept the same file type as 
+input.  When reading input, blank lines and any line that starts with a # are ignored.  
+
+You could can use these commands to do quick and easy edits on the shard catalog.  The following example shows how to dump the shard catalog, edit it, and reload.  
+
+{{{
+bin/trepctl -service test shard -list > file.out
+vi file.out
+bin/trepctl shard -service test -update < file.out
+}}}
+
+The last command will import the file and process data from it, updating rows that are found in the table and inserting new rows when not found.  The file processing will skip commented lines (#) as well as blank lines.
+
+== Shard Filter == 
