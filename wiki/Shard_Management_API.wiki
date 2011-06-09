@@ -6,7 +6,23 @@ Tungsten Replicator tags each transaction with a shard ID on extraction, which i
 
 This design describes a shard management interface that allows users to specify key shard properties dynamically through APIs.  Users may change shard properties on the fly and have them take effect through network calls only.  The shard management API also introduces the ability to drop or forward shards implemented by a specialized filter that reads shard management metadata. 
 
-= Detailed Requirements =
+= Background and Further Reading =
+
+This design assumes readers are familiar with Tungsten Replicator architecture and operation, especially concepts like pipelines and replication services.  For more information please refer to the [http://www.continuent.com/downloads/documentation Tungsten Replicator Guide 2.0].
+
+
+
+= Requirements =
+
+== Use Cases ==
+
+[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/bidi-replication-diagram.jpg Tenants Sites and Replication Services]
+
+=== Definition of New Tenant ===
+
+=== Switching Tenant Home between Sites ===
+
+== Detailed Requirements ==
 
 The shard management API includes the following deliverables.  
 
