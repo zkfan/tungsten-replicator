@@ -10,17 +10,41 @@ This design describes a shard management interface that allows users to specify 
 
 This design assumes readers are familiar with Tungsten Replicator architecture and operation, especially concepts like pipelines and replication services.  For more information please refer to the [http://www.continuent.com/downloads/documentation Tungsten Replicator Guide 2.0].
 
-
-
 = Requirements =
 
 == Use Cases ==
 
-[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/bidi-replication-diagram.jpg Tenants Sites and Replication Services]
+=== Overview ===
 
-=== Definition of New Tenant ===
+The initial implementation of the Shard Management API is designed to allow replication users to maintain primary and backup tenant copies across sites linked by databases.  This type of model is known a "system of record" architecture where data processing for each schema occurs on a certain and replicates to backup copies on or more other sites. 
 
-=== Switching Tenant Home between Sites ===
+To understand the model, imagine a software-as-a-service application with customer data stored in separate databases.  The DBMS servers live on two separate sites, NYC and SJC, and are connected using bi-directional replication.  A change on NYC automatically replicates to SJC; similarly a change on SJC automatically replicates to NYC.  
+
+Each customer in the application has a primary site, which is where processing for that customer occurs.  Suppose company A has NYC as primary site.  All processing for that customer occurs on the primary site NYC and replicates automatically to the backup database copy on SJC.  Suppose customer B has SJC as primary site.  All processing for customer B occurs on SJC and replicates automatically to the backup database copy on 
+
+Within the same DBMS server, some customers may have NYC as the primary site, and some customers may have SJC as the primary site.  From time to time new customers are added.  Also, from time to time the primary site for a particular customer may switch.  
+
+The following diagram illustrates the system of record architecture using Tungsten Replicator replication services.  
+
+[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/bidi-replication-diagram.jpg]
+
+In this diagram each DBMS server has a local service and a remote service.  The local service reads the MySQL binlog and makes transactions available to other services.  The remote service pulls transactions from the local service on the other site.  
+
+To make the system of record architecture work, Tungsten Replicator must be extended to add rules that control replication of transactions across sites.  These rules must work to ensure that updates on the primary site replicate replicate to the customer primary site replicate to the backup site.  Updates on the customer backup site, by contrast should not replicate back.  Finally, some schemas may be marked so that they do not replicate at all between either site. 
+
+The following use cases are supported. 
+
+=== Use Case 1: Definition of New Customer ===
+
+In this use case a new customer A is defined in the application with NYC as primary site.  The SaaS operators create a rule for the customer on the NYC remote service on the SJC site to accept customer A's shard "a".   They add a rule on the SJC remote service to drop customer A's shard.  After the rules are defined on both sites, processing for that customer may begin on the primary site. 
+
+=== Use Case 2: Customer Data Replication ===
+
+During normal operation an update on the customer A primary site NYC will replicate to the backup schema copy on the SJC backup site.  The update to the backup copy will appear in the backup site DBMS binlog and can replicate to slaves on the backup site.  However, the primary site NYC will will not accept the change back again. 
+
+=== Use Case 3: Switching Customer Home between Sites ===
+
+In this case the SaaS operators switch the customer primary site from NYC to SJC.  The SaaS operators first quiesce transactions for the customer in question on site NYC.  Once transactions have stopped *and* have replicated from the primary to the backup site, the SaaS operators will update shard processing rules to the reverse of Use Case 1 (accept transactions for shard "a" on NYC coming from SJC and refuse them from NYC to SJC). 
 
 == Detailed Requirements ==
 
