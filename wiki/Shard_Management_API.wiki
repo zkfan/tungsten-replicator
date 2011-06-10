@@ -91,20 +91,9 @@ The trep_shard table contains the following columns.
 || name        || varchar(128) || PRI   || Shard name      ||
 || home        || varchar(128) ||       || Home service name ||
 || critical    || char(1)      ||       || If true, must serialize ||
-|| disposition || varchar(30)  ||       || How to filter the shard ||
 || channel     || int(11)      ||       || Explicit channel or null ||
 
 The home column determine the system that "owns" the shard.  The shard may only replicate from the data service name matches the home. 
-
-The disposition affects how the shard is processed by shard filters.  The following values are allowed.  
-
-|| *Value* || *Description*          ||
-|| Accept || Forward the transaction ||
-|| Drop   || Drop the transaction    ||
-|| Warn   || Drop transaction and generate a warning in the log ||
-|| Error  || Signal a replication error and go offline || 
-
-Values are not case-sensitive. 
 
 == JMX API ==
 
@@ -187,7 +176,6 @@ Here is a simple example of usage.
     shard.put("name", "test");
     shard.put("home", "nyc");
     shard.put("critical", "false");
-    shard.put("disposition", "accept");
     args.add(shard);
     mbean.insert(args);
         
@@ -216,9 +204,9 @@ trepctl [-service name] shard { -insert | -update | -delete | -list}
 The -list command lists all shards using a CSV format that looks like the following.  The first line is a comment with header values, while subsequent lines are whitespace-separated values. 
 
 {{{
-# name    home        critical    disposition    channel
-db1       sjc         true        ACCEPT         1
-db2       nyc         false       WARN           3
+# name    home        critical    channel
+db1       sjc         true        1
+db2       nyc         false       3
 }}}
 
 The -insert, -update, and -delete options accept the same file type as 
@@ -242,30 +230,111 @@ The shard filter class has the following properties that may be set in the repli
 
 || *Property* || *Description* ||
 || autoCreate         || Automatically add new shards to catalog ||
-|| defaultDisposition || Default disposition to assign to new shards ||
 || enforceHome        || If true, allow update from home service only ||
-|| enforceDisposition || If true, enforce disposition ||
 
 The shard filter class can be added to any stage of any pipeline.  It will be installed on remote pipelines by default.  Only one such filter per pipeline is supported.  Adding additional filters may cause primary key errors and other problems.  
 
 The shard filter reads the shard catalog table when its prepare() method is called.  It stores the shard definition in an in-memory cache.  
 
-If the shard filter sees a new shard that is not in the catalog and the autoCreate property is true, it will create a new shard record.  The shard will receive the disposition.  
+If the shard filter sees a new shard that is not in the catalog and the autoCreate property is true, it will create a new shard record.  The shard will receive the current service as home.  
 
-_Note_:  What should the filter do if there's no shard definition and autoCreate=false. 
+If the enforceHome property is true, the shard filter handles transactions as follows: 
 
-The shard filter handles rules in two different ways.  
+  # If the filter is running in a local service, all transaction are  accepted.  For example, if the filter is running in local service "sjc" it accepts all shards regardless of the home value.  This means that the "sjc" master forwards all shards it finds and "sjc" local slaves accept all shards.  This behavior is identical to standard master/slave behavior. 
+  ## If the filter is running in a remote service, there are two cases to consider. 
+   # Shard home matches replicator service name.  Transaction is applied.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "sjc", it will be applied.  This means that "sjc" updates are propagated from the home.  
+   ## Shard home does not match replicator service name.  Transaction is dropped.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "nyc", it will be dropped.  This means that "nyc" updates are not propagated back from "sjc," thereby avoiding loops. 
 
-*Case 1:* Shard is known from the shard catalog.  In this case the filter processes the transaction according to the shard disposition.  For example, if the shard disposition is "drop", the filter will drop the transaction, including all fragments. 
-
-*Case 2:* Shard is not known.  In this case the filter will create a new shard catalog entry for the shard.  The shard disposition is set using the defaultDisposition value.  The filter then processes the shard disposition as in case 1 above. 
+If enforceHome property is true but autoCreate is false, shards without previously defined catalog entries will be dropped.  There could be a policy for this case.  In some cases one might want to have the replicator fail so the problem would be noticed and fixed. 
 
 == Shard Partitioner == 
 
-The ShardListPartitioner class will be updated to use the new shard catalog table.  The existing shard.list file will no longer be supported. 
+The ShardListPartitioner class used to separate shards for parallel repliation will be updated to use the new shard catalog table.  The existing shard.list file will no longer be supported.  This unifies parallel replication support with the shard management API.  
 
-== Shard Status == 
+== Shard Status ==
 
 The current 'trepctl status -name shards' command will be updated to include shard metadata from the shard catalog table as well as dynamic counts from the currently operating pipeline.  
 
-This means that all shards will be listed in the status command even if they have not had any transactions since the replicator went online.  Currently the status command only shows shards processed since the pipeline went online. 
+This means that all shards will be listed in the status command even if they have not had any transactions since the replicator went online.  Currently the status command only shows shards processed since the pipeline went online.  
+
+= Practical Applications of the Shard Management API =
+
+In this final section we consider practical application to the use cases mentioned previously.  For these examples we assume that the shard filter is added to each replicator pipeline with the following property settings: 
+
+{{{
+# Configure shard filter for system-of-record enforcement.  Shards must
+# be explicitly defined.  Shard homes are enforced. 
+replicator.filter.shard=com.continuent.tungsten.enterprise.replicator.filter.ShardFilter
+replicator.filter.shard.autoCreate=false
+replicator.filter.shard.enforceHome=true
+}}}
+
+We further assume that all shard definitions are defined in a text file called 'shards.txt'.  This could be stored in a spreadsheet as well and dumped to CSV. 
+
+== Example 1: Definition of New Customer ==
+
+To define a new customer cust_c whose home is "nyc," the steps are as follows. 
+
+  # Edit the shards.txt file and add the following line. 
+
+{{{
+# name    home        critical    channel
+...
+cust_c    nyc         false       null
+}}}
+
+  ## Upload the file to all replicator services on sites "sjc" and "nyc".  *Note*:  This can be optimized to load into only remote services.
+
+{{{
+trepctl -host sjc1 -service sjc shard -update < shards.txt
+trepctl -host sjc1 -service nyc shard -update < shards.txt
+trepctl -host nyc1 -service sjc shard -update < shards.txt
+trepctl -host nyc1 -service nyc shard -update < shards.txt
+}}}
+
+  ## Start processing for customer cust_c on the "nyc" host.  This 
+can occur as soon as the trepctl commands complete successfully. 
+
+== Example 2: Switching Customer Home ==
+
+To switch the home for cust_c from "nyc" to "sjc" the steps are as follows. 
+
+  # Edit the shards.txt file and edit the following line. 
+
+{{{
+# name    home        critical    channel
+...
+cust_c    sjc         false       null
+}}}
+
+  ## Stop processing on cust_c. 
+
+  ## Issue a trepctl flush command and wait for the sequence number it returns to be committed on sjc.  When the wait command returns all transactions from cust_c have flushed through both masters. 
+{{{
+$ trepctl -host nyc -service nyc flush
+Master log is synchronized with database at log sequence number: 4313339
+$ trepctl -host sjc -service nyc wait -applied 4313339
+}}}
+
+  ## Upload the file to all replicator services on sites "sjc" and "nyc".  *Note*:  This can be optimized as noted before to load into only remote services.
+
+{{{
+trepctl -host sjc1 -service sjc shard -update < shards.txt
+trepctl -host sjc1 -service nyc shard -update < shards.txt
+trepctl -host nyc1 -service sjc shard -update < shards.txt
+trepctl -host nyc1 -service nyc shard -update < shards.txt
+}}}
+
+  ## Start processing for customer cust_c on the "sjc" host.  This 
+can occur as soon as the trepctl commands complete successfully. 
+
+
+== Example 3: Detect Discrepancies in Rules ==
+
+To check for discrepancies between replicator services, dump the shard entries from each and diff them, as shown below. 
+
+{{{
+trepctl -host sjc1 -service sjc shard -list > shard.sjc1.sjc.txt
+trepctl -host nyc1 -service sjc shard -list > shard.nyc1.sjc.txt
+diff shard.sjc1.sjc.txt shard.nyc1.sjc.txt
+}}}
