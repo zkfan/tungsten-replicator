@@ -16,11 +16,11 @@ This design assumes readers are familiar with Tungsten Replicator architecture a
 
 === Overview ===
 
-The initial implementation of the Shard Management API is designed to allow replication users to maintain primary and backup tenant copies across sites linked by databases.  This type of model is known a "system of record" architecture where data processing for each schema occurs on a certain and replicates to backup copies on or more other sites. 
+The initial implementation of the Shard Management API is designed to allow replication users to maintain primary and backup tenant copies across sites linked by replication.  This data storage model is known a "system of record" architecture where data processing for each schema occurs on a certain and replicates to backup copies on or more other sites. 
 
-To understand the model, imagine a software-as-a-service application with customer data stored in separate databases.  The DBMS servers live on two separate sites, NYC and SJC, and are connected using bi-directional replication.  A change on NYC automatically replicates to SJC; similarly a change on SJC automatically replicates to NYC.  
+To understand the model, imagine a software-as-a-service application with customer data stored in separate databases which Tungsten processes as shards.  The DBMS servers live on two separate sites, NYC and SJC, and are connected using bi-directional replication.  A change on NYC replicates to SJC; similarly a change on SJC automatically to NYC.  
 
-Each customer in the application has a primary site, which is where processing for that customer occurs.  Suppose company A has NYC as primary site.  All processing for that customer occurs on the primary site NYC and replicates automatically to the backup database copy on SJC.  Suppose customer B has SJC as primary site.  All processing for customer B occurs on SJC and replicates automatically to the backup database copy on 
+In the system of record model each customer has a primary site, which is where processing for that customer occurs.  Suppose company A has NYC as primary site.  All processing for that customer occurs on the primary site NYC and replicates automatically to the backup database copy on SJC.  Suppose customer B has SJC as primary site.  All processing for customer B occurs on SJC and replicates automatically to the backup database copy on NYC. 
 
 Within the same DBMS server, some customers may have NYC as the primary site, and some customers may have SJC as the primary site.  From time to time new customers are added.  Also, from time to time the primary site for a particular customer may switch.  
 
@@ -46,6 +46,10 @@ During normal operation an update on the customer A primary site NYC will replic
 
 In this case the SaaS operators switch the customer primary site from NYC to SJC.  The SaaS operators first quiesce transactions for the customer in question on site NYC.  Once transactions have stopped *and* have replicated from the primary to the backup site, the SaaS operators will update shard processing rules to the reverse of Use Case 1 (accept transactions for shard "a" on NYC coming from SJC and refuse them from NYC to SJC). 
 
+=== Use Case 4: Detect Discrepancies in Rules ===
+
+SaaS operators may periodically check for discrepancies between shard processing rules in different services.  This is done by dumping the rules and diff'ing them. 
+
 == Detailed Requirements ==
 
 The shard management API includes the following deliverables.  
@@ -66,26 +70,33 @@ The shard management API includes the following deliverables.
 = Implementation = 
 == Architecture == 
 
-Shard management includes the following key components.  
+Shard management for the system of record model includes the following key components.  
 
   * A new shard catalog table stored in the service database to track shards. 
   * A new JMX MBean API for shard management with associated trepctl options to invoke APIs from scripts
   * A simple shard filter that processes shards based on shard metadata.  The shard filter implements options for generating new shard options. 
   * A shard partitioner that uses the shard catalog table instead of shard.list. 
 
+There are also some miscellaneous changes to integrate shard information and configuration in other components. 
+
 == Shard Catalog Table == 
 
 The shard catalog table is named trep_shard.  It is automatically created in the service database used for replication if it does not exist.  
+
+The trep_shard table is a public interface.  Users can select from this table to gain an accurate list of current rules for shard processing.  Users should *not* update the table as the values will not be propagated automatically to online replication services, which could lead to confusing errors.  Instead, users should use either the JMX API or trepctl to make changes. 
 
 The trep_shard table contains the following columns. 
 
 || *Name*      || *Type*       || *Key* || *Description* ||
 || name        || varchar(128) || PRI   || Shard name      ||
+|| home        || varchar(128) ||       || Home service name ||
 || critical    || char(1)      ||       || If true, must serialize ||
 || disposition || varchar(30)  ||       || How to filter the shard ||
 || channel     || int(11)      ||       || Explicit channel or null ||
 
-The disposition affects how the shard is processed by the shard filter.  The following values are allowed.  
+The home column determine the system that "owns" the shard.  The shard may only replicate from the data service name matches the home. 
+
+The disposition affects how the shard is processed by shard filters.  The following values are allowed.  
 
 || *Value* || *Description*          ||
 || Accept || Forward the transaction ||
@@ -100,6 +111,9 @@ Values are not case-sensitive.
 Each replication service will offer an additional JMX MBean named ShardManagementMBean that contains operations for shard management.  The MBean will be published using a name derived from the service OpenReplicatorManagerMBean so that it is easy to find.  
 
 The shard management JMX interface is designed to be extremely simple.  There are four basic operations:  add, update, delete, and list.  These use list structures that contain a list of shards, where the shards themselves are stored as name-value pairs. 
+
+_Note_:  It may be convenient to introduce a call to set the shard 
+disposition only.  
 
 The ShardManagementMBean interfaces are described below. 
 
@@ -118,8 +132,9 @@ public interface ShardManagerMBean
      * of name-value parameters, for example, name -> my_shard, channel -> 2.
      * 
      * @param params a list of shards to be inserted
+     * @return The number of rows affected. 
      */
-    public void insert(List<Map<String, String>> params);
+    public int insert(List<Map<String, String>> params);
 
     /**
      * Updates a list of shards into the shard table. Each shard will be a map
@@ -127,21 +142,23 @@ public interface ShardManagerMBean
      * the key to be used to update being the shard name.
      * 
      * @param params a list of shards to be updated
+     * @return The number of rows affected. 
      */
-    public void update(List<Map<String, String>> params);
+    public int update(List<Map<String, String>> params);
 
     /**
      * Deletes a list of shards based on shard ids (aka shard name). The list
      * will only contain shard ids.
      * 
      * @param params
+     * @return The number of rows affected. 
      */
-    public void delete(List<Map<String, String>> params);
+    public int delete(List<Map<String, String>> params);
 
     /**
      * Deletes all shards from the shard table.
      */
-    public void deleteAll();
+    public int deleteAll();
 
     /**
      * List all shards definitions
@@ -152,6 +169,9 @@ public interface ShardManagerMBean
 
 }
 }}}
+
+_Note_:  It may be convenient to introduce a call to set the shard 
+disposition only.  This makes changing shard dispositions simpler for clients. 
 
 Here is a simple example of usage. 
 {{{
@@ -165,14 +185,15 @@ Here is a simple example of usage.
     // Insert a shard. 
     shard = new HashMap<String,String>();
     shard.put("name", "test");
+    shard.put("home", "nyc");
     shard.put("critical", "false");
     shard.put("disposition", "accept");
     args.add(shard);
     mbean.insert(args);
         
-    // Update a shard to add the channel number. 
+    // Update a shard to change the home. 
     args.clear();
-    shard.put("channel", "7");
+    shard.put("home", "sjc");
     args.add(shard);
     mbean.update(args);
         
@@ -195,9 +216,9 @@ trepctl [-service name] shard { -insert | -update | -delete | -list}
 The -list command lists all shards using a CSV format that looks like the following.  The first line is a comment with header values, while subsequent lines are whitespace-separated values. 
 
 {{{
-# name    critical    disposition    channel
-db1       true        ACCEPT         1
-db2       false       WARN           3
+# name    home        critical    disposition    channel
+db1       sjc         true        ACCEPT         1
+db2       nyc         false       WARN           3
 }}}
 
 The -insert, -update, and -delete options accept the same file type as 
@@ -217,16 +238,23 @@ The last command will import the file and process data from it, updating rows th
 
 Shards will be processed using a shard filter, which will be implemented as Java class ShardFilter, which implements the Tungsten Filter interface. 
 
-The ShardFilter class has the following properties that may be set in the replicator service properties file: 
+The shard filter class has the following properties that may be set in the replicator service properties file: 
 
 || *Property* || *Description* ||
+|| autoCreate         || Automatically add new shards to catalog ||
 || defaultDisposition || Default disposition to assign to new shards ||
+|| enforceHome        || If true, allow update from home service only ||
+|| enforceDisposition || If true, enforce disposition ||
 
-The ShardFilter class can be added to any stage of any pipeline.  Only one such filter per pipeline is supported.  Adding additional filters may cause primary key errors and other problems. 
+The shard filter class can be added to any stage of any pipeline.  It will be installed on remote pipelines by default.  Only one such filter per pipeline is supported.  Adding additional filters may cause primary key errors and other problems.  
 
-The ShardFilter calls reads the shard catalog table when its prepare() method is called.  It stores the shard definition in an in-memory cache.  
+The shard filter reads the shard catalog table when its prepare() method is called.  It stores the shard definition in an in-memory cache.  
 
-The ShardFilter handles two main cases.
+If the shard filter sees a new shard that is not in the catalog and the autoCreate property is true, it will create a new shard record.  The shard will receive the disposition.  
+
+_Note_:  What should the filter do if there's no shard definition and autoCreate=false. 
+
+The shard filter handles rules in two different ways.  
 
 *Case 1:* Shard is known from the shard catalog.  In this case the filter processes the transaction according to the shard disposition.  For example, if the shard disposition is "drop", the filter will drop the transaction, including all fragments. 
 
