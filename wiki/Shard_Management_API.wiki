@@ -4,7 +4,9 @@
 
 Tungsten Replicator tags each transaction with a shard ID on extraction, which is then used in features like shard-based replication.  Shard properties are currently controlled using a file named shard.list, which is simple to understand but not manageable either remotely nor in a dynamic fashion.   
 
-This design describes a shard management interface that allows users to specify key shard properties dynamically through APIs.  Users may change shard properties on the fly and have them take effect through network calls only.  The shard management API also introduces the ability to drop or forward shards implemented by a specialized filter that reads shard management metadata. 
+This design describes a shard management interface that allows users to specify key shard properties dynamically through APIs.  Users may change shard properties on the fly and have them take effect through network calls only.  
+
+There are many applications of shards and this new API does not attempt to solve all of them.  Rather, it provides support for the existing parallel replication capabilities of the shard.list file and adds the ability to support "system-of-record" architectures for multi-master replication.  We will extend the API in future to support other types of applications efficiently. 
 
 = Background and Further Reading =
 
@@ -274,24 +276,19 @@ We further assume that all shard definitions are defined in a text file called '
 == Example 1: Definition of New Customer ==
 
 To define a new customer cust_c whose home is "nyc," the steps are as follows. 
-
   # Edit the shards.txt file and add the following line. 
-
 {{{
 # name    home        critical    channel
 ...
 cust_c    nyc         false       null
 }}}
-
   ## Upload the file to all replicator services on sites "sjc" and "nyc".  *Note*:  This can be optimized to load into only remote services.
-
 {{{
 trepctl -host sjc1 -service sjc shard -update < shards.txt
 trepctl -host sjc1 -service nyc shard -update < shards.txt
 trepctl -host nyc1 -service sjc shard -update < shards.txt
 trepctl -host nyc1 -service nyc shard -update < shards.txt
 }}}
-
   ## Start processing for customer cust_c on the "nyc" host.  This 
 can occur as soon as the trepctl commands complete successfully. 
 
@@ -300,34 +297,26 @@ can occur as soon as the trepctl commands complete successfully.
 To switch the home for cust_c from "nyc" to "sjc" the steps are as follows. 
 
   # Edit the shards.txt file and edit the following line. 
-
 {{{
 # name    home        critical    channel
 ...
 cust_c    sjc         false       null
 }}}
-
   ## Stop processing on cust_c. 
-
   ## Issue a trepctl flush command and wait for the sequence number it returns to be committed on sjc.  When the wait command returns all transactions from cust_c have flushed through both masters. 
 {{{
 $ trepctl -host nyc -service nyc flush
 Master log is synchronized with database at log sequence number: 4313339
 $ trepctl -host sjc -service nyc wait -applied 4313339
 }}}
-
   ## Upload the file to all replicator services on sites "sjc" and "nyc".  *Note*:  This can be optimized as noted before to load into only remote services.
-
 {{{
 trepctl -host sjc1 -service sjc shard -update < shards.txt
 trepctl -host sjc1 -service nyc shard -update < shards.txt
 trepctl -host nyc1 -service sjc shard -update < shards.txt
 trepctl -host nyc1 -service nyc shard -update < shards.txt
 }}}
-
-  ## Start processing for customer cust_c on the "sjc" host.  This 
-can occur as soon as the trepctl commands complete successfully. 
-
+  ## Start processing for customer cust_c on the "sjc" host.  This can occur as soon as the trepctl commands complete successfully. 
 
 == Example 3: Detect Discrepancies in Rules ==
 
