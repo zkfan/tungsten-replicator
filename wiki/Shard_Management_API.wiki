@@ -6,7 +6,7 @@ Tungsten Replicator tags each transaction with a shard ID on extraction, which i
 
 This design describes a shard management interface that allows users to specify key shard properties dynamically through APIs.  Users may change shard properties on the fly and have them take effect through network calls only.  
 
-There are many applications of shards and this new API does not attempt to solve all of them.  Rather, it provides support for the existing parallel replication capabilities of the shard.list file and adds the ability to support "system-of-record" architectures for multi-master replication.  We will extend the API in future to support other types of applications efficiently. 
+There are many applications of shards; this new API does not attempt to handle all of them.  Rather, it provides support for the existing parallel replication capabilities of the shard.list file and adds the ability to support "system-of-record" architectures for multi-master replication.  We will extend the API in future to support other types of applications efficiently. 
 
 = Background and Further Reading =
 
@@ -32,7 +32,7 @@ The following diagram illustrates the system of record architecture using Tungst
 
 In this diagram each DBMS server has a local service and a remote service.  The local service reads the MySQL binlog and makes transactions available to other services.  The remote service pulls transactions from the local service on the other site.  
 
-To make the system of record architecture work, Tungsten Replicator must be extended to add rules that control replication of transactions across sites.  These rules must work to ensure that updates on the primary site replicate replicate to the customer primary site replicate to the backup site.  Updates on the customer backup site, by contrast should not replicate back.  Finally, some schemas may be marked so that they do not replicate at all between either site. 
+To make the system of record architecture work, Tungsten Replicator must be extended to add rules that control replication of transactions across sites.  These rules must work to ensure that updates on the primary site replicate to the backup site.  Updates on the customer backup site, by contrast should not replicate back.  Finally, some schemas may be marked so that they do not replicate at all between either site. 
 
 The following use cases are supported. 
 
