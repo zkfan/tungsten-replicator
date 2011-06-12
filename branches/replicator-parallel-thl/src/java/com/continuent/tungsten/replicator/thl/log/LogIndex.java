@@ -130,11 +130,10 @@ public class LogIndex
                         }
                         else
                         {
-                            logger
-                                    .warn("Unexpected record type in first log record: type="
-                                            + record1.getData()[0]
-                                            + " file="
-                                            + lf.getFile().getAbsolutePath());
+                            logger.warn("Unexpected record type in first log record: type="
+                                    + record1.getData()[0]
+                                    + " file="
+                                    + lf.getFile().getAbsolutePath());
                         }
                     }
                 }
@@ -171,8 +170,6 @@ public class LogIndex
 
     /**
      * Returns true if the index is empty.
-     * 
-     * @return
      */
     public synchronized boolean isEmpty()
     {
@@ -276,17 +273,26 @@ public class LogIndex
             return null;
 
         // Search the current file index.
-        LogIndexEntry previousEntry = null;
         for (LogIndexEntry indexEntry : index)
         {
             if (indexEntry.contains(seqno))
                 return indexEntry.fileName;
-            previousEntry = indexEntry;
         }
-        if (previousEntry != null)
-            return previousEntry.fileName;
-        else
-            return null;
+        return null;
+    }
+
+    /**
+     * Returns true if the name of a log file exists in the index.
+     */
+    public synchronized boolean fileNameExists(String name)
+    {
+        // Search the current file index.
+        for (LogIndexEntry indexEntry : index)
+        {
+            if (indexEntry.fileName.equals(name))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -295,6 +301,17 @@ public class LogIndex
     public synchronized List<LogIndexEntry> getIndexCopy()
     {
         return new ArrayList<LogIndexEntry>(index);
+    }
+
+    /**
+     * Returns the first index file or null if no such file exists.
+     */
+    public synchronized String getFirstFile()
+    {
+        if (index.size() == 0)
+            return null;
+        else
+            return index.get(0).fileName;
     }
 
     /**
@@ -309,10 +326,24 @@ public class LogIndex
     }
 
     /**
+     * Returns an array containing all file names.
+     */
+    public synchronized String[] getFileNames()
+    {
+        String[] fileNames = new String[this.size()];
+        int i = 0;
+        for (LogIndexEntry lie : index)
+        {
+            fileNames[i++] = lie.fileName;
+        }
+        return fileNames;
+    }
+
+    /**
      * Adds a new file to the index.
      * 
-     * @seqno Starting sequence number in the file
-     * @fileName Name of the log file
+     * @param seqno Starting sequence number in the file
+     * @param fileName Name of the log file
      */
     public synchronized void addNewFile(long seqno, String fileName)
     {

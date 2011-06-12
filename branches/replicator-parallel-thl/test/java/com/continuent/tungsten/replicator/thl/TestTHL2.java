@@ -83,8 +83,8 @@ public class TestTHL2 extends TestCase
 
         Store thl = pipeline.getStore("thl");
         assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno(true));
-        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno(true));
+                .getMinStoredSeqno());
+        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Close down pipeline.
         pipeline.shutdown(false);
@@ -110,7 +110,7 @@ public class TestTHL2 extends TestCase
         builder.addStage("extract-s", "dummy", "thl-apply", null);
 
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
-        builder.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
 
         builder.addComponent("store", "thl", THL.class);
@@ -136,11 +136,11 @@ public class TestTHL2 extends TestCase
                 RemoteTHLExtractor.class);
         builder2.addProperty("extractor", "thl-remote-extractor", "connectUri",
                 "thl://localhost:2112/");
-        builder2.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder2.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder2.addProperty("applier", "thl-apply", "storeName", "thl");
 
         builder2
-                .addComponent("extractor", "thl-extract", THLStoreAdapter.class);
+                .addComponent("extractor", "thl-extract", THLStoreExtractor.class);
         builder2.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder2.addComponent("applier", "dummy", DummyApplier.class);
 
@@ -190,15 +190,15 @@ public class TestTHL2 extends TestCase
         // Ensure each THL contains expected number of events.
         Store serverThl = serverPipeline.getStore("thl");
         assertEquals("Expected 0 as first event", 0, serverThl
-                .getMinStoredSeqno(true));
+                .getMinStoredSeqno());
         assertEquals("Expected 9 as last event", 9, serverThl
-                .getMaxStoredSeqno(true));
+                .getMaxStoredSeqno());
 
         Store thlClient = clientPipeline.getStore("thl");
         assertEquals("Expected 0 as first event", 0, thlClient
-                .getMinStoredSeqno(true));
+                .getMinStoredSeqno());
         assertEquals("Expected 9 as last event", 9, thlClient
-                .getMaxStoredSeqno(true));
+                .getMaxStoredSeqno());
 
         // Shut down both pipelines.
         clientPipeline.shutdown(true);
@@ -222,7 +222,7 @@ public class TestTHL2 extends TestCase
         builder.addPipeline("master", "extract", "thl");
         builder.addStage("extract", "dummy", "thl-apply", null);
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
-        builder.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
         builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
@@ -276,8 +276,8 @@ public class TestTHL2 extends TestCase
         // Ensure THL contains expected number of events.
         Store thl = serverPipeline.getStore("thl");
         assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno(true));
-        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno(true));
+                .getMinStoredSeqno());
+        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Shut down both pipelines.
         clientPipeline.shutdown(true);
@@ -306,7 +306,7 @@ public class TestTHL2 extends TestCase
         builder.addStage("extract-s", "dummy", "thl-apply", null);
 
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
-        builder.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
 
         builder.addComponent("store", "thl", THL.class);
@@ -358,9 +358,9 @@ public class TestTHL2 extends TestCase
         // Ensure THL contains expected number of events.
         Store thl = pipeline2.getStore("thl");
         assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno(true));
+                .getMinStoredSeqno());
         assertEquals("Expected 19 as last event", 19, thl
-                .getMaxStoredSeqno(true));
+                .getMaxStoredSeqno());
 
         // Make storage non-persistent.
         DummyTHLStorage2.setPersistence("testSeqnoPropagation", false);
@@ -392,14 +392,14 @@ public class TestTHL2 extends TestCase
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
         builder.addProperty("extractor", "dummy", "nFrags", new Integer(3)
                 .toString());
-        builder.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
         builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
                 .getName());
 
         // Apply stage components.
-        builder.addComponent("extractor", "thl-extract", THLStoreAdapter.class);
+        builder.addComponent("extractor", "thl-extract", THLStoreExtractor.class);
         builder.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder.addComponent("applier", "dummy", DummyApplier.class);
         builder.addProperty("applier", "dummy", "storeAppliedEvents", "true");
@@ -422,8 +422,8 @@ public class TestTHL2 extends TestCase
 
         Store thl = pipeline.getStore("thl");
         assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno(true));
-        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno(true));
+                .getMinStoredSeqno());
+        assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Confirm we have 10x2 statements.
         ApplierWrapper wrapper = (ApplierWrapper) pipeline.getStage("apply")
@@ -454,14 +454,14 @@ public class TestTHL2 extends TestCase
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
         builder.addProperty("extractor", "dummy", "nFrags", new Integer(nFrags)
                 .toString());
-        builder.addComponent("applier", "thl-apply", THLStoreAdapter.class);
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
         builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
                 .getName());
 
         // Apply stage components.
-        builder.addComponent("extractor", "thl-extract", THLStoreAdapter.class);
+        builder.addComponent("extractor", "thl-extract", THLStoreExtractor.class);
         builder.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder.addComponent("applier", "dummy", DummyApplier.class);
 

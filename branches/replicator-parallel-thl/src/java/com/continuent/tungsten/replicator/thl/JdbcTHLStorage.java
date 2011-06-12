@@ -41,8 +41,7 @@ import com.continuent.tungsten.replicator.plugin.PluginContext;
  */
 public class JdbcTHLStorage implements THLStorage
 {
-    private static Logger       logger            = Logger
-                                                          .getLogger(JdbcTHLStorage.class);
+    private static Logger       logger            = Logger.getLogger(JdbcTHLStorage.class);
     private ReplicatorRuntime   runtime           = null;
     protected String            driver            = null;
     protected String            vendor            = null;
@@ -170,7 +169,7 @@ public class JdbcTHLStorage implements THLStorage
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.thl.THLStorage#store(com.continuent.tungsten.replicator.thl.THLEvent,
-     *      boolean)
+     *      boolean, boolean)
      */
     public void store(THLEvent event, boolean doCommit, boolean syncTHL)
             throws THLException, InterruptedException

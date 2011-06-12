@@ -192,11 +192,14 @@ public class DiskLogExtendedTest extends TestCase
         long lastSeqno = seqno + howMany;
 
         // Write a series of events to the log.
+        LogConnection conn = log.connect(false);
         for (int i = 0; i < howMany; i++)
         {
             THLEvent e = this.createTHLEvent(seqno++);
-            log.store(e, (seqno == lastSeqno));
+            conn.store(e, (seqno == lastSeqno));
         }
+        conn.commit();
+        conn.release();
         assertEquals("Should have stored requested events", (seqno - 1), log
                 .getMaxSeqno());
         logger.info("Final seqno: " + (seqno - 1));

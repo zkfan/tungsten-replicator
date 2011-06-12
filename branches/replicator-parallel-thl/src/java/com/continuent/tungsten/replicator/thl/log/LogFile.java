@@ -471,7 +471,7 @@ public class LogFile
      * 
      * @param waitMillis Number of milliseconds to wait for data to be
      *            available. 0 means do not wait.
-     * @returns A log record if we can read one before timing out
+     * @return A log record if we can read one before timing out
      * @throws IOException Thrown if there is an I/O error
      * @throws InterruptedException Thrown if we are interrupted
      * @throws LogTimeoutException Thrown if we timeout while waiting for data
@@ -635,7 +635,7 @@ public class LogFile
      * Writes a buffer to the log file and returns true if we have exceeded the
      * log file size.
      * 
-     * @param barr Array containing data to write
+     * @param record Log record to write
      * @param logFileSize Maximum log file size
      * @return true if log file size exceeded
      */

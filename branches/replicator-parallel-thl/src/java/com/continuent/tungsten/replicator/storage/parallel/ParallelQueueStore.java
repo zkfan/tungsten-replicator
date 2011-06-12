@@ -203,7 +203,7 @@ public class ParallelQueueStore implements ParallelStore
      * 
      * @see com.continuent.tungsten.replicator.storage.Store#getMaxStoredSeqno()
      */
-    public long getMaxStoredSeqno(boolean adminCommand)
+    public long getMaxStoredSeqno()
     {
         return 0;
     }
@@ -213,22 +213,9 @@ public class ParallelQueueStore implements ParallelStore
      * 
      * @see com.continuent.tungsten.replicator.storage.Store#getMinStoredSeqno()
      */
-    public long getMinStoredSeqno(boolean adminCommand)
+    public long getMinStoredSeqno()
     {
         return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see com.continuent.tungsten.replicator.storage.Store#fetchEvent(long,
-     *      short, boolean)
-     */
-    public ReplDBMSEvent fetchEvent(long seqno, short fragno,
-            boolean ignoreSkippedEvent)
-    {
-        // We don't keep events persistently, so this is always null.
-        return null;
     }
 
     /**

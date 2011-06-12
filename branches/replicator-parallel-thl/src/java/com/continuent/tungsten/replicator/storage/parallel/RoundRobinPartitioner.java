@@ -36,7 +36,7 @@ public class RoundRobinPartitioner implements Partitioner
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.store.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
+     * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
      *      int, int)
      */
     public PartitionerResponse partition(ReplDBMSEvent event,

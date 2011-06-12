@@ -90,9 +90,8 @@ public class LogRecord
      * 
      * @param offset File offset at which this record was read
      * @param bytes Data in record
-     * @param offset Starting offset in source log file
-     * @param If true, the record is truncated, i.e., contains only partial
-     *            record data
+     * @param crcType Type of CRC check to use
+     * @param crc CRC value
      */
     public LogRecord(long offset, byte[] bytes, byte crcType, long crc)
     {

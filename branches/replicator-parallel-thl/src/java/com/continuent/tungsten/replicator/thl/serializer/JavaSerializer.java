@@ -39,7 +39,7 @@ public class JavaSerializer implements Serializer
     /**
      * Deserializes THLEvent off the stream. {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.thl.Serializer.Serializer#deserializeEvent(java.io.InputStream)
+     * @see com.continuent.tungsten.replicator.thl.serializer.Serializer#deserializeEvent(java.io.InputStream)
      */
     public THLEvent deserializeEvent(InputStream inStream) throws THLException,
             IOException
@@ -68,7 +68,7 @@ public class JavaSerializer implements Serializer
     /**
      * Serialize the THL event onto the stream. {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.thl.Serializer.Serializer#serializeEvent(com.continuent.tungsten.replicator.thl.THLEvent,
+     * @see com.continuent.tungsten.replicator.thl.serializer.Serializer#serializeEvent(com.continuent.tungsten.replicator.thl.THLEvent,
      *      java.io.OutputStream)
      */
     public void serializeEvent(THLEvent event, OutputStream outStream)

@@ -42,8 +42,7 @@ import com.continuent.tungsten.replicator.plugin.PluginContext;
 
 public class ParallelQueueExtractor implements ParallelExtractor
 {
-    private static Logger      logger = Logger
-                                              .getLogger(ParallelQueueExtractor.class);
+    private static Logger      logger = Logger.getLogger(ParallelQueueExtractor.class);
 
     private int                taskId = -1;
     private String             storeName;
@@ -111,9 +110,8 @@ public class ParallelQueueExtractor implements ParallelExtractor
             else
             {
                 // This should not happen.
-                logger
-                        .warn("Returned unexpected event type from peek operation: "
-                                + event.getClass().toString());
+                logger.warn("Returned unexpected event type from peek operation: "
+                        + event.getClass().toString());
                 return null;
             }
         }
@@ -179,7 +177,7 @@ public class ParallelQueueExtractor implements ParallelExtractor
 
     /**
      * Return the header, which should have been place here by an extractor
-     * during restart. {@inheritDoc}
+     * during restart.
      * 
      * @see com.continuent.tungsten.replicator.applier.Applier#getLastEvent()
      */
@@ -217,8 +215,6 @@ public class ParallelQueueExtractor implements ParallelExtractor
      */
     public void setLastEventId(String eventId) throws ReplicatorException
     {
-        logger
-                .warn("Attempt to set last event ID on queue storage: "
-                        + eventId);
+        logger.warn("Attempt to set last event ID on queue storage: " + eventId);
     }
 }

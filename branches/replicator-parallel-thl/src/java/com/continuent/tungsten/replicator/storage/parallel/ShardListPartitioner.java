@@ -62,8 +62,7 @@ import com.continuent.tungsten.replicator.event.ReplOptionParams;
  */
 public class ShardListPartitioner implements Partitioner
 {
-    private static Logger            logger           = Logger
-                                                              .getLogger(ShardListPartitioner.class);
+    private static Logger            logger           = Logger.getLogger(ShardListPartitioner.class);
     private File                     shardMap;
     private HashMap<String, Integer> shardTable;
     private int                      defaultPartition = -1;
@@ -84,7 +83,7 @@ public class ShardListPartitioner implements Partitioner
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.store.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
+     * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
      *      int, int)
      */
     public PartitionerResponse partition(ReplDBMSEvent event,
@@ -134,13 +133,13 @@ public class ShardListPartitioner implements Partitioner
         TungstenProperties shardMapProperties = PartitionerUtility
                 .loadShardProperties(shardMap);
 
-        // Construct data used for partitioning.  
+        // Construct data used for partitioning.
         logger.info("Loading shard partitioning data");
         shardTable = new HashMap<String, Integer>();
         criticalShards = new HashMap<String, Boolean>();
-        
-        // The #UNKNOWN shard must be declared critical or it will not be 
-        // processed correctly. 
+
+        // The #UNKNOWN shard must be declared critical or it will not be
+        // processed correctly.
         criticalShards.put(ReplOptionParams.SHARD_ID_UNKNOWN, true);
 
         for (String shardName : shardMapProperties.keyNames())
@@ -174,8 +173,7 @@ public class ShardListPartitioner implements Partitioner
         }
         else
         {
-            logger
-                    .info("No default partition specified; unassigned shards will use hashing");
+            logger.info("No default partition specified; unassigned shards will use hashing");
         }
 
         // Dump shard table in debug mode.

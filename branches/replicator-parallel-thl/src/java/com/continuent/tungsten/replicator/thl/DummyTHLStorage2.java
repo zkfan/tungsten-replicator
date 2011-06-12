@@ -299,7 +299,7 @@ public class DummyTHLStorage2 implements THLStorage
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.thl.THLStorage#store(com.continuent.tungsten.replicator.thl.THLEvent,
-     *      boolean)
+     *      boolean, boolean)
      */
     public void store(THLEvent event, boolean doCommit, boolean syncTHL)
             throws THLException

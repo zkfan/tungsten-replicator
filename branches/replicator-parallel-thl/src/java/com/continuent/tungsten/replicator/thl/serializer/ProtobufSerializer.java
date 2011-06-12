@@ -92,7 +92,7 @@ public class ProtobufSerializer implements Serializer
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.thl.serializer.Serializer#deserializeEvent(java.io.InputStream)
+     * @see com.continuent.tungsten.replicator.thl.serializer.Serializer#deserializeEvent(java.io.InputStream)
      */
     public THLEvent deserializeEvent(InputStream inStream) throws IOException
     {
@@ -170,7 +170,7 @@ public class ProtobufSerializer implements Serializer
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.enterprise.replicator.thl.serializer.Serializer#serializeEvent(com.continuent.tungsten.replicator.thl.THLEvent,
+     * @see com.continuent.tungsten.replicator.thl.serializer.Serializer#serializeEvent(com.continuent.tungsten.replicator.thl.THLEvent,
      *      java.io.OutputStream)
      */
     public void serializeEvent(THLEvent thlEvent, OutputStream outStream)

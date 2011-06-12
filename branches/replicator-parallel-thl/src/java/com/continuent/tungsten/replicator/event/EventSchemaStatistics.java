@@ -139,7 +139,7 @@ public class EventSchemaStatistics
     // metadata schema or null if it is an ordinary schema.
     private String schemaToServiceName(String schema)
     {
-        Matcher m = this.serviceNamePattern.matcher(schema);
+        Matcher m = serviceNamePattern.matcher(schema);
         if (m.find())
             return m.group(1);
         else

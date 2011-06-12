@@ -53,11 +53,13 @@ public class SimpleLogReader implements Runnable
     /** Read all records from file. */
     public void run()
     {
-        for (long seqno = startSeqno; seqno < startSeqno + howMany; seqno++)
+        try
         {
-            try
+            LogConnection conn = log.connect(true);
+            conn.seek(startSeqno);
+            for (long seqno = startSeqno; seqno < startSeqno + howMany; seqno++)
             {
-                THLEvent e = log.find(seqno, (short) 0);
+                THLEvent e = conn.next();
                 if (e == null)
                     throw new Exception("Event is null: seqno=" + seqno);
                 if (seqno != e.getSeqno())
@@ -75,15 +77,13 @@ public class SimpleLogReader implements Runnable
                             + eventsRead);
                 }
             }
-            catch (InterruptedException e)
-            {
-                break;
-            }
-            catch (Throwable t)
-            {
-                error = t;
-                break;
-            }
+        }
+        catch (InterruptedException e)
+        {
+        }
+        catch (Throwable t)
+        {
+            error = t;
         }
     }
 }

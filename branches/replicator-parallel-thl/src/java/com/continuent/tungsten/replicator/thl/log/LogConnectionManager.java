@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2010 Continuent Inc.
+ * Copyright (C) 2010-11 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,260 +23,137 @@
 package com.continuent.tungsten.replicator.thl.log;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.thl.THLException;
 
 /**
- * Manages log connections behalf of threads. Threads either fetch existing
- * connections or allocate new ones.
+ * Encapsulates management of connections and their log cursors. Log cursors are
+ * a position in a particular log file and can only move in a forward direction.
+ * If clients move backward in the log we need to allocated a new cursor.
  * 
  * @author <a href="mailto:robert.hodges@continuent.com">Robert Hodges</a>
  */
 public class LogConnectionManager
 {
-    private static Logger            logger           = Logger
-                                                              .getLogger(LogConnectionManager.class);
+    private static Logger       logger          = Logger.getLogger(LogConnectionManager.class);
 
-    // Map of active connections and flag to indicate we are closed for
+    // Map of active cursors and flag to indicate we are closed for
     // business.
-    private Map<Long, LogConnection> connections      = new Hashtable<Long, LogConnection>();
-    private boolean                  done;
+    private boolean             done;
 
-    // Connection timeout variables.
-    private long                     lastTimeoutCheck = System
-                                                              .currentTimeMillis();
-    private int                      timeoutMillis    = 5000;
-    private long                     nextTimeoutCheck;
+    // Connection pools.
+    private LogConnection       writeConnection;
+    private List<LogConnection> readConnections = new ArrayList<LogConnection>();
 
     /**
-     * Create a new log connection manager.
+     * Create a new log cursor manager.
      */
-    public LogConnectionManager() throws THLException
+    public LogConnectionManager()
     {
-        nextTimeoutCheck = lastTimeoutCheck + timeoutMillis;
     }
 
     /**
-     * Returns the number of connections currently managed.
+     * Stores a new connection.
      */
-    public synchronized int getSize()
-    {
-        return connections.size();
-    }
-
-    /**
-     * Returns the timeout for idle connections.
-     */
-    public int getTimeoutMillis()
-    {
-        return timeoutMillis;
-    }
-
-    /**
-     * Sets the timeout for idle connections. This recomputes the timeout.
-     */
-    public void setTimeoutMillis(int timeoutMillis)
-    {
-        this.timeoutMillis = timeoutMillis;
-        nextTimeoutCheck = lastTimeoutCheck + timeoutMillis;
-    }
-
-    /**
-     * Return a connection to the log file belonging to this client. If the next
-     * seqno is before the current position, we release the existing file and
-     * return null.
-     * 
-     * @return A connection. This must be returned using returnLogConnection().
-     */
-    public synchronized LogConnection getLogConnection(long nextSeqno)
+    public synchronized void store(LogConnection connection)
             throws THLException
     {
-        long threadId = Thread.currentThread().getId();
-        assertNotDone(threadId);
-        if (logger.isDebugEnabled())
+        // Ensure we are still open for business.
+        assertNotDone(connection);
+
+        // Clean up all finished connections.
+        if (writeConnection != null && writeConnection.isDone())
+            writeConnection = null;
+        int readConnectionsSize = readConnections.size();
+        for (int i = 0; i < readConnectionsSize; i++)
         {
-            logger.debug("Seeking connection to disk log: threadId=" + threadId
-                    + " requested seqno=" + nextSeqno);
+            // Have to walk backwards through the read connections.
+            int index = readConnectionsSize - i - 1;
+            if (readConnections.get(index).isDone())
+                readConnections.remove(index);
         }
 
-        // Check for and remove idle connections. This may include the
-        // connection we are seeking but doing it this way makes unit tests
-        // easier to write.
-        long currentTimeMillis = System.currentTimeMillis();
-        if (currentTimeMillis > nextTimeoutCheck)
+        // To prevent chaos only a single write connection is allowed.
+        if (!connection.isReadonly() && writeConnection != null)
+            throw new THLException(
+                    "Write connection already exists: connection="
+                            + writeConnection.toString());
+
+        // Allocate, store, and return the connection.
+        if (connection.isReadonly())
+            readConnections.add(connection);
+        else
+            writeConnection = connection;
+
+    }
+
+    /**
+     * Releases an existing connection.
+     */
+    public synchronized void release(LogConnection connection)
+    {
+        // Warn if we are shut down.
+        if (done)
         {
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("Checking for old connections to free");
-            }
-            // Compute lower bound for last access time.
-            long oldestAccessMillis = currentTimeMillis - timeoutMillis;
-
-            // Use two loops to avoid concurrent access error.
-            ArrayList<Long> threadIds = new ArrayList<Long>();
-            for (long id : connections.keySet())
-            {
-                LogConnection lc = connections.get(id);
-                if (!lc.isLoaned()
-                        && lc.getLastAccessMillis() < oldestAccessMillis)
-                {
-                    threadIds.add(id);
-                }
-            }
-            for (long id : threadIds)
-            {
-                releaseConnection(id);
-            }
-
-            // Set next timeout check.
-            nextTimeoutCheck = currentTimeMillis + timeoutMillis;
+            logger.warn("Attempt to release connection after connection manager shutdown: "
+                    + connection);
+            return;
         }
 
-        // Look up the connection.
-        LogConnection logConnection = connections.get(threadId);
-        if (logConnection != null)
+        // Release the connection.
+        connection.releaseInternal();
+        if (connection.isReadonly())
         {
-            // Assert that this connection was not already loaned.
-            if (logConnection.isLoaned())
-            {
-                throw new THLException(
-                        "Log connection already loaned to thread: name="
-                                + Thread.currentThread().getName() + " id="
-                                + threadId);
-            }
-
-            // See if log connection is positioned before requested sequence
-            // number.
-            if (logConnection.getLastSeqno() <= nextSeqno)
-            {
-                // Connection is usable, return it.
-                logConnection.setLastSeqno(nextSeqno);
-                logConnection.setLoaned(true);
-                logConnection.setLastAccessMillis(currentTimeMillis);
-                return logConnection;
-            }
-            else
-            {
-                if (logger.isDebugEnabled())
-                {
-                    logger
-                            .debug("Requested next sequence number is less than connection seqno: requested seqno="
-                                    + nextSeqno
-                                    + " last seqno="
-                                    + logConnection.getLastSeqno());
-                }
-                connections.remove(threadId);
-                logConnection.release();
-                return null;
-            }
+            if (!readConnections.remove(connection))
+                logger.warn("Unable to free read-only connection: "
+                        + connection);
         }
         else
-            return null;
-    }
-
-    /**
-     * Sets the log file and last accessed sequence number for this thread. This
-     * allows clients to roll over the log connection and receive it back as a
-     * new loaned connection.
-     * 
-     * @return A connection. This must be returned using returnLogConnection().
-     */
-    public synchronized LogConnection createAndGetLogConnection(
-            LogFile logFile, long lastSeqno) throws THLException
-    {
-        long threadId = Thread.currentThread().getId();
-        assertNotDone(threadId);
-
-        // Clear previous connection if any for this thread.
-        LogConnection logConnection = connections.remove(threadId);
-        if (logConnection != null)
-            logConnection.release();
-
-        // Add new connection for this thread.
-        logConnection = new LogConnection(logFile, lastSeqno);
-        logConnection.setLoaned(true);
-        connections.put(threadId, logConnection);
-
-        if (logger.isDebugEnabled())
         {
-            logger.debug("Creating new log connection: threadId=" + threadId
-                    + " file=" + logFile.getFile().getName() + " seqno="
-                    + lastSeqno);
+            if (writeConnection == connection)
+                writeConnection = null;
+            else
+            {
+                logger.warn("Unable to free write connection: " + connection);
+            }
         }
-        return logConnection;
-    }
-
-    /**
-     * Returns a loaned log connection. This must be called on any connection
-     * before asking for it again.
-     * 
-     * @param logConnection
-     */
-    public synchronized void returnLogConnection(LogConnection logConnection)
-    {
-        logConnection.setLoaned(false);
     }
 
     /**
      * Releases all connections. This must be called when terminating to ensure
      * file descriptors are released.
      */
-    public synchronized void release()
+    public synchronized void releaseAll()
     {
-        done = true;
-
-        // Use two loops to avoid concurrent access error.
-        ArrayList<Long> threadIds = new ArrayList<Long>(connections.size());
-        for (long threadId : connections.keySet())
+        if (!done)
         {
-            threadIds.add(threadId);
-        }
-        for (long threadId : threadIds)
-        {
-            releaseConnection(threadId);
-        }
+            // Release all connections.
+            if (this.writeConnection != null)
+            {
+                // This flushes pending output.
+                writeConnection.releaseInternal();
+                writeConnection = null;
+            }
+            for (LogConnection connection : readConnections)
+            {
+                connection.releaseInternal();
+            }
+            readConnections = null;
 
-        connections = null;
+            done = true;
+        }
     }
 
     // Ensure that log is still accessible.
-    private void assertNotDone(long threadId) throws THLException
+    private void assertNotDone(LogConnection client) throws THLException
     {
         if (done)
         {
-            throw new THLException("Illegal access on closed log: threadId="
-                    + threadId);
-        }
-    }
-
-    /**
-     * Releases log connection for current thread.
-     */
-    public void releaseConnection()
-    {
-        releaseConnection(Thread.currentThread().getId());
-    }
-
-    /**
-     * Releases log connection for specific thread ID.
-     */
-    public synchronized void releaseConnection(long threadId)
-    {
-        LogConnection logConnection = connections.get(threadId);
-        if (logConnection != null)
-        {
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("Releasing log connection: file="
-                        + logConnection.getLogFile().getFile().getName()
-                        + " threadid=" + threadId);
-            }
-            logConnection.release();
-            connections.remove(threadId);
+            throw new THLException("Illegal access on closed log: client="
+                    + client);
         }
     }
 }

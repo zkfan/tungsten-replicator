@@ -418,7 +418,7 @@ public class Pipeline implements ReplicatorPlugin
         for (Store store : stores.values())
         {
             // First term in predicate ensures that we assign a value.
-            long minStoredSeqno = store.getMinStoredSeqno(true);
+            long minStoredSeqno = store.getMinStoredSeqno();
             if (seqno == -1 || seqno > minStoredSeqno)
                 seqno = minStoredSeqno;
         }
@@ -433,7 +433,7 @@ public class Pipeline implements ReplicatorPlugin
         long seqno = -1;
         for (Store store : stores.values())
         {
-            long maxStoredSeqno = store.getMaxStoredSeqno(true);
+            long maxStoredSeqno = store.getMaxStoredSeqno();
             if (seqno < maxStoredSeqno)
                 seqno = maxStoredSeqno;
         }
