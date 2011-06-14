@@ -25,7 +25,6 @@ package com.continuent.tungsten.replicator.pipeline;
 import com.continuent.tungsten.replicator.event.ReplControlEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplEvent;
-import com.continuent.tungsten.replicator.thl.SkippedEvent;
 
 /**
  * Defines a basic schedule implementation that tracks watches on events and
@@ -62,9 +61,7 @@ public class SimpleSchedule implements Schedule
         if (replEvent instanceof ReplDBMSEvent)
         {
             ReplDBMSEvent event = (ReplDBMSEvent) replEvent;
-            if (event instanceof SkippedEvent)
-                return CONTINUE_NEXT;
-            else if (stage.getProgressTracker().skip(event))
+            if (stage.getProgressTracker().skip(event))
                 return CONTINUE_NEXT_COMMIT;
             else
                 return PROCEED;

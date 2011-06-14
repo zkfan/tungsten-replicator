@@ -22,6 +22,7 @@
 
 package com.continuent.tungsten.replicator.thl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +47,9 @@ import com.continuent.tungsten.replicator.pipeline.PipelineConfigBuilder;
 import com.continuent.tungsten.replicator.storage.Store;
 
 /**
- * Implements a test of THL.  This test implements a practical test of the 
- * pipeline architecture under various transaction use cases, which are 
- * documented below. 
+ * Implements a test of THL. This test implements a practical test of the
+ * pipeline architecture under various transaction use cases, which are
+ * documented below.
  * 
  * @author <a href="mailto:jussi-pekka.kurikka@continuent.com">Jussi-Pekka
  *         Kurikka</a>
@@ -69,8 +70,8 @@ public class TestTHL2 extends TestCase
         TungstenProperties conf = this.generateTwoStageProps(
                 "testBasicServices", 1);
         ReplicatorRuntime runtime = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         runtime.configure();
         runtime.prepare();
         Pipeline pipeline = runtime.getPipeline();
@@ -82,8 +83,7 @@ public class TestTHL2 extends TestCase
         assertEquals("Expected 10 server events", 9, lastEvent.getSeqno());
 
         Store thl = pipeline.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno());
+        assertEquals("Expected 0 as first event", 0, thl.getMinStoredSeqno());
         assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Close down pipeline.
@@ -99,13 +99,15 @@ public class TestTHL2 extends TestCase
     {
         logger.info("##### testTHL2Chaining #####");
 
+        // Prepare the log directories.
+        prepareLogDir("testTHL2Chaining1");
+        prepareLogDir("testTHL2Chaining2");
+
         // Generate server pipeline from dummy extractor to THL.
         PipelineConfigBuilder builder = new PipelineConfigBuilder();
         builder.setProperty(ReplicatorConf.SERVICE_NAME, "test");
         builder.setRole("master");
-        builder
-                .setProperty(ReplicatorConf.METADATA_SCHEMA,
-                        "testTHL2Chaining1");
+        builder.setProperty(ReplicatorConf.METADATA_SCHEMA, "testTHL2Chaining1");
         builder.addPipeline("master", "extract-s", "thl");
         builder.addStage("extract-s", "dummy", "thl-apply", null);
 
@@ -114,8 +116,7 @@ public class TestTHL2 extends TestCase
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
 
         builder.addComponent("store", "thl", THL.class);
-        builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder.addProperty("store", "thl", "logDir", "testTHL2Chaining1");
         builder.addProperty("store", "thl", "storageListenerUri",
                 "thl://localhost:2112/");
         TungstenProperties serverConf = builder.getConfig();
@@ -139,32 +140,29 @@ public class TestTHL2 extends TestCase
         builder2.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder2.addProperty("applier", "thl-apply", "storeName", "thl");
 
-        builder2
-                .addComponent("extractor", "thl-extract", THLStoreExtractor.class);
+        builder2.addComponent("extractor", "thl-extract",
+                THLStoreExtractor.class);
         builder2.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder2.addComponent("applier", "dummy", DummyApplier.class);
 
         builder2.addComponent("store", "thl", THL.class);
-        builder2.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder2.addProperty("store", "thl", "logDir", "testTHL2Chaining2");
         builder2.addProperty("store", "thl", "storageListenerUri",
                 "thl://localhost:2113/");
 
         TungstenProperties clientConf = builder2.getConfig();
-        // TungstenProperties clientConf = this.generateRemoteToTHLToDummy(2112,
-        // 2113);
 
         // Configure and get pipelines.
         ReplicatorRuntime serverRuntime = new ReplicatorRuntime(serverConf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         serverRuntime.configure();
         serverRuntime.prepare();
         Pipeline serverPipeline = serverRuntime.getPipeline();
 
         ReplicatorRuntime clientRuntime = new ReplicatorRuntime(clientConf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         clientRuntime.configure();
         clientRuntime.prepare();
         Pipeline clientPipeline = clientRuntime.getPipeline();
@@ -189,16 +187,16 @@ public class TestTHL2 extends TestCase
 
         // Ensure each THL contains expected number of events.
         Store serverThl = serverPipeline.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, serverThl
-                .getMinStoredSeqno());
-        assertEquals("Expected 9 as last event", 9, serverThl
-                .getMaxStoredSeqno());
+        assertEquals("Expected 0 as first event", 0,
+                serverThl.getMinStoredSeqno());
+        assertEquals("Expected 9 as last event", 9,
+                serverThl.getMaxStoredSeqno());
 
         Store thlClient = clientPipeline.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, thlClient
-                .getMinStoredSeqno());
-        assertEquals("Expected 9 as last event", 9, thlClient
-                .getMaxStoredSeqno());
+        assertEquals("Expected 0 as first event", 0,
+                thlClient.getMinStoredSeqno());
+        assertEquals("Expected 9 as last event", 9,
+                thlClient.getMaxStoredSeqno());
 
         // Shut down both pipelines.
         clientPipeline.shutdown(true);
@@ -215,6 +213,9 @@ public class TestTHL2 extends TestCase
     {
         logger.info("##### testInstanceConnections #####");
 
+        // Prepare log directory.
+        prepareLogDir("testInstanceConnections");
+
         // Generate server pipeline from dummy extractor to THL.
         PipelineConfigBuilder builder = new PipelineConfigBuilder();
         builder.setProperty(ReplicatorConf.SERVICE_NAME, "test");
@@ -225,8 +226,7 @@ public class TestTHL2 extends TestCase
         builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
-        builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder.addProperty("store", "thl", "logDir", "testInstanceConnections");
         TungstenProperties serverConf = builder.getConfig();
 
         // Generate slave pipeline from remote THL extractor to dummy applier.
@@ -242,15 +242,15 @@ public class TestTHL2 extends TestCase
 
         // Configure and get pipelines.
         ReplicatorRuntime serverRuntime = new ReplicatorRuntime(serverConf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         serverRuntime.configure();
         serverRuntime.prepare();
         Pipeline serverPipeline = serverRuntime.getPipeline();
 
         ReplicatorRuntime clientRuntime = new ReplicatorRuntime(clientConf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         clientRuntime.configure();
         clientRuntime.prepare();
         Pipeline clientPipeline = clientRuntime.getPipeline();
@@ -275,8 +275,7 @@ public class TestTHL2 extends TestCase
 
         // Ensure THL contains expected number of events.
         Store thl = serverPipeline.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno());
+        assertEquals("Expected 0 as first event", 0, thl.getMinStoredSeqno());
         assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Shut down both pipelines.
@@ -296,6 +295,8 @@ public class TestTHL2 extends TestCase
     {
         logger.info("##### testSeqnoPropagation #####");
 
+        this.prepareLogDir("testSeqnoPropagation");
+
         // Generate config.
         PipelineConfigBuilder builder = new PipelineConfigBuilder();
         builder.setProperty(ReplicatorConf.SERVICE_NAME, "test");
@@ -310,19 +311,15 @@ public class TestTHL2 extends TestCase
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
 
         builder.addComponent("store", "thl", THL.class);
-        builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder.addProperty("store", "thl", "logDir", "testSeqnoPropagation");
         builder.addProperty("store", "thl", "storageListenerUri",
                 "thl://localhost:2112/");
         TungstenProperties conf = builder.getConfig();
 
-        // Make in-memory storage persistent.
-        DummyTHLStorage2.setPersistence("testSeqnoPropagation", true);
-
         // Run pipeline through the first time.
         ReplicatorRuntime runtime1 = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         runtime1.configure();
         runtime1.prepare();
         Pipeline pipeline1 = runtime1.getPipeline();
@@ -341,8 +338,8 @@ public class TestTHL2 extends TestCase
 
         // Run pipeline through the second time.
         ReplicatorRuntime runtime2 = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         runtime2.configure();
         runtime2.prepare();
         Pipeline pipeline2 = runtime2.getPipeline();
@@ -357,13 +354,8 @@ public class TestTHL2 extends TestCase
 
         // Ensure THL contains expected number of events.
         Store thl = pipeline2.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno());
-        assertEquals("Expected 19 as last event", 19, thl
-                .getMaxStoredSeqno());
-
-        // Make storage non-persistent.
-        DummyTHLStorage2.setPersistence("testSeqnoPropagation", false);
+        assertEquals("Expected 0 as first event", 0, thl.getMinStoredSeqno());
+        assertEquals("Expected 19 as last event", 19, thl.getMaxStoredSeqno());
 
         // Shut down second pipeline.
         pipeline2.shutdown(true);
@@ -376,6 +368,9 @@ public class TestTHL2 extends TestCase
     public void testFragmentedEvents() throws Exception
     {
         logger.info("##### testFragmentedEvents #####");
+
+        // Prepare log directory. 
+        this.prepareLogDir("testFragmentedEvents");
 
         // Create configuration; ask dummy extractor to generate 3 fragments
         // per transaction.
@@ -390,24 +385,24 @@ public class TestTHL2 extends TestCase
 
         // Extract stage components.
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
-        builder.addProperty("extractor", "dummy", "nFrags", new Integer(3)
-                .toString());
+        builder.addProperty("extractor", "dummy", "nFrags",
+                new Integer(3).toString());
         builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
-        builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder.addProperty("store", "thl", "logDir", "testFragmentedEvents");
 
         // Apply stage components.
-        builder.addComponent("extractor", "thl-extract", THLStoreExtractor.class);
+        builder.addComponent("extractor", "thl-extract",
+                THLStoreExtractor.class);
         builder.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder.addComponent("applier", "dummy", DummyApplier.class);
         builder.addProperty("applier", "dummy", "storeAppliedEvents", "true");
 
         TungstenProperties conf = builder.getConfig();
         ReplicatorRuntime runtime = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
 
         // Configure and start pipeline
         runtime.configure();
@@ -421,8 +416,7 @@ public class TestTHL2 extends TestCase
         assertEquals("Expected 10 server events", 9, lastEvent.getSeqno());
 
         Store thl = pipeline.getStore("thl");
-        assertEquals("Expected 0 as first event", 0, thl
-                .getMinStoredSeqno());
+        assertEquals("Expected 0 as first event", 0, thl.getMinStoredSeqno());
         assertEquals("Expected 9 as last event", 9, thl.getMaxStoredSeqno());
 
         // Confirm we have 10x2 statements.
@@ -442,6 +436,10 @@ public class TestTHL2 extends TestCase
     public TungstenProperties generateTwoStageProps(String schemaName,
             int nFrags) throws Exception
     {
+        // Clear the THL log directory.
+        prepareLogDir(schemaName);
+
+        // Create pipeline.
         PipelineConfigBuilder builder = new PipelineConfigBuilder();
         builder.setProperty(ReplicatorConf.SERVICE_NAME, "test");
         builder.setRole("master");
@@ -452,19 +450,39 @@ public class TestTHL2 extends TestCase
 
         // Extract stage components.
         builder.addComponent("extractor", "dummy", DummyExtractor.class);
-        builder.addProperty("extractor", "dummy", "nFrags", new Integer(nFrags)
-                .toString());
+        builder.addProperty("extractor", "dummy", "nFrags",
+                new Integer(nFrags).toString());
         builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
         builder.addProperty("applier", "thl-apply", "storeName", "thl");
         builder.addComponent("store", "thl", THL.class);
-        builder.addProperty("store", "thl", "storage", DummyTHLStorage2.class
-                .getName());
+        builder.addProperty("store", "thl", "logDir", schemaName);
 
         // Apply stage components.
-        builder.addComponent("extractor", "thl-extract", THLStoreExtractor.class);
+        builder.addComponent("extractor", "thl-extract",
+                THLStoreExtractor.class);
         builder.addProperty("extractor", "thl-extract", "storeName", "thl");
         builder.addComponent("applier", "dummy", DummyApplier.class);
 
         return builder.getConfig();
+    }
+
+    // Create an empty log directory or if the directory exists remove
+    // any files within it.
+    private File prepareLogDir(String logDirName)
+    {
+        File logDir = new File(logDirName);
+        // Delete old log if present.
+        if (logDir.exists())
+        {
+            for (File f : logDir.listFiles())
+            {
+                f.delete();
+            }
+            logDir.delete();
+        }
+
+        // Create new log directory.
+        logDir.mkdirs();
+        return logDir;
     }
 }

@@ -48,10 +48,6 @@ public class THLStoreApplier implements Applier
     private THL           thl;
     private LogConnection client;
 
-    // Pointers to track storage.
-    private long          seqno;
-    private short         fragno;
-
     /**
      * Instantiate the adapter.
      */

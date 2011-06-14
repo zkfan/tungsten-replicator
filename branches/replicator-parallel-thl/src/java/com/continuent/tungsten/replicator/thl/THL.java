@@ -31,7 +31,10 @@ import com.continuent.tungsten.commons.cluster.resource.physical.Replicator;
 import com.continuent.tungsten.commons.config.TungstenProperties;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntime;
+import com.continuent.tungsten.replicator.event.ReplControlEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
+import com.continuent.tungsten.replicator.event.ReplEvent;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 import com.continuent.tungsten.replicator.storage.Store;
 import com.continuent.tungsten.replicator.thl.log.DiskLog;
@@ -100,9 +103,6 @@ public class THL implements Store
 
     /** If true, fsync when flushing. */
     private boolean            fsyncOnFlush         = false;
-
-    /** If true, log is read-only. */
-    private boolean            readOnly             = true;
 
     // Database storage and disk log.
     private CatalogManager     catalog              = null;
@@ -263,15 +263,15 @@ public class THL implements Store
     // STORE API STARTS HERE.
 
     /**
-     * Return max stored sequence number. 
+     * Return max stored sequence number.
      */
     public long getMaxStoredSeqno()
     {
         return diskLog.getMaxSeqno();
     }
 
-    /** 
-     * Return minimum stored sequence number. 
+    /**
+     * Return minimum stored sequence number.
      */
     public long getMinStoredSeqno()
     {
@@ -301,12 +301,15 @@ public class THL implements Store
         // Prepare database connection.
         if (url != null && url.length() > 0)
         {
+            logger.info("Preparing SQL catalog tables");
             ReplicatorRuntime runtime = (ReplicatorRuntime) context;
             String metadataSchema = context.getReplicatorSchemaName();
             catalog = new CatalogManager(runtime);
             catalog.connect(url, user, password, metadataSchema);
             catalog.prepareSchema();
         }
+        else
+            logger.info("SQL catalog tables are disabled");
 
         // Configure and prepare the log.
         diskLog = new DiskLog();
@@ -319,13 +322,9 @@ public class THL implements Store
         diskLog.setBufferSize(bufferSize);
         diskLog.setFlushIntervalMillis(flushIntervalMillis);
         diskLog.setFsyncOnFlush(fsyncOnFlush);
-        diskLog.setReadOnly(readOnly);
+        diskLog.setReadOnly(false);
         diskLog.prepare();
-
-        // Set sequencer.
-        sequencer = new AtomicCounter(diskLog.getMaxSeqno());
-
-        logger.info("Adapter preparation is complete");
+        logger.info("Log preparation is complete");
 
         // Start server for THL connections.
         if (context.isRemoteService() == false)
@@ -404,24 +403,34 @@ public class THL implements Store
     }
 
     /**
-     * Updates the sequence number stored in the catalog trep_commit_seqno.
+     * Updates the sequence number stored in the catalog trep_commit_seqno. If
+     * the catalog is disabled we do nothing, which allows us to run unit tests
+     * easily without a DBMS present.
      * 
      * @throws THLException Thrown if update is unsuccessful
      */
     public void updateCommitSeqno(THLEvent thlEvent) throws THLException
     {
-        try
+        if (catalog == null)
         {
-            catalog.updateCommitSeqnoTable(thlEvent);
+            if (logger.isDebugEnabled())
+                logger.debug("Seqno update is disabled: seqno="
+                        + thlEvent.getSeqno());
         }
-        catch (SQLException e)
+        else
         {
-            throw new THLException(
-                    "Unable to update commit sequence number: seqno="
-                            + thlEvent.getSeqno() + " event id="
-                            + thlEvent.getEventId(), e);
+            try
+            {
+                catalog.updateCommitSeqnoTable(thlEvent);
+            }
+            catch (SQLException e)
+            {
+                throw new THLException(
+                        "Unable to update commit sequence number: seqno="
+                                + thlEvent.getSeqno() + " event id="
+                                + thlEvent.getEventId(), e);
+            }
         }
-
     }
 
     /**
@@ -433,21 +442,67 @@ public class THL implements Store
     }
 
     /**
-     * Get the last applied event as found in the CommitSeqnoTable
+     * Get the last applied event. We first try the disk log then if that is
+     * absent try the catalog. If there is nothing there we must be starting
+     * from scratch and return null.
      * 
-     * @return An event header, or null if nothing found in the database
+     * @return An event header or null if log is newly initialized
+     * @throws InterruptedException
      * @throws THLException
      */
-    public ReplDBMSHeader getLastAppliedEvent() throws ReplicatorException
+    public ReplDBMSHeader getLastAppliedEvent() throws ReplicatorException,
+            InterruptedException
     {
-        try
+        // Look for maximum sequence number in log and use that if available.
+        if (diskLog != null)
+
+        {
+            long maxSeqno = diskLog.getMaxSeqno();
+            if (maxSeqno > -1)
+            {
+                LogConnection conn = null;
+                try
+                {
+                    // Try to connect and find the event.
+                    THLEvent thlEvent = null;
+                    conn = diskLog.connect(true);
+                    conn.seek(maxSeqno);
+                    while ((thlEvent = conn.next(false)) != null
+                            && thlEvent.getSeqno() == maxSeqno)
+                    {
+                        // Return only the last fragment.
+                        if (thlEvent.getLastFrag())
+                        {
+                            ReplEvent event = thlEvent.getReplEvent();
+                            if (event instanceof ReplDBMSEvent)
+                                return (ReplDBMSEvent) event;
+                            else if (event instanceof ReplControlEvent)
+                                return ((ReplControlEvent) event).getEvent();
+                        }
+                    }
+
+                    // If we did not find the last fragment of the event
+                    // we need to warn somebody.
+                    if (thlEvent != null)
+                        logger.warn("Unable to find last fragment of event: seqno="
+                                + maxSeqno);
+                }
+                finally
+                {
+                    conn.release();
+                }
+            }
+        }
+
+        // If that does not work, try the catalog.
+        if (catalog != null)
         {
             return catalog.getLastEvent();
         }
-        catch (ReplicatorException e)
-        {
-            throw new ReplicatorException("Unable to get last applied event", e);
-        }
+
+        // If we get to this point, the log is newly initialized and there is no
+        // such event to return.
+        return null;
     }
 
     /**
@@ -464,17 +519,22 @@ public class THL implements Store
         props.setInt("logFileSize", logFileSize);
         props.setBoolean("doChecksum", doChecksum);
         props.setString("logFileRetention", logFileRetention);
+        props.setString("logDir", logDir);
         return props;
     }
 
     /**
      * {@inheritDoc}
      * 
+     * @throws InterruptedException
      * @see com.continuent.tungsten.replicator.storage.Store#getMaxCommittedSeqno()
      */
     @Override
     public long getMaxCommittedSeqno() throws ReplicatorException
     {
-        return getLastAppliedEvent().getSeqno();
+        // TODO: This could use getMaxSeqno() as the log is now cleaned up and
+        // has better commit semantics.
+        // return getLastAppliedEvent().getSeqno();
+        return this.getMaxStoredSeqno();
     }
 }

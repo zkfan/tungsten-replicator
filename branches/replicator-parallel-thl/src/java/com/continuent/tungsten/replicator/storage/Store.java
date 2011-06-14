@@ -58,6 +58,7 @@ public interface Store extends ReplicatorPlugin
     /**
      * Returns the maximum committed sequence number. 
      * TODO: This should be the same as the max stored seqno. 
+     * @throws InterruptedException 
      */
     public long getMaxCommittedSeqno() throws ReplicatorException;
 }

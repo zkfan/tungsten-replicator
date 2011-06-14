@@ -99,9 +99,9 @@ public class DiskLogTest extends TestCase
     /**
      * Confirm that read-only log preparation fails if the log does not exist.
      */
-    public void testLogReadonlyPrepFailure() throws Exception
+    public void testLogReadonlyNonExistent() throws Exception
     {
-        File logDir = prepareLogDir("testLogReadonlyPrepFailure");
+        File logDir = prepareLogDir("testLogReadonlyNonExistent");
         DiskLog log = new DiskLog();
         log.setReadOnly(true);
         log.setLogDir(logDir.getAbsolutePath());
@@ -113,6 +113,35 @@ public class DiskLogTest extends TestCase
         catch (ReplicatorException e)
         {
         }
+    }
+
+    /**
+     * Confirm that log preparation succeeds if the log is writable but does not
+     * exist.
+     */
+    public void testLogWritableNonExistent() throws Exception
+    {
+        // Delete existing log file, if any.
+        File logDir = new File("testLogWritableNonExistent");
+        if (logDir.exists())
+        {
+            for (File f : logDir.listFiles())
+            {
+                f.delete();
+            }
+            logDir.delete();
+        }
+        assertFalse("Log dir does not exist", logDir.exists());
+
+        // Create disk log and confirm we can prepare the same.
+        DiskLog log = new DiskLog();
+        log.setReadOnly(false);
+        log.setLogDir(logDir.getAbsolutePath());
+        log.prepare();
+        log.release();
+
+        // Confirm log directory now exists.
+        assertTrue("Log dir exists", logDir.exists() && logDir.isDirectory());
     }
 
     /**
@@ -383,7 +412,8 @@ public class DiskLogTest extends TestCase
     /**
      * Confirm that if you seek to the beginning of a newly initialized log
      * next() returns null if the connection is non-blocking and otherwise
-     * blocks until there is a record placed in the log.
+     * blocks and then times out. (Using a timeout enables us to test blocking
+     * without using extra threads.)
      */
     public void testFirstRead() throws Exception
     {
@@ -668,12 +698,11 @@ public class DiskLogTest extends TestCase
         LogConnection conn = logR.connect(true);
         assertFalse("Cannot find non-existent value", conn.seek(-2, (short) 0));
 
-        // Ensure that higher values time out.  
+        // Ensure that higher values time out.
         long[] seqno1 = {1, 2, 100};
         for (long seqno : seqno1)
         {
-            assertFalse("Cannot find non-existent value",
-                    conn.seek(seqno));
+            assertFalse("Cannot find non-existent value", conn.seek(seqno));
         }
         conn.release();
         logR.release();
@@ -989,7 +1018,8 @@ public class DiskLogTest extends TestCase
         LogConnection conn = log.connect(false);
 
         // Create and start a reader. It will read two events and exit.
-        SimpleLogReader reader = new SimpleLogReader(log, LogConnection.FIRST, 2);
+        SimpleLogReader reader = new SimpleLogReader(log, LogConnection.FIRST,
+                2);
         Thread thread = new Thread(reader);
         thread.start();
 

@@ -131,7 +131,7 @@ public class THLStoreExtractor implements Extractor
         {
             try
             {
-                if (client.seek(seqno, fragno))
+                if (! client.seek(seqno, fragno))
                 {
                     throw new ExtractorException(
                             "Unable to find event; may not exist in log: seqno="
