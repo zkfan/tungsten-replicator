@@ -227,19 +227,12 @@ replicator.stage.binlog-to-dummy.applier=dummy
 # TRANSACTION HISTORY LOG (THL) #
 #################################
 
-# The following parameters set up THL database access.  If you use a
-# a database name other than 'tungsten' you must change property
-# replicator.schema to match. (JIRA TREP-157). 
 # NOTE:  If you run multiple replication services, beware of collisions 
 # on log file names and THL lister ports. 
 
-# Set the THL storage implementation class.  For disk logs use commercial class
-# com.continuent.tungsten.enterprise.replicator.thl.EnterpriseTHL.  
-replicator.store.thl=com.continuent.tungsten.enterprise.replicator.thl.EnterpriseTHL
-
-# Set the storage accessor.  If you use disk logging this must be commercial
-# class com.continuent.tungsten.enterprise.replicator.thl.DiskTHLStorage. 
-replicator.store.thl.storage=com.continuent.tungsten.enterprise.replicator.thl.DiskTHLStorage
+# Set the THL storage implementation class.  All replicators now use
+# a single implementation. 
+replicator.store.thl=com.continuent.tungsten.replicator.thl.THL
 
 # All THL implementations require database access to store metadata. 
 replicator.store.thl.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/tungsten_${service.name}?createDB=true
@@ -301,23 +294,10 @@ replicator.thl.protocol.buffer_size=${replicator.global.buffer.size}
 # slaves may connect to the wrong port. 
 replicator.store.thl.storageListenerUri=thl://0.0.0.0:2112
 
-# The following settings can be used in order to get better
-# performance.  THL on the slave side is caching events that are
-# received from the master THL.  This is done in order to prevent
-# from reading events from THL database on the slave side.  The
-# size of this cache can be changed by the following setting. By
-# default, this cache only contains one event at a time.  
-#
-# WARNING: increasing the size of the cache will potientially require 
-# more memory.
-
-replicator.store.thl.cacheSize=0
-
 # The transfer rate between the master and the slave can be improved
 # by setting the following setting to a value greater than 1, which
 # is the default.  In doing so, this will also require more memory
 # on the master side.
-
 replicator.store.thl.resetPeriod=1
 
 #################################
@@ -486,10 +466,10 @@ replicator.filter.foreignkeychecks.script=${replicator.home.dir}/samples/extensi
 replicator.filter.delay=com.continuent.tungsten.replicator.filter.TimeDelayFilter
 replicator.filter.delay.delay=300
 
-# Remote slave filter.  This filter sanitizes events on remote slaves by 
-# dropping events produced on the same service ID.  To use this you *must* 
-# set the localServiceName parameter, which must be the same as the 
-# service.name parameter of the local service that reads the binlog. 
+# Remote slave filter.  This filter sanitizes events on remote slaves by
+# dropping events produced on the same service ID.  To use this you *must*
+# set the localServiceName parameter, which must be the same as the
+# service.name parameter of the local service that reads the binlog.
 replicator.filter.bidiSlave=com.continuent.tungsten.enterprise.replicator.filter.BidiRemoteSlaveFilter
 replicator.filter.bidiSlave.localServiceName=${local.service.name}
 
