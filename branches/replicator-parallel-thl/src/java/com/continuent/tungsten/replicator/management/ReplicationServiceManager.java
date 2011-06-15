@@ -47,6 +47,7 @@ import com.continuent.tungsten.commons.jmx.JmxManager;
 import com.continuent.tungsten.commons.jmx.MethodDesc;
 import com.continuent.tungsten.commons.jmx.ParamDesc;
 import com.continuent.tungsten.commons.utils.CLUtils;
+import com.continuent.tungsten.commons.utils.ManifestParser;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.conf.PropertiesManager;
 import com.continuent.tungsten.replicator.conf.ReplicatorConf;
@@ -101,7 +102,7 @@ public class ReplicationServiceManager
         // Start JMX registry.
         managerRMIPort = serviceProps.getInt(ReplicatorConf.RMI_PORT,
                 ReplicatorConf.RMI_DEFAULT_PORT, false);
-        String rmiHost = getHostName();
+        String rmiHost = getHostName(serviceProps);
         JmxManager jmxManager = new JmxManager(rmiHost, managerRMIPort,
                 ReplicatorConf.RMI_DEFAULT_SERVICE_NAME);
         jmxManager.start();
@@ -186,6 +187,7 @@ public class ReplicationServiceManager
      */
     public static void main(String argv[])
     {
+        ManifestParser.logReleaseWithBuildNumber(logger);
         logger.info("Starting replication service manager");
 
         // Parse global options and command.
@@ -412,7 +414,7 @@ public class ReplicationServiceManager
      * @see com.continuent.tungsten.replicator.management.OpenReplicatorManagerMBean#status()
      */
     @MethodDesc(description = "Return the status for one or more replicators", usage = "status(name)")
-    public Map<String, String> status(
+    public Map<String, String> replicatorStatus(
             @ParamDesc(name = "name", description = "optional name of replicator") String name)
             throws Exception
     {
@@ -472,7 +474,7 @@ public class ReplicationServiceManager
 
         for (String name : replicators.keySet())
         {
-            statusProps.put(name, status(name));
+            statusProps.put(name, replicatorStatus(name));
         }
 
         managerProps.put("serviceProperties", statusProps.toString());
@@ -651,28 +653,29 @@ public class ReplicationServiceManager
         logger.info("Replication service stopped successfully: name=" + name);
     }
 
-    /*
-     * Returns the hostname to be used to bind ports for RMI use. This defaults
-     * to 'localhost' for backwards compatibility
+    /**
+     * Returns the hostname to be used to bind ports for RMI use.
      */
-    private static String getHostName()
+    private static String getHostName(TungstenProperties properties)
     {
+        String defaultHost = properties.getString(ReplicatorConf.RMI_HOST);
         String hostName = System.getProperty(ReplicatorConf.RMI_HOST,
-                ReplicatorConf.RMI_DEFAULT_HOST);
-
-        try
+                defaultHost);
+        // No value provided, retrieve from environment.
+        if (hostName == null)
         {
-            InetAddress addr = InetAddress.getLocalHost();
-
-            // Get hostname
-            hostName = addr.getHostName();
+            try
+            {
+                // Get hostname.
+                InetAddress addr = InetAddress.getLocalHost();
+                hostName = addr.getHostName();
+            }
+            catch (UnknownHostException e)
+            {
+                logger.info("Exception when trying to get the host name from the environment, reason="
+                        + e);
+            }
         }
-        catch (UnknownHostException e)
-        {
-            logger.info("Exception when trying to get the host name from the environment, reason="
-                    + e);
-        }
-
         return hostName;
     }
 

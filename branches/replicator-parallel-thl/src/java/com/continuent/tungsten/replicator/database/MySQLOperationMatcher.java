@@ -25,6 +25,8 @@ package com.continuent.tungsten.replicator.database;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+
 /**
  * Parses SQL statements to extract the SQL operation and the object, identified
  * by type, name and schema, to which it pertains.
@@ -34,6 +36,8 @@ import java.util.regex.Pattern;
  */
 public class MySQLOperationMatcher implements SqlOperationMatcher
 {
+    private static Logger               logger          = Logger.getLogger(MySQLOperationMatcher.class);
+
     // Maximum length to search down large strings.
     private static int                  PREFIX_LENGTH   = 150;
 
@@ -146,6 +150,38 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
     protected Pattern                   alter           = Pattern
                                                                 .compile(
                                                                         "^\\s*alter\\s*(?:online|offline)?\\s*(?:ignore\\s*)?table\\s+(?:[`\"]*([a-zA-Z0-9_]+)[`\"]*\\.){0,1}[`\"]*([a-zA-Z0-9_]+)",
+                                                                        Pattern.CASE_INSENSITIVE);
+
+    // CREATE [ONLINE|OFFLINE] [UNIQUE|FULLTEXT|SPATIAL] INDEX index_name
+    // [index_type] ON tbl_name (index_col_name,...)
+    protected Pattern                   createIndex     = Pattern
+                                                                .compile(
+                                                                        "^\\s*create\\s*(?:online|offline)?\\s*(?:unique|fulltext|spatial)?\\s*?index.*\\son\\s*(?:[`\"]*([a-zA-Z0-9_]+)[`\"]*\\.){0,1}[`\"]*([a-zA-Z0-9_]+)",
+                                                                        Pattern.CASE_INSENSITIVE);
+
+    // DROP [ONLINE|OFFLINE] INDEX index_name ON tbl_name
+    protected Pattern                   dropIndex       = Pattern
+                                                                .compile(
+                                                                        "^\\s*drop\\s*(?:online|offline)?\\s*index.*\\son\\s*(?:[`\"]*([a-zA-Z0-9_]+)[`\"]*\\.){0,1}[`\"]*([a-zA-Z0-9_]+)",
+                                                                        Pattern.CASE_INSENSITIVE);
+
+    // CREATE [OR REPLACE] [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]
+    // [DEFINER = { user | CURRENT_USER }] [SQL SECURITY { DEFINER | INVOKER }]
+    // VIEW view_name [(column_list)] AS select_statement
+    protected Pattern                   createView      = Pattern
+                                                                .compile(
+                                                                        "^\\s*create\\s(?:or replace)?\\s*algorithm.*\\s*view\\s*(?:[`\"]*([a-zA-Z0-9_]+)[`\"]*\\.){0,1}[`\"]*([a-zA-Z0-9_]+)",
+                                                                        Pattern.CASE_INSENSITIVE);
+    // DROP VIEW [IF EXISTS] view_name
+    protected Pattern                   dropView        = Pattern
+                                                                .compile(
+                                                                        "^\\s*drop\\s*view\\s*(?:if\\s+exists\\s*)?(?:[`\"]*([a-zA-Z0-9_]+)[`\"]*\\.){0,1}[`\"]*([a-zA-Z0-9_]+)",
+                                                                        Pattern.CASE_INSENSITIVE);
+
+    // FLUSH TABLES
+    protected Pattern                   flushTables     = Pattern
+                                                                .compile(
+                                                                        "^\\s*flush\\s*tables",
                                                                         Pattern.CASE_INSENSITIVE);
 
     /**
@@ -264,7 +300,7 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
             if (m.find())
             {
                 return new SqlOperation(SqlOperation.SESSION, SqlOperation.SET,
-                        null, null);
+                        null, null, false);
             }
         }
 
@@ -284,6 +320,22 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
             {
                 return new SqlOperation(SqlOperation.TABLE,
                         SqlOperation.CREATE, m.group(1), m.group(2));
+            }
+            // Create index.
+            m = createIndex.matcher(statement);
+            if (m.find())
+            {
+                return new SqlOperation(SqlOperation.INDEX,
+                        SqlOperation.CREATE, m.group(1), m.group(2));
+            }
+            // Create view.
+            m = createView.matcher(statement);
+            if (m.find())
+            {
+                SqlOperation createView = new SqlOperation(SqlOperation.VIEW,
+                        SqlOperation.CREATE, m.group(1), m.group(2));
+                createView.setBidiUnsafe(true);
+                return createView;
             }
             // Create procedure.
             m = createProcedure.matcher(statement);
@@ -316,6 +368,20 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
             if (m.find())
             {
                 return new SqlOperation(SqlOperation.TABLE, SqlOperation.DROP,
+                        m.group(1), m.group(2));
+            }
+            // Drop view.
+            m = dropView.matcher(statement);
+            if (m.find())
+            {
+                return new SqlOperation(SqlOperation.VIEW, SqlOperation.DROP,
+                        m.group(1), m.group(2));
+            }
+            // Drop index.
+            m = dropIndex.matcher(statement);
+            if (m.find())
+            {
+                return new SqlOperation(SqlOperation.INDEX, SqlOperation.DROP,
                         m.group(1), m.group(2));
             }
             // Drop procedure.
@@ -352,7 +418,7 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
             if (m.find())
             {
                 return new SqlOperation(SqlOperation.TABLE,
-                        SqlOperation.LOAD_DATA, m.group(1), m.group(2));
+                        SqlOperation.LOAD_DATA, m.group(1), m.group(2), false);
             }
         }
 
@@ -367,10 +433,25 @@ public class MySQLOperationMatcher implements SqlOperationMatcher
             }
         }
 
+        // Look for a FLUSH statement
+        else if (prefix.startsWith("FLUSH"))
+        {
+            m = flushTables.matcher(statement);
+            if (m.find())
+            {
+                return new SqlOperation(SqlOperation.DBMS,
+                        SqlOperation.FLUSH_TABLES, null, null);
+            }
+        }
+
         // We didn't recognize anything.
         SqlOperation unrecognized = new SqlOperation(SqlOperation.UNRECOGNIZED,
                 SqlOperation.UNRECOGNIZED, null, null, false);
         unrecognized.setBidiUnsafe(true);
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Unrecognized SQL statement: " + inputStatement);
+        }
         return unrecognized;
     }
 }
