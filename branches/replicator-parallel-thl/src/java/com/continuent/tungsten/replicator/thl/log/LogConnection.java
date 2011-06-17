@@ -186,6 +186,7 @@ public class LogConnection
             return true;
 
         // Look for the sequence number we are trying to find.
+        long lastSeqno = logFile.getBaseSeqno();
         while (true)
         {
             try
@@ -195,7 +196,13 @@ public class LogConnection
                 LogRecord logRecord = logFile.readRecord(0);
                 if (logRecord.isEmpty())
                 {
-                    break;
+                    // If we are positioned on the end of the log, this means we
+                    // must be waiting for the record to arrive.  We are correctly
+                    // positioned.  
+                    if (seqno == (lastSeqno + 1))
+                        return true;
+                    else
+                        break;
                 }
 
                 byte[] bytes = logRecord.getData();
@@ -219,6 +226,11 @@ public class LogConnection
                     {
                         // Our event is simply not in the log.
                         break;
+                    }
+                    else
+                    {
+                        // Remember which seqno we saw and keep going. 
+                        lastSeqno = eventReader.getSeqno();
                     }
                 }
                 else if (recordType == LogRecord.EVENT_ROTATE)

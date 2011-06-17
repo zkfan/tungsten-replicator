@@ -278,6 +278,18 @@ public class LogIndex
             if (indexEntry.contains(seqno))
                 return indexEntry.fileName;
         }
+
+        // We did not find a log file with the value currently present. However,
+        // if the client is looking for the next seqno past the end of the log,
+        // we need return the last log file so they can position on it.
+        if (seqno <= (getMaxIndexedSeqno() + 1))
+        {
+            int last = index.size() - 1;
+            if (last >= 0)
+                return index.get(last).fileName;
+        }
+
+        // This occurs for a sequence number off the end of the log.
         return null;
     }
 

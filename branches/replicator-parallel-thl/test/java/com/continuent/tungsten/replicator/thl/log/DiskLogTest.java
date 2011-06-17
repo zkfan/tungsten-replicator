@@ -287,10 +287,14 @@ public class DiskLogTest extends TestCase
             assertTrue(conn.seek(i));
         }
 
+        // Confirm that we seek the next number but it is not present. 
+        assertTrue("can seek to end", conn.seek(3));
+        assertNull("cannot read past end", conn.next(false));
+        
         // Confirm that seek does not find events with higher sequence numbers.
-        for (int i = 3; i < 10; i++)
+        for (int i = 4; i < 10; i++)
         {
-            assertFalse(conn.seek(i));
+            assertFalse("cannot seek past end", conn.seek(i));
         }
 
         conn.release();
@@ -355,6 +359,44 @@ public class DiskLogTest extends TestCase
         // non-blocking.
         THLEvent e1000a = conn.next(false);
         assertNull("Non-blocking call returns null", e1000a);
+
+        // Close up.
+        conn.release();
+        log.release();
+    }
+
+    /**
+     * Confirm that we can seek to the sequenced number *after* the last
+     * sequence number currently stored and read the next event when it appears.
+     */
+    public void testSeekLast() throws Exception
+    {
+        // Create a log and write 10 events to it. Set the timeout interval to
+        // 1 second.
+        File logDir = prepareLogDir("testNonexistingLogFile");
+        DiskLog log = openLog(logDir, false);
+        log.setTimeoutMillis(1000);
+        writeEventsToLog(log, 0, 10);
+
+        // Confirm that 9 is the last sequence number, then seek to 10. 
+        assertEquals("expected last sequence number", 9, log.getMaxSeqno());
+        LogConnection conn = log.connect(true);
+        assertTrue("Seeking last event", conn.seek(10));
+
+        // Confirm we timeout on the next event if the call is blocking.
+        try
+        {
+            THLEvent e10 = conn.next();
+            throw new Exception("Found non-existent event: " + e10.toString());
+        }
+        catch (LogTimeoutException e)
+        {
+        }
+
+        // Confirm that we return null on the next event if the call is
+        // non-blocking.
+        THLEvent e10a = conn.next(false);
+        assertNull("Non-blocking call returns null", e10a);
 
         // Close up.
         conn.release();
@@ -720,7 +762,7 @@ public class DiskLogTest extends TestCase
         assertFalse("Cannot find non-existent value", conn.seek(-2, (short) 0));
 
         // Ensure that higher values fail.
-        long[] seqno2 = {50, 51, 100000};
+        long[] seqno2 = {51, 52, 100000};
         for (long seqno : seqno2)
         {
             assertFalse("Cannot find non-existent value",
@@ -1047,48 +1089,6 @@ public class DiskLogTest extends TestCase
         }
 
         // Release the log.
-        log.release();
-    }
-
-    /**
-     * Confirm that if the log retention is set we will purge files after the
-     * specified interval but that we always retain at least the last two log
-     * files.
-     */
-    public void testLogRetention() throws Exception
-    {
-        // Create the log with with 5K log files and a 5 second retention.
-        File logDir = prepareLogDir("testLogRetention");
-        DiskLog log = new DiskLog();
-        log.setLogDir(logDir.getAbsolutePath());
-        log.setReadOnly(false);
-        log.setLogFileSize(3000);
-        log.setTimeoutMillis(10000);
-        log.setLogFileRetainMillis(5000);
-
-        log.prepare();
-        writeEventsToLog(log, 200);
-
-        // Collect the log file count and ensure it is greater than two.
-        int fileCount = log.fileCount();
-        assertTrue("More than two logs generated", fileCount > 2);
-
-        // Wait for the retention to expire.
-        Thread.sleep(10000);
-
-        // Write enough events to force log rotation by computing how many
-        // events on average go into a single log.
-        int logEvents = (200 / fileCount) * 2;
-        writeEventsToLog(log, 200, logEvents);
-
-        // Give the deletion thread time to do its work.
-        Thread.sleep(3000);
-
-        // We should now have 2 logs because the old logs will age out.
-        int fileCount2 = log.fileCount();
-        assertEquals("Aging out should result in 2 logs", 2, fileCount2);
-
-        // All done!
         log.release();
     }
 

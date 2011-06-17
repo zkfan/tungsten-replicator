@@ -139,11 +139,12 @@ public class THLManagerCtrl
      * 
      * @throws THLException
      */
-    public void connect(boolean readOnly) throws THLException
+    public void connect(boolean readOnly) throws ReplicatorException, InterruptedException
     {
         diskLog = new DiskLog();
         diskLog.setLogDir(logDir);
         diskLog.setReadOnly(readOnly);
+        diskLog.prepare();
     }
 
     /**
@@ -342,10 +343,9 @@ public class THLManagerCtrl
                 + thlEvent.getFragno()
                 + (thlEvent.getLastFrag() ? (" (last frag)") : ""));
         println(stringBuilder, "- TIME = " + thlEvent.getSourceTstamp());
+        println(stringBuilder, "- EPOCH# = " + thlEvent.getEpochNumber());
         println(stringBuilder, "- EVENTID = " + thlEvent.getEventId());
         println(stringBuilder, "- SOURCEID = " + thlEvent.getSourceId());
-        println(stringBuilder,
-                "- STATUS = " + THLEvent.statusToString(thlEvent.getStatus()));
         if (thlEvent.getComment() != null && thlEvent.getComment().length() > 0)
             println(stringBuilder, "- COMMENTS = " + thlEvent.getComment());
     }

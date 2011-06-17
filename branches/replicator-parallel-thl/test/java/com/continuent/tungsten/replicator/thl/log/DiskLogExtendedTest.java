@@ -163,6 +163,50 @@ public class DiskLogExtendedTest extends TestCase
             }
         }
     }
+    
+    /**
+     * Confirm that if the log retention is set we will purge files after the
+     * specified interval but that we always retain at least the last two log
+     * files.
+     */
+    public void testLogRetention() throws Exception
+    {
+        // Create the log with with 5K log files and a 5 second retention.
+        File logDir = prepareLogDir("testLogRetention");
+        DiskLog log = new DiskLog();
+        log.setLogDir(logDir.getAbsolutePath());
+        log.setReadOnly(false);
+        log.setLogFileSize(3000);
+        log.setTimeoutMillis(10000);
+        log.setLogFileRetainMillis(5000);
+
+        log.prepare();
+        writeEventsToLog(log, 200);
+
+        // Collect the log file count and ensure it is greater than two.
+        int fileCount = log.fileCount();
+        assertTrue("More than two logs generated", fileCount > 2);
+
+        // Wait for the retention to expire.
+        Thread.sleep(10000);
+
+        // Write enough events to force log rotation by computing how many
+        // events on average go into a single log.
+        int logEvents = (200 / fileCount) * 2;
+        writeEventsToLog(log, 200, logEvents);
+
+        // Give the deletion thread time to do its work.
+        Thread.sleep(3000);
+
+        // We should now have 2 logs because the old logs will age out.
+        int fileCount2 = log.fileCount();
+        assertEquals("Aging out should result in 2 logs", 2, fileCount2);
+
+        // All done!
+        log.release();
+    }
+
+
 
     // Create an empty log directory or if the directory exists remove
     // any files within it.
@@ -181,6 +225,13 @@ public class DiskLogExtendedTest extends TestCase
             logDir.mkdirs();
         }
         return logDir;
+    }
+    
+    // Write a prescribed number of events to the log starting at zero.
+    private void writeEventsToLog(DiskLog log, int howMany)
+            throws THLException, InterruptedException
+    {
+        writeEventsToLog(log, 0, howMany);
     }
 
     // Write a prescribed number of events to the log starting at a

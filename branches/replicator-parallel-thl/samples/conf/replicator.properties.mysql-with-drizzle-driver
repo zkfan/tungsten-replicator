@@ -271,17 +271,12 @@ replicator.store.thl.log_file_retention=7d
 # The THL serialization for events is pluggable.  The default is Protobuf
 # serialization which is relatively fast and compact.  Java serialization
 # is also provided but is experimental.
-replicator.store.thl.event_serializer=com.continuent.tungsten.enterprise.replicator.thl.serializer.ProtobufSerializer
+replicator.store.thl.event_serializer=com.continuent.tungsten.replicator.thl.serializer.ProtobufSerializer
 
 # The disk log can compute checksums automatically on log records.  This
 # is enabled by default but can cut performance by 50% or more.  Set false
 # for faster log performance.
 replicator.store.thl.doChecksum=false
-
-# The THL storage transfer protocol is pluggable.  Use commercial class 
-# com.continuent.tungsten.enterprise.replicator.thl.ConnectorV2 for fast
-# byte-based transfer. 
-#replicator.thl.protocol=com.continuent.tungsten.replicator.thl.Connector;
 
 # Maximum number of events to transfer at once.  Higher values are better
 # but as with queue store sizes require more memory.
@@ -309,10 +304,10 @@ replicator.store.queue=com.continuent.tungsten.replicator.storage.InMemoryQueueS
 replicator.store.queue.maxSize=${replicator.global.buffer.size}
 
 # Parallel queue storage. 
-replicator.store.parallel-queue=com.continuent.tungsten.enterprise.replicator.store.ParallelQueueStore
+replicator.store.parallel-queue=com.continuent.tungsten.replicator.storage.parallel.ParallelQueueStore
 replicator.store.parallel-queue.maxSize=${replicator.global.buffer.size}
 replicator.store.parallel-queue.partitions=${replicator.global.apply.channels}
-replicator.store.parallel-queue.partitionerClass=com.continuent.tungsten.enterprise.replicator.store.ShardListPartitioner
+replicator.store.parallel-queue.partitionerClass=com.continuent.tungsten.replicator.storage.parallel.ShardListPartitioner
 
 ##############
 # EXTRACTORS #
@@ -384,7 +379,7 @@ replicator.extractor.queue=com.continuent.tungsten.replicator.storage.InMemoryQu
 replicator.extractor.queue.storeName=queue
 
 # Parallel queue extractor. 
-replicator.extractor.parallel-q-extractor=com.continuent.tungsten.enterprise.replicator.store.ParallelQueueExtractor 
+replicator.extractor.parallel-q-extractor=com.continuent.tungsten.replicator.storage.parallel.ParallelQueueExtractor 
 replicator.extractor.parallel-q-extractor.storeName=parallel-queue
 
 # Dummy extractor.
@@ -416,7 +411,7 @@ replicator.applier.queue=com.continuent.tungsten.replicator.storage.InMemoryQueu
 replicator.applier.queue.storeName=queue
 
 # Parallel queue applier. 
-replicator.applier.parallel-q-applier=com.continuent.tungsten.enterprise.replicator.store.ParallelQueueApplier 
+replicator.applier.parallel-q-applier=com.continuent.tungsten.replicator.storage.parallel.ParallelQueueApplier 
 replicator.applier.parallel-q-applier.storeName=parallel-queue
 
 # Dummy applier.
@@ -475,7 +470,7 @@ replicator.filter.delay.delay=300
 # dropping events produced on the same service ID.  To use this you *must*
 # set the localServiceName parameter, which must be the same as the
 # service.name parameter of the local service that reads the binlog.
-replicator.filter.bidiSlave=com.continuent.tungsten.enterprise.replicator.filter.BidiRemoteSlaveFilter
+replicator.filter.bidiSlave=com.continuent.tungsten.replicator.filter.BidiRemoteSlaveFilter
 replicator.filter.bidiSlave.localServiceName=${local.service.name}
 
 # If true allow statements that may be unsafe for bi-directional replication. 
@@ -492,7 +487,7 @@ replicator.filter.ignoreserver.server_ids=3,7
 
 # Primary key filter.  This filter is required for MySQL row replication to 
 # reduce the number of columns used in comparisons for updates and deletes. 
-replicator.filter.pkey=com.continuent.tungsten.enterprise.replicator.filter.PrimaryKeyFilter
+replicator.filter.pkey=com.continuent.tungsten.replicator.filter.PrimaryKeyFilter
 
 # Column name filter.  Adds column name metadata to row updates.  This is 
 # required for MySQL row replication if you have logic that requires column

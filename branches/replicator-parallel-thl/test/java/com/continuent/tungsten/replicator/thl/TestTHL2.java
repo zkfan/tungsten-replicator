@@ -23,6 +23,7 @@
 package com.continuent.tungsten.replicator.thl;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -38,12 +39,17 @@ import com.continuent.tungsten.replicator.applier.DummyApplier;
 import com.continuent.tungsten.replicator.conf.ReplicatorConf;
 import com.continuent.tungsten.replicator.conf.ReplicatorMonitor;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntime;
+import com.continuent.tungsten.replicator.dbms.DBMSData;
 import com.continuent.tungsten.replicator.dbms.StatementData;
+import com.continuent.tungsten.replicator.event.DBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplOptionParams;
 import com.continuent.tungsten.replicator.extractor.DummyExtractor;
 import com.continuent.tungsten.replicator.management.MockOpenReplicatorContext;
 import com.continuent.tungsten.replicator.pipeline.Pipeline;
 import com.continuent.tungsten.replicator.pipeline.PipelineConfigBuilder;
+import com.continuent.tungsten.replicator.storage.InMemoryQueueAdapter;
+import com.continuent.tungsten.replicator.storage.InMemoryQueueStore;
 import com.continuent.tungsten.replicator.storage.Store;
 
 /**
@@ -369,7 +375,7 @@ public class TestTHL2 extends TestCase
     {
         logger.info("##### testFragmentedEvents #####");
 
-        // Prepare log directory. 
+        // Prepare log directory.
         this.prepareLogDir("testFragmentedEvents");
 
         // Create configuration; ask dummy extractor to generate 3 fragments
@@ -431,6 +437,86 @@ public class TestTHL2 extends TestCase
         runtime.release();
     }
 
+    /*
+     * Verify that the THLExtractor extract() method waits for events to arrive
+     * in the THL and then supplies them to the waiting THL. This simulates the
+     * case where an applier stage has applied everything from the stage and is
+     * now waiting for new events to arrive.
+     */
+    public void testTHLExtractWaiting() throws Exception
+    {
+        logger.info("##### testTHLExtractWaiting #####");
+
+        // Set up a pipeline with a queue at the beginning. We will feed
+        // transactions into the queue.
+        TungstenProperties conf = this
+                .generateQueueFedPipelineProps("testTHLExtractWaiting");
+        ReplicatorRuntime runtime = new ReplicatorRuntime(conf,
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
+        runtime.configure();
+        runtime.prepare();
+        Pipeline pipeline = runtime.getPipeline();
+        pipeline.start(new EventDispatcher());
+
+        // Fetch out the queue store so we can write events thereunto.
+        InMemoryQueueStore queue = (InMemoryQueueStore) pipeline
+                .getStore("queue");
+
+        // Feed events into the pipeline and confirm they reach the other side.
+        for (int i = 0; i < 10; i++)
+        {
+            assertFalse("Pipeline must be OK", pipeline.isShutdown());
+
+            // Create and insert an event.
+            ReplDBMSEvent e = createEvent(i);
+            queue.put(e);
+
+            // Now wait for it.
+            Future<ReplDBMSEvent> wait = pipeline
+                    .watchForAppliedSequenceNumber(i);
+            ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+            assertEquals("Expected event we put in", i, lastEvent.getSeqno());
+        }
+
+        // Close down pipeline.
+        pipeline.shutdown(false);
+        runtime.release();
+
+        // Restart the pipeline and do the same test again, starting with event
+        // 10.
+        runtime = new ReplicatorRuntime(conf, new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
+        runtime.configure();
+        runtime.prepare();
+        pipeline = runtime.getPipeline();
+        pipeline.start(new EventDispatcher());
+
+        // Feed events into the pipeline and confirm they reach the other side.
+        // We have a sleep to simulate not getting events into the THL for a 
+        // while.  
+        Thread.sleep(1000);
+        queue = (InMemoryQueueStore) pipeline.getStore("queue");
+        for (int i = 10; i < 20; i++)
+        {
+            assertFalse("Pipeline must be OK", pipeline.isShutdown());
+
+            // Create and insert an event.
+            ReplDBMSEvent e = createEvent(i);
+            queue.put(e);
+
+            // Now wait for it.
+            Future<ReplDBMSEvent> wait = pipeline
+                    .watchForAppliedSequenceNumber(i);
+            ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+            assertEquals("Expected event we put in", i, lastEvent.getSeqno());
+        }
+
+        // Close down pipeline.
+        pipeline.shutdown(false);
+        runtime.release();
+    }
+
     // Generate configuration properties for a double stage-pipline
     // going through THL.
     public TungstenProperties generateTwoStageProps(String schemaName,
@@ -466,6 +552,45 @@ public class TestTHL2 extends TestCase
         return builder.getConfig();
     }
 
+    // Generate configuration properties for a double stage-pipeline
+    // going through THL. This pipeline uses a queue as the initial head
+    // of the queue.
+    public TungstenProperties generateQueueFedPipelineProps(String schemaName)
+            throws Exception
+    {
+        // Clear the THL log directory.
+        prepareLogDir(schemaName);
+
+        // Create pipeline.
+        PipelineConfigBuilder builder = new PipelineConfigBuilder();
+        builder.setProperty(ReplicatorConf.SERVICE_NAME, "test");
+        builder.setRole("master");
+        builder.setProperty(ReplicatorConf.METADATA_SCHEMA, schemaName);
+        builder.addPipeline("master", "extract, apply", "queue,thl");
+        builder.addStage("extract", "queue", "thl-apply", null);
+        builder.addStage("apply", "thl-extract", "dummy", null);
+
+        // Define stores.
+        builder.addComponent("store", "thl", THL.class);
+        builder.addProperty("store", "thl", "logDir", schemaName);
+        builder.addComponent("store", "queue", InMemoryQueueStore.class);
+        builder.addProperty("store", "queue", "maxSize", "5");
+
+        // Extract stage components.
+        builder.addComponent("extractor", "queue", InMemoryQueueAdapter.class);
+        builder.addProperty("extractor", "queue", "storeName", "queue");
+        builder.addComponent("applier", "thl-apply", THLStoreApplier.class);
+        builder.addProperty("applier", "thl-apply", "storeName", "thl");
+
+        // Apply stage components.
+        builder.addComponent("extractor", "thl-extract",
+                THLStoreExtractor.class);
+        builder.addProperty("extractor", "thl-extract", "storeName", "thl");
+        builder.addComponent("applier", "dummy", DummyApplier.class);
+
+        return builder.getConfig();
+    }
+
     // Create an empty log directory or if the directory exists remove
     // any files within it.
     private File prepareLogDir(String logDirName)
@@ -484,5 +609,24 @@ public class TestTHL2 extends TestCase
         // Create new log directory.
         logDir.mkdirs();
         return logDir;
+    }
+
+    // Returns a well-formed event with a default shard ID.
+    private ReplDBMSEvent createEvent(long seqno)
+    {
+        return createEvent(seqno, ReplOptionParams.SHARD_ID_UNKNOWN);
+    }
+
+    // Returns a well-formed ReplDBMSEvent with a specified shard ID.
+    private ReplDBMSEvent createEvent(long seqno, String shardId)
+    {
+        ArrayList<DBMSData> t = new ArrayList<DBMSData>();
+        t.add(new StatementData("SELECT 1"));
+        DBMSEvent dbmsEvent = new DBMSEvent(new Long(seqno).toString(), null,
+                t, true, new Timestamp(System.currentTimeMillis()));
+        ReplDBMSEvent replDbmsEvent = new ReplDBMSEvent(seqno, dbmsEvent);
+        replDbmsEvent.getDBMSEvent().addMetadataOption(
+                ReplOptionParams.SHARD_ID, shardId);
+        return replDbmsEvent;
     }
 }
