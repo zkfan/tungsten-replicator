@@ -230,6 +230,10 @@ public class THLManagerCtrl
                 else
                     log += value.getValue().toString();
             }
+            else
+                log += "NULL";
+        else
+            log += "NULL";
         return log;
     }
 
