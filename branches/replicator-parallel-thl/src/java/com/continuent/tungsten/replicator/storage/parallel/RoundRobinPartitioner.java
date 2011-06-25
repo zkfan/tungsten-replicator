@@ -22,7 +22,7 @@
 
 package com.continuent.tungsten.replicator.storage.parallel;
 
-import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 
 /**
  * Partitions event by assigning each succeeding sequence number to the next
@@ -33,14 +33,26 @@ import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
  */
 public class RoundRobinPartitioner implements Partitioner
 {
+    private int availablePartitions;
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#setPartitions(int)
+     */
+    public synchronized void setPartitions(int availablePartitions)
+    {
+        this.availablePartitions = availablePartitions;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
      *      int, int)
      */
-    public PartitionerResponse partition(ReplDBMSEvent event,
-            int availablePartitions, int taskId)
+    public synchronized PartitionerResponse partition(ReplDBMSHeader event,
+            int taskId)
     {
         int partition = (int) (event.getSeqno() % availablePartitions);
         return new PartitionerResponse(partition, false);

@@ -189,9 +189,8 @@ public class MongoApplier implements RawApplier
                             if (logger.isDebugEnabled())
                             {
                                 if (updatedRow == null)
-                                    logger
-                                            .debug("Unable to find document for update: query="
-                                                    + query);
+                                    logger.debug("Unable to find document for update: query="
+                                            + query);
                                 else
                                     logger.debug("Documented updated: doc="
                                             + doc);
@@ -235,8 +234,7 @@ public class MongoApplier implements RawApplier
                             if (logger.isDebugEnabled())
                             {
                                 if (deletedRow == null)
-                                    logger
-                                            .debug("Unable to find document for delete");
+                                    logger.debug("Unable to find document for delete");
                                 else
                                     logger.debug("Documented deleted: doc="
                                             + deletedRow);
@@ -314,9 +312,8 @@ public class MongoApplier implements RawApplier
         if (logger.isDebugEnabled())
         {
             if (updatedDoc == null)
-                logger
-                        .debug("Unable to update/insert trep_commit_seqno: query="
-                                + query + " doc=" + doc);
+                logger.debug("Unable to update/insert trep_commit_seqno: query="
+                        + query + " doc=" + doc);
             else
                 logger.debug("Trep_commit_seqno updated: updatedDoc="
                         + updatedDoc);
@@ -363,8 +360,10 @@ public class MongoApplier implements RawApplier
             String sourceId = (String) doc.get("source_id");
             long epochNumber = (Long) doc.get("epoch_number");
             String eventId = (String) doc.get("event_id");
+            String shardId = (String) doc.get("shard_id");
             ReplDBMSHeaderData header = new ReplDBMSHeaderData(seqno,
-                    (short) fragno, lastFrag, sourceId, epochNumber, eventId);
+                    (short) fragno, lastFrag, sourceId, epochNumber, eventId,
+                    shardId);
             return header;
         }
     }

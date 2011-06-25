@@ -63,5 +63,9 @@ public interface ReplDBMSHeader
      * Returns the native event ID corresponding to this log sequence number. 
      */
     public String getEventId();
-
+    
+    /**
+     * Returns the shard ID for this transaction. 
+     */
+    public String getShardId();
 }

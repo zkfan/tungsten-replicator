@@ -88,8 +88,8 @@ public class ReplDBMSEvent extends ReplEvent implements ReplDBMSHeader
      */
     public ReplDBMSEvent(long seqno, DBMSEvent event)
     {
-        this(seqno, (short) 0, true, "NONE", 0, new Timestamp(System
-                .currentTimeMillis()), event);
+        this(seqno, (short) 0, true, "NONE", 0, new Timestamp(
+                System.currentTimeMillis()), event);
     }
 
     /**
@@ -174,7 +174,22 @@ public class ReplDBMSEvent extends ReplEvent implements ReplDBMSHeader
     }
 
     /**
-     * Returns the raw DBMS event containing SQL data. 
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.event.ReplDBMSHeader#getShardId()
+     */
+    public String getShardId()
+    {
+        String shardId = getDBMSEvent().getMetadataOptionValue(
+                ReplOptionParams.SHARD_ID);
+        if (shardId == null)
+            return ReplOptionParams.SHARD_ID_UNKNOWN;
+        else
+            return shardId;
+    }
+
+    /**
+     * Returns the raw DBMS event containing SQL data.
      */
     public DBMSEvent getDBMSEvent()
     {

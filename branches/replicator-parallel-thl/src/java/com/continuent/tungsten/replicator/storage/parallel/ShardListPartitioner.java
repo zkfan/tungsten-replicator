@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.continuent.tungsten.commons.config.TungstenProperties;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntimeConf;
-import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
 
 /**
@@ -62,16 +62,13 @@ import com.continuent.tungsten.replicator.event.ReplOptionParams;
  */
 public class ShardListPartitioner implements Partitioner
 {
+    private int                      availablePartitions;
+
     private static Logger            logger           = Logger.getLogger(ShardListPartitioner.class);
     private File                     shardMap;
     private HashMap<String, Integer> shardTable;
     private int                      defaultPartition = -1;
     private HashMap<String, Boolean> criticalShards;
-
-    public void setShardMap(File shardMap)
-    {
-        this.shardMap = shardMap;
-    }
 
     /**
      * Create new instance of partitioner.
@@ -80,22 +77,36 @@ public class ShardListPartitioner implements Partitioner
     {
     }
 
+    public void setShardMap(File shardMap)
+    {
+        this.shardMap = shardMap;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#setPartitions(int)
+     */
+    public synchronized void setPartitions(int availablePartitions)
+    {
+        this.availablePartitions = availablePartitions;
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.storage.parallel.Partitioner#partition(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
      *      int, int)
      */
-    public PartitionerResponse partition(ReplDBMSEvent event,
-            int availablePartitions, int taskId) throws ReplicatorException
+    public PartitionerResponse partition(ReplDBMSHeader event, int taskId)
+            throws ReplicatorException
     {
         // Initialize on first call.
         if (shardTable == null)
             initialize();
 
         // See if there is an explicit partition assignment.
-        String shardId = event.getDBMSEvent().getMetadataOptionValue(
-                ReplOptionParams.SHARD_ID);
+        String shardId = event.getShardId();
         Integer partition = shardTable.get(shardId);
 
         // If not, either assign to the default partition or hash.

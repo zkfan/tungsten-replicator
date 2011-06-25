@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 
 import org.apache.log4j.Logger;
 
@@ -61,7 +62,7 @@ public class BufferedFileDataInput
      * @param size Size of buffer for buffered I/O
      */
     public BufferedFileDataInput(File file, int size)
-            throws FileNotFoundException, IOException
+            throws FileNotFoundException, IOException, InterruptedException
     {
         this.file = file;
         this.size = size;
@@ -72,7 +73,7 @@ public class BufferedFileDataInput
      * Creates instance with default buffer size.
      */
     public BufferedFileDataInput(File file) throws FileNotFoundException,
-            IOException
+            IOException, InterruptedException
     {
         this(file, 1024);
     }
@@ -146,8 +147,9 @@ public class BufferedFileDataInput
      * Reset stream back to last mark.
      * 
      * @throws IOException Thrown if mark has been invalidated or not set
+     * @throws InterruptedException Thrown if we are interrupted
      */
-    public void reset() throws IOException
+    public void reset() throws IOException, InterruptedException
     {
         try
         {
@@ -182,11 +184,22 @@ public class BufferedFileDataInput
      * @param seekBytes Number of bytes from start of file
      * @throws IOException Thrown if offset cannot be found
      * @throws FileNotFoundException Thrown if file is not found
+     * @throws InterruptedException Thrown if thread is interrupted
      */
-    public void seek(long seekBytes) throws FileNotFoundException, IOException
+    public void seek(long seekBytes) throws FileNotFoundException, IOException, InterruptedException
     {
         fileInput = new FileInputStream(file);
-        fileInput.getChannel().position(seekBytes);
+        try
+        {
+            fileInput.getChannel().position(seekBytes);
+        }
+        catch (ClosedByInterruptException e) 
+        {
+            // NIO rewrites InterruptException into this, which seems broken. 
+            // To preserve interrupt handling behavior up the stack, we throw
+            // InterruptException. 
+            throw new InterruptedException();
+        }
         bufferedInput = new BufferedInputStream(fileInput, size);
         dataInput = new DataInputStream(bufferedInput);
         offset = seekBytes;

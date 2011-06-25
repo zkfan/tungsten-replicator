@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2010-2011 Continuent Inc.
+ * Copyright (C) 2010 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -16,42 +16,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
- * Initial developer(s): Robert Hodges
- * Contributor(s):
+ * Initial developer(s): Stephane Giron
+ * Contributor(s): Robert Hodges
  */
 
-package com.continuent.tungsten.replicator.storage.parallel;
+package com.continuent.tungsten.replicator.thl.log;
+
+import com.continuent.tungsten.replicator.thl.THLException;
 
 /**
- * Contains partitioning response data.
+ * Denotes a class that decides whether to accept and deserialize the next
+ * replication event in the log. This is used to implement query logic over
+ * scans within the log.
  * 
  * @author <a href="mailto:robert.hodges@continuent.com">Robert Hodges</a>
- * @version 1.0
  */
-public class PartitionerResponse
+public interface LogEventReadFilter
 {
-    private final int     partition;
-    private final boolean critical;
-
     /**
-     * Generates a new response.
-     * 
-     * @param partition Partition to which current event should be assigned
-     * @param critical If true, this event requires a critical section
+     * Returns true if the reader contains an event that should be deserialized.
      */
-    public PartitionerResponse(int partition, boolean critical)
-    {
-        this.partition = partition;
-        this.critical = critical;
-    }
-
-    public int getPartition()
-    {
-        return partition;
-    }
-
-    public boolean isCritical()
-    {
-        return critical;
-    }
+    public boolean accept(LogEventReplReader reader) throws THLException;
 }

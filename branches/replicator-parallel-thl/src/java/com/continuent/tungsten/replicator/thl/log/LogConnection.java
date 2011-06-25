@@ -41,31 +41,34 @@ import com.continuent.tungsten.replicator.thl.serializer.Serializer;
  */
 public class LogConnection
 {
-    private static Logger    logger     = Logger.getLogger(LogConnection.class);
+    private static Logger      logger     = Logger.getLogger(LogConnection.class);
 
     /**
      * Symbol representing the first transaction in a new log.
      */
-    public static long       FIRST      = 0;
+    public static long         FIRST      = 0;
 
     // Client connection parameters.
-    private final boolean    readonly;
+    private final boolean      readonly;
 
     // Control parameters.
-    private volatile boolean done       = false;
+    private volatile boolean   done       = false;
 
     // Disk log parameters.
-    private DiskLog          diskLog;
-    private LogCursor        cursor;
-    private THLEvent         pendingEvent;
-    private long             writeCount = 0;
-    private long             readCount  = 0;
+    private DiskLog            diskLog;
+    private LogCursor          cursor;
+    private THLEvent           pendingEvent;
+    private long               writeCount = 0;
+    private long               readCount  = 0;
 
     // Information required for successful output.
-    private boolean          doChecksum;
-    private Serializer       eventSerializer;
-    private int              logFileSize;
-    private int              timeoutMillis;
+    private boolean            doChecksum;
+    private Serializer         eventSerializer;
+    private int                logFileSize;
+    private int                timeoutMillis;
+
+    // Filter used to decide whether to deserialize events on input.
+    private LogEventReadFilter readFilter;
 
     /**
      * Instantiates a client on a disk log.
@@ -99,12 +102,22 @@ public class LogConnection
     }
 
     /**
+     * Sets the read filter, which determines whether events are fully
+     * deserialized on read. This implements query logic on scanned events.
+     */
+    public void setReadFilter(LogEventReadFilter readFilter)
+    {
+        this.readFilter = readFilter;
+    }
+
+    /**
      * Releases the client connection. This must be called to avoid resource
      * leaks.
      */
     public void release()
     {
-        diskLog.release(this);
+        if (diskLog != null)
+            diskLog.release(this);
     }
 
     /**
@@ -197,8 +210,8 @@ public class LogConnection
                 if (logRecord.isEmpty())
                 {
                     // If we are positioned on the end of the log, this means we
-                    // must be waiting for the record to arrive.  We are correctly
-                    // positioned.  
+                    // must be waiting for the record to arrive. We are
+                    // correctly positioned.
                     if (seqno == (lastSeqno + 1))
                         return true;
                     else
@@ -229,7 +242,7 @@ public class LogConnection
                     }
                     else
                     {
-                        // Remember which seqno we saw and keep going. 
+                        // Remember which seqno we saw and keep going.
                         lastSeqno = eventReader.getSeqno();
                     }
                 }
@@ -397,8 +410,13 @@ public class LogConnection
                     LogEventReplReader eventReader = new LogEventReplReader(
                             logRecord, eventSerializer, doChecksum);
 
-                    // Found the event.
-                    event = eventReader.deserializeEvent();
+                    // Found the event. If there is no read filter
+                    // or if the filter asks us to accept, then deserialize
+                    // fully.
+                    if (readFilter == null || readFilter.accept(eventReader))
+                    {
+                        event = eventReader.deserializeEvent();
+                    }
                     break;
                 }
                 else if (recordType == LogRecord.EVENT_ROTATE)

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
@@ -69,6 +68,7 @@ public class Pipeline implements ReplicatorPlugin
     private String                     name;
     private LinkedList<Stage>          stages               = new LinkedList<Stage>();
     private HashMap<String, Store>     stores               = new HashMap<String, Store>();
+    private List<String>               storeNames           = new ArrayList<String>();
     private boolean                    autoSync             = false;
     private boolean                    syncTHLWithExtractor = true;
     private ExecutorService            shutdownTaskExec     = Executors
@@ -111,6 +111,7 @@ public class Pipeline implements ReplicatorPlugin
     public void addStore(String name, Store store)
     {
         stores.put(name, store);
+        storeNames.add(name);
     }
 
     public Stage getStage(String name)
@@ -158,9 +159,9 @@ public class Pipeline implements ReplicatorPlugin
         return stores.get(name);
     }
 
-    public Set<String> getStoreNames()
+    public List<String> getStoreNames()
     {
-        return stores.keySet();
+        return storeNames;
     }
 
     /**

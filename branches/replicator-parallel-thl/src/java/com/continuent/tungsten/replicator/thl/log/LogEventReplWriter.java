@@ -69,7 +69,7 @@ public class LogEventReplWriter
             dos.writeLong(event.getEpochNumber());
             dos.writeUTF(event.getSourceId());
             dos.writeUTF(event.getEventId());
-            dos.writeUTF("#DEFAULT");
+            dos.writeUTF(event.getShardId());
             dos.writeLong(event.getSourceTstamp().getTime());
             
             serializer.serializeEvent(event, dos);

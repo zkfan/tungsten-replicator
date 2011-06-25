@@ -23,8 +23,7 @@
 package com.continuent.tungsten.replicator.event;
 
 /**
- * An implementation of replicator header information used to track 
- * position. 
+ * An implementation of replicator header information used to track position.
  * 
  * @author <a href="mailto:robert.hodges@continuent.com">Robert Hodges</a>
  * @version 1.0
@@ -37,12 +36,13 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
     private final String  sourceId;
     private final long    epochNumber;
     private final String  eventId;
+    private final String  shardId;
 
-    /** 
-     * Create header instance from component parts. 
+    /**
+     * Create header instance from component parts.
      */
     public ReplDBMSHeaderData(long seqno, short fragno, boolean lastFrag,
-            String sourceId, long epochNumber, String eventId)
+            String sourceId, long epochNumber, String eventId, String shardId)
     {
         this.seqno = seqno;
         this.fragno = fragno;
@@ -50,6 +50,7 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
         this.sourceId = sourceId;
         this.epochNumber = epochNumber;
         this.eventId = eventId;
+        this.shardId = shardId;
     }
 
     public ReplDBMSHeaderData(ReplDBMSEvent event)
@@ -60,6 +61,7 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
         this.sourceId = event.getSourceId();
         this.epochNumber = event.getEpochNumber();
         this.eventId = event.getEventId();
+        this.shardId = event.getShardId();
     }
 
     public long getSeqno()
@@ -90,5 +92,10 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
     public String getSourceId()
     {
         return sourceId;
+    }
+    
+    public String getShardId()
+    {
+        return shardId;
     }
 }

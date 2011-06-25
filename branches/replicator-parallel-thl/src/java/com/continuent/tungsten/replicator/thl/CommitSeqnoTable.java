@@ -72,6 +72,7 @@ public class CommitSeqnoTable
     private Column             commitSeqnoTableEventId;
     private Column             commitSeqnoTableAppliedLatency;
     private Column             commitSeqnoTableUpdateTimestamp;
+    private Column             commitSeqnoTableShardId;
 
     private PreparedStatement  commitSeqnoUpdate;
     private PreparedStatement  lastSeqnoQuery;
@@ -107,6 +108,7 @@ public class CommitSeqnoTable
                 Types.INTEGER);
         commitSeqnoTableUpdateTimestamp = new Column("update_timestamp",
                 Types.TIMESTAMP);
+        commitSeqnoTableShardId = new Column("shard_id", Types.VARCHAR, 128);
 
         commitSeqnoTable.AddColumn(commitSeqnoTableTaskId);
         commitSeqnoTable.AddColumn(commitSeqnoTableSeqno);
@@ -117,6 +119,7 @@ public class CommitSeqnoTable
         commitSeqnoTable.AddColumn(commitSeqnoTableEventId);
         commitSeqnoTable.AddColumn(commitSeqnoTableAppliedLatency);
         commitSeqnoTable.AddColumn(commitSeqnoTableUpdateTimestamp);
+        commitSeqnoTable.AddColumn(commitSeqnoTableShardId);
 
         Key pkey = new Key(Key.Primary);
         pkey.AddColumn(commitSeqnoTableTaskId);
@@ -124,7 +127,7 @@ public class CommitSeqnoTable
 
         // Prepare SQL.
         lastSeqnoQuery = database
-                .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid from "
+                .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id from "
                         + schema + "." + TABLE_NAME + " WHERE task_id=?");
 
         commitSeqnoUpdate = database.prepareStatement("UPDATE "
@@ -138,6 +141,7 @@ public class CommitSeqnoTable
                 + commitSeqnoTableEventId.getName() + "=?, "
                 + commitSeqnoTableAppliedLatency.getName() + "=?, "
                 + commitSeqnoTableUpdateTimestamp.getName() + "=? " + "WHERE "
+                + commitSeqnoTableShardId.getName() + "=? " + "WHERE "
                 + commitSeqnoTableTaskId.getName() + "=?");
 
         // Create the table if it does not exist.
@@ -240,7 +244,7 @@ public class CommitSeqnoTable
         {
             // Scan task positions.
             allSeqnosQuery = database
-                    .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, task_id from "
+                    .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id, task_id from "
                             + schema + "." + TABLE_NAME);
             rs = allSeqnosQuery.executeQuery();
             while (rs.next())
@@ -253,7 +257,7 @@ public class CommitSeqnoTable
                     hasCommonSeqno = false;
 
                 // Check for task 0.
-                int task_id = rs.getInt(7);
+                int task_id = rs.getInt(8);
                 if (task_id == 0)
                     hasTask0 = true;
             }
@@ -307,6 +311,7 @@ public class CommitSeqnoTable
         commitSeqnoUpdate.setTimestamp(8,
                 new Timestamp(System.currentTimeMillis()));
         commitSeqnoUpdate.setInt(9, taskId);
+        commitSeqnoUpdate.setString(10, header.getShardId());
 
         commitSeqnoUpdate.executeUpdate();
     }
@@ -321,9 +326,10 @@ public class CommitSeqnoTable
         String sourceId = rs.getString(4);
         long epochNumber = rs.getLong(5);
         String eventId = rs.getString(6);
+        String shardId = rs.getString(7);
 
         return new ReplDBMSHeaderData(seqno, fragno, lastFrag, sourceId,
-                epochNumber, eventId);
+                epochNumber, eventId, shardId);
     }
 
     // Close a result set properly.

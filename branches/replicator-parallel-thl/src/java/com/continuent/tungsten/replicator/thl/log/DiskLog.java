@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.thl.THLEvent;
 import com.continuent.tungsten.replicator.thl.THLException;
 import com.continuent.tungsten.replicator.thl.serializer.ProtobufSerializer;
 import com.continuent.tungsten.replicator.thl.serializer.Serializer;
@@ -719,15 +718,14 @@ public class DiskLog
      */
     LogFile getLogFile(long seqno)
     {
-        // Find the log file name. 
+        // Find the log file name.
         String name;
         if (seqno == FIRST)
             name = index.getFirstFile();
         else
             name = index.getFile(seqno);
-        
 
-        // Create and return a matching log file instance. 
+        // Create and return a matching log file instance.
         if (name == null)
             return null;
         else
@@ -770,8 +768,10 @@ public class DiskLog
      * @param newFileName Name of the file.
      * @return Opens log file.
      * @throws THLException If file cannot be found or opened
+     * @throws InterruptedException Thrown if we are interrupted
      */
-    LogFile getLogFileForReading(String newFileName) throws THLException
+    LogFile getLogFileForReading(String newFileName) throws THLException,
+            InterruptedException
     {
         LogFile logFile = new LogFile(logDir, newFileName);
         logFile.setBufferSize(bufferSize);
@@ -937,8 +937,10 @@ public class DiskLog
      * @param readOnly
      * @return a {@link LogFile} object referencing the last indexed file
      * @throws ReplicatorException if an error occurs
+     * @throws InterruptedException Thrown if we are interrupted
      */
-    LogFile openLastFile(boolean readOnly) throws ReplicatorException
+    LogFile openLastFile(boolean readOnly) throws ReplicatorException,
+            InterruptedException
     {
         String logFileName = index.getLastFile();
         return openFile(logFileName, readOnly);
@@ -951,9 +953,10 @@ public class DiskLog
      * @param readOnly
      * @return a {@link LogFile} object referencing the last indexed file
      * @throws ReplicatorException if an error occurs
+     * @throws InterruptedException Thrown if we are interrupted
      */
     private LogFile openFile(String logFileName, boolean readOnly)
-            throws ReplicatorException
+            throws ReplicatorException, InterruptedException
     {
         // Open a LogFile instance. Set log sync task if we are writing and
         // deferred sync is enabled.
@@ -995,7 +998,7 @@ public class DiskLog
      * @seqno Sequence number of first event in the file
      */
     private LogFile startNewLogFile(long seqno) throws THLException,
-            IOException
+            IOException, InterruptedException
     {
         // Open new log file and update index. TODO: did this get updated?
         String logFileName = getDataFileName(fileIndex);
@@ -1012,62 +1015,6 @@ public class DiskLog
         index.addNewFile(seqno, logFileName);
 
         return dataFile;
-    }
-
-    /**
-     * setFile prepares a log file to be read.
-     * 
-     * @param file Name of the file to be prepared. This file must be found in
-     *            the configured logs directory.
-     * @return the log file descriptor if found
-     * @throws ReplicatorException in case of error
-     */
-    public LogFile setFile(String file) throws ReplicatorException
-    {
-        LogFile data = new LogFile(logDir, file);
-        data.setBufferSize(bufferSize);
-        data.openRead();
-        return data;
-    }
-
-    /**
-     * Read the next event from the provided file.
-     * 
-     * @param data a log file descriptor
-     * @return a THLEvent extracted from the file, or null if no more THLEvent
-     *         could be decoded from the file.
-     * @throws THLException
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public THLEvent readNextEvent(LogFile data) throws THLException,
-            IOException, InterruptedException
-    {
-        LogRecord logRecord = data.readRecord(LogFile.NO_WAIT);
-
-        // Timeouts return an empty record. In that case we return
-        // null, because the record was not found. Otherwise, we
-        // are highly surprised.
-        if (logRecord.isEmpty())
-        {
-            return null;
-        }
-
-        byte[] bytes = logRecord.getData();
-        byte recordType = bytes[0];
-        if (recordType == LogRecord.EVENT_REPL)
-        {
-            LogEventReplReader eventReader = new LogEventReplReader(logRecord,
-                    eventSerializer, doChecksum);
-
-            THLEvent event = eventReader.deserializeEvent();
-            eventReader.done();
-            return event;
-        }
-        else
-        {
-            return null;
-        }
     }
 
     /**

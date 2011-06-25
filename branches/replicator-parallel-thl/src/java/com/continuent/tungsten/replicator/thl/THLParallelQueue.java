@@ -20,10 +20,11 @@
  * Contributor(s):
  */
 
-package com.continuent.tungsten.replicator.storage.parallel;
+package com.continuent.tungsten.replicator.thl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
@@ -39,6 +40,9 @@ import com.continuent.tungsten.replicator.event.ReplEvent;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 import com.continuent.tungsten.replicator.storage.ParallelStore;
+import com.continuent.tungsten.replicator.storage.parallel.Partitioner;
+import com.continuent.tungsten.replicator.storage.parallel.PartitionerResponse;
+import com.continuent.tungsten.replicator.storage.parallel.SimplePartitioner;
 import com.continuent.tungsten.replicator.util.AtomicCounter;
 import com.continuent.tungsten.replicator.util.WatchPredicate;
 
@@ -49,13 +53,48 @@ import com.continuent.tungsten.replicator.util.WatchPredicate;
  * @author <a href="mailto:robert.hodges@continuent.com">Robert Hodges</a>
  * @version 1.0
  */
-public class ParallelQueueStore implements ParallelStore
+public class THLParallelQueue implements ParallelStore
 {
-    private static Logger                                      logger             = Logger.getLogger(ParallelQueueStore.class);
-    private String                                             name;
-    private List<LinkedBlockingQueue<ReplEvent>>               queues;
-    private ReplDBMSHeader[]                                   lastHeaders;
-    private ReplDBMSEvent                                      lastInsertedEvent;
+    private static Logger             logger              = Logger.getLogger(THLParallelQueue.class);
+
+    // Queue parameters.
+    private String                    name;
+    private int                       maxSize             = 1;
+    private int                       partitions          = 1;
+    private boolean                   syncEnabled         = true;
+    private int                       syncInterval        = 20000;
+    private int                       maxCriticalSections = 10000;
+    private String                    thlStoreName        = "thl";
+
+    // THL for which we are implementing a parallel queue.
+    private THL                       thl;
+
+    // Read task control information.
+    private List<THLParallelReadTask> readTasks;
+    private ReplDBMSHeader[]          lastHeaders;
+    private ReplDBMSEvent             lastInsertedEvent;
+
+    // Counter of head sequence number.
+    private AtomicCounter             headSeqnoCounter    = new AtomicCounter(0);
+
+    // Class to describe critical sections.
+    class CriticalSection
+    {
+        int  partition;
+        long startSeqno;
+        long endSeqno;
+
+        CriticalSection(int partition, long startSeqno, long endSeqno)
+        {
+            this.partition = partition;
+            this.startSeqno = startSeqno;
+            this.endSeqno = endSeqno;
+        }
+    }
+
+    // Queue of pending critical sections.
+    private BlockingQueue<CriticalSection>                     criticalSections;
+    CriticalSection                                            pendingCriticalSection;
 
     // Partitioner configuration variables.
     private Partitioner                                        partitioner;
@@ -71,21 +110,12 @@ public class ParallelQueueStore implements ParallelStore
     // Flag to insert stop synchronization event at next transaction boundary.
     private boolean                                            stopRequested      = false;
 
-    // Queue parameters.
-    private int                                                maxSize            = 1;
-    private int                                                partitions         = 1;
-    private boolean                                            syncEnabled        = true;
-    private int                                                syncInterval       = 100;
-
     // Counter to force synchronization events at intervals so all queues remain
     // up-to-date.
     private int                                                syncCounter        = 1;
 
-    // Control information for event serialization to support dependent shard
-    // processing.
+    // Control information for event serialization to support shard processing.
     private int                                                criticalPartition  = -1;
-    private AtomicCounter                                      activeSize         = new AtomicCounter(
-                                                                                          0);
 
     public String getName()
     {
@@ -174,14 +204,6 @@ public class ParallelQueueStore implements ParallelStore
         this.syncEnabled = syncEnabled;
     }
 
-    /**
-     * Returns the current number of events across all queues of store.
-     */
-    public long getStoreSize()
-    {
-        return activeSize.getSeqno();
-    }
-
     /** Sets the last header processed. This is required for restart. */
     public void setLastHeader(int taskId, ReplDBMSHeader header)
             throws ReplicatorException
@@ -218,15 +240,16 @@ public class ParallelQueueStore implements ParallelStore
     }
 
     /**
-     * Puts an event in the queue, blocking if it is full. Putting events into
-     * parallel queues needs to occur atomically so this method is synchronized.
-     * (Getting/peeking from queues on the other hand must not be synchronized
-     * or we would deadlock due to critical sectio processing.)
+     * Puts an event in the queue, blocking if it is full.)
      */
     public synchronized void put(int taskId, ReplDBMSEvent event)
             throws InterruptedException, ReplicatorException
     {
         boolean needsSync = false;
+
+        // Update transaction count at end.
+        if (event.getLastFrag())
+            transactionCount++;
 
         // Discard empty events.
         DBMSEvent dbmsEvent = event.getDBMSEvent();
@@ -237,52 +260,57 @@ public class ParallelQueueStore implements ParallelStore
             return;
         }
 
-        // Partition the event. Handle critical sections by "blocking to zero"
-        // under the following circumstances:
-        // 1.) Event is critical and we are not in a critical section.
-        // 2.) We are in a critical section but the shard ID has changed.
-        // 3.) Event is not critical and we are in a critical section.
+        // Partition the event.
         PartitionerResponse response = partitioner.partition(event, taskId);
-        if (response.isCritical()
-                && (criticalPartition != response.getPartition()))
+        if (response.isCritical())
         {
-            // Covers cases 1 & 2. We have to serialize here.
             serializationCount++;
-            blockToZero();
-            criticalPartition = response.getPartition();
-            if (logger.isDebugEnabled())
+
+            if (pendingCriticalSection == null)
             {
-                logger.debug("Enabling critical partition: partition="
-                        + criticalPartition + " seqno=" + event.getSeqno());
+                // Case 1: A critical section is starting.
+                pendingCriticalSection = new CriticalSection(
+                        response.getPartition(), event.getSeqno(),
+                        event.getSeqno());
+            }
+            else if (pendingCriticalSection.partition == response
+                    .getPartition())
+            {
+                // Case 2: We are continuing in a critical section. Mark the
+                // current seqno.
+                pendingCriticalSection.endSeqno = event.getSeqno();
+            }
+            else
+            {
+                // Case 3: We are switching between critical sections. Enqueue
+                // previous critical section and start a new one.
+                criticalSections.put(pendingCriticalSection);
+                headSeqnoCounter.setSeqno(pendingCriticalSection.endSeqno);
+                pendingCriticalSection = new CriticalSection(
+                        response.getPartition(), event.getSeqno(),
+                        event.getSeqno());
             }
         }
-        else if (!response.isCritical() && criticalPartition > 0)
+        else
         {
-            // Covers case 3.
-            blockToZero();
-            criticalPartition = -1;
-            if (logger.isDebugEnabled())
+            if (pendingCriticalSection == null)
             {
-                logger.debug("Ending critical partition: seqno="
-                        + event.getSeqno());
+                // Case 4: Not in a critical section. Just advance the counter.
+                headSeqnoCounter.incrAndGetSeqno();
+            }
+            else
+            {
+                // Case 5: Critical section has ended and we are back to
+                // non-critical processing. Enqueue critical section and advance
+                // counter.
+                criticalSections.put(pendingCriticalSection);
+                pendingCriticalSection = null;
+                headSeqnoCounter.setSeqno(pendingCriticalSection.endSeqno);
             }
         }
 
-        // Add event to the queue, increment the active store size, and remember
-        // the event.
-        queues.get(response.getPartition()).put(event);
-        long size = activeSize.incrAndGetSeqno();
-        transactionCount++;
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Placed event in queue: seqno=" + event.getSeqno()
-                    + " partition=" + response.getPartition() + " activeSize="
-                    + size);
-            if (transactionCount % 10000 == 0)
-                logger.debug("Queue store: xacts=" + transactionCount
-                        + " size=" + queues.size() + " activeSize=" + size);
-        }
-        this.lastInsertedEvent = event;
+        // Record last event handled.
+        lastInsertedEvent = event;
 
         // Fulfill stop request if we have one.
         if (event.getLastFrag() && stopRequested)
@@ -344,27 +372,26 @@ public class ParallelQueueStore implements ParallelStore
         }
     }
 
-    // Block until all queues are empty.
-    private void blockToZero() throws InterruptedException
-    {
-        activeSize.waitSeqnoLessEqual(0);
-    }
-
     // Inserts a control event in all queues.
     private void putControlEvent(int type, ReplDBMSEvent event)
             throws InterruptedException
     {
-        long ctrlSeqno; 
+        long ctrlSeqno;
         if (event == null)
-            ctrlSeqno = 0;
+            ctrlSeqno = this.headSeqnoCounter.getSeqno();
         else
             ctrlSeqno = event.getSeqno();
         ReplControlEvent ctrl = new ReplControlEvent(type, ctrlSeqno, event);
 
-        for (LinkedBlockingQueue<ReplEvent> queue : queues)
+        if (logger.isDebugEnabled())
         {
-            queue.put(ctrl);
-            activeSize.incrAndGetSeqno();
+            logger.debug("Inserting control event: type=" + type + " seqno="
+                    + ctrlSeqno);
+        }
+
+        for (THLParallelReadTask readTask : this.readTasks)
+        {
+            readTask.putControlEvent(ctrl);
         }
     }
 
@@ -375,35 +402,18 @@ public class ParallelQueueStore implements ParallelStore
             ReplicatorException
     {
         assertTaskIdWithinRange(taskId);
-        ReplEvent event = queues.get(taskId).take();
-        long size = activeSize.decrAndGetSeqno();
-        if (logger.isDebugEnabled())
-        {
-            if (event instanceof ReplDBMSEvent)
-            {
-                logger.debug("Returning event from queue: seqno="
-                        + ((ReplDBMSEvent) event).getSeqno() + " taskId="
-                        + taskId + " activeSize=" + size);
-            }
-            else
-            {
-                logger.debug("Returning control event from queue: taskId="
-                        + taskId + " event=" + event.toString()
-                        + " activeSize=" + size);
-            }
-        }
-        return event;
+        return readTasks.get(taskId).get();
     }
 
     /**
-     * Returns but does not remove next event from the queue if it exists or
-     * returns null if queue is empty.
+     * Returns next event from the queue without removing it, returning null if
+     * queue is empty.
      */
-    public ReplEvent peek(int taskId) throws ReplicatorException,
-            InterruptedException
+    public ReplEvent peek(int taskId) throws InterruptedException,
+            ReplicatorException
     {
         assertTaskIdWithinRange(taskId);
-        return queues.get(taskId).peek();
+        return readTasks.get(taskId).peek();
     }
 
     /**
@@ -411,7 +421,7 @@ public class ParallelQueueStore implements ParallelStore
      */
     public int size(int taskId)
     {
-        return queues.get(taskId).size();
+        return readTasks.get(taskId).size();
     }
 
     /**
@@ -422,6 +432,7 @@ public class ParallelQueueStore implements ParallelStore
     public synchronized void configure(PluginContext context)
             throws ReplicatorException
     {
+
         // Instantiate partitioner class.
         if (partitioner == null)
         {
@@ -439,26 +450,51 @@ public class ParallelQueueStore implements ParallelStore
             }
         }
 
-        // Instantiate queue list, followed by array of last sequence numbers to
-        // permit propagation of restart points from each output task.
-        queues = new ArrayList<LinkedBlockingQueue<ReplEvent>>(partitions);
-        lastHeaders = new ReplDBMSHeader[partitions];
-        this.watchPredicates = new LinkedBlockingQueue<WatchPredicate<ReplDBMSEvent>>();
+        // Allocate queue for watch predicates.
+        // TODO: Get this to work.
+        watchPredicates = new LinkedBlockingQueue<WatchPredicate<ReplDBMSEvent>>();
+
+        // Allocate queue for critical sections.
+        criticalSections = new LinkedBlockingQueue<CriticalSection>(
+                maxCriticalSections);
     }
 
     /**
-     * Allocate an in-memory queue. {@inheritDoc}
+     * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.plugin.ReplicatorPlugin#prepare(com.continuent.tungsten.replicator.plugin.PluginContext)
      */
     public synchronized void prepare(PluginContext context)
-            throws ReplicatorException
+            throws ReplicatorException, InterruptedException
     {
-        // Create queues.
+        // Find the THL from which we expect to feed.
+        try
+        {
+            thl = (THL) context.getStore(thlStoreName);
+        }
+        catch (ClassCastException e)
+        {
+            throw new ReplicatorException(
+                    "Invalid THL storage class; thlStoreName parameter may be in error: "
+                            + context.getStore(thlStoreName).getClass()
+                                    .getName());
+        }
+        if (thl == null)
+            throw new ReplicatorException(
+                    "Unknown storage name; thlStoreName may be in error: "
+                            + thlStoreName);
+
+        // Instantiate reader tasks, followed by array of last sequence numbers
+        // to permit propagation of restart points from each output task.
+        readTasks = new ArrayList<THLParallelReadTask>(partitions);
         for (int i = 0; i < partitions; i++)
         {
-            queues.add(new LinkedBlockingQueue<ReplEvent>(maxSize));
+            THLParallelReadTask readTask = new THLParallelReadTask(i, thl,
+                    partitioner, headSeqnoCounter, maxSize);
+            readTasks.add(readTask);
+            readTask.prepare(context);
         }
+        lastHeaders = new ReplDBMSHeader[partitions];
     }
 
     /**
@@ -469,8 +505,30 @@ public class ParallelQueueStore implements ParallelStore
     public synchronized void release(PluginContext context)
             throws ReplicatorException
     {
-        queues = null;
+        for (THLParallelReadTask readTask : readTasks)
+        {
+            // Stop the task thread again for good measure.
+            readTask.stop();
+            readTask.release();
+        }
+        readTasks = null;
         lastHeaders = null;
+    }
+
+    /**
+     * Start the reader for a particular task.
+     */
+    public synchronized void start(int taskId)
+    {
+        this.readTasks.get(taskId).start();
+    }
+
+    /**
+     * Stop the reader for a particular task.
+     */
+    public synchronized void stop(int taskId)
+    {
+        this.readTasks.get(taskId).stop();
     }
 
     // Validate that the taskId is in the accepted range of partitions.
@@ -514,7 +572,6 @@ public class ParallelQueueStore implements ParallelStore
     public TungstenProperties status()
     {
         TungstenProperties props = new TungstenProperties();
-        props.setLong("storeSize", getStoreSize());
         props.setLong("maxSize", maxSize);
         props.setLong("eventCount", transactionCount);
         props.setLong("discardCount", discardCount);
@@ -525,9 +582,9 @@ public class ParallelQueueStore implements ParallelStore
         props.setLong("serializationCount", serializationCount);
         props.setBoolean("stopRequested", stopRequested);
         props.setInt("criticalPartition", criticalPartition);
-        for (int i = 0; i < queues.size(); i++)
+        for (int i = 0; i < readTasks.size(); i++)
         {
-            props.setInt("store.queueSize." + i, queues.get(i).size());
+            props.setInt("store.queueSize." + i, readTasks.get(i).size());
         }
         return props;
     }

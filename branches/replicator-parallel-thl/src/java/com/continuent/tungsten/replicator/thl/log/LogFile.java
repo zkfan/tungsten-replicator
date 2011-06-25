@@ -39,8 +39,7 @@ import com.continuent.tungsten.replicator.thl.THLException;
  */
 public class LogFile
 {
-    static Logger              logger             = Logger
-                                                          .getLogger(LogFile.class);
+    static Logger              logger             = Logger.getLogger(LogFile.class);
 
     // Header fields.
     private static final int   MAGIC_NUMBER       = 0xC001CAFE;
@@ -171,8 +170,10 @@ public class LogFile
      * Open the log file for reading. The log cannot be written.
      * 
      * @throws THLException Thrown if file cannot be opened
+     * @throws InterruptedException Thrown if thread is interrupted
      */
-    public synchronized void openRead() throws THLException
+    public synchronized void openRead() throws THLException,
+            InterruptedException
     {
         // Confirm that file exists.
         if (!file.exists())
@@ -202,8 +203,10 @@ public class LogFile
      * to the end of the file.
      * 
      * @throws THLException Thrown if file cannot be opened
+     * @throws InterruptedException Thrown if we are interrupted
      */
-    public synchronized void openWrite() throws THLException
+    public synchronized void openWrite() throws THLException,
+            InterruptedException
     {
         // Confirm file exists.
         if (!file.exists())
@@ -243,7 +246,8 @@ public class LogFile
      * 
      * @param seqno Base sequence number of this file (written to header)
      */
-    public synchronized void create(long seqno) throws THLException
+    public synchronized void create(long seqno) throws THLException,
+            InterruptedException
     {
         // Confirm file does not already exist.
         if (file.exists())
@@ -372,7 +376,7 @@ public class LogFile
      * Returns only if log file is in write mode. If we are in read mode, this
      * will switch over to write mode and position at the end of the file.
      */
-    protected void assertWriteMode() throws THLException
+    protected void assertWriteMode() throws THLException, InterruptedException
     {
         if (mode != AccessMode.write)
         {
@@ -383,7 +387,7 @@ public class LogFile
     }
 
     /** Returns only if log file is in read mode. */
-    protected void assertReadMode() throws THLException
+    protected void assertReadMode() throws THLException, InterruptedException
     {
         if (mode != AccessMode.read)
         {
@@ -452,7 +456,7 @@ public class LogFile
      * @throws IOException If positioning results in an error.
      */
     public synchronized void seekOffset(long offset) throws IOException,
-            THLException
+            THLException, InterruptedException
     {
         assertReadMode();
         dataInput.seek(offset);
@@ -572,21 +576,24 @@ public class LogFile
     }
 
     /** Reads a single short. */
-    protected short readShort() throws IOException, THLException
+    protected short readShort() throws IOException, THLException,
+            InterruptedException
     {
         assertReadMode();
         return dataInput.readShort();
     }
 
     /** Read a single integer. */
-    protected int readInt() throws IOException, THLException
+    protected int readInt() throws IOException, THLException,
+            InterruptedException
     {
         assertReadMode();
         return dataInput.readInt();
     }
 
     /** Reads a single long. */
-    protected long readLong() throws IOException, THLException
+    protected long readLong() throws IOException, THLException,
+            InterruptedException
     {
         assertReadMode();
         return dataInput.readLong();
@@ -599,7 +606,8 @@ public class LogFile
      * 
      * @param length New file length
      */
-    public synchronized void setLength(long length) throws THLException
+    public synchronized void setLength(long length) throws THLException,
+            InterruptedException
     {
         assertWriteMode();
         try
@@ -613,19 +621,22 @@ public class LogFile
         }
     }
 
-    protected void write(int myInt) throws IOException, THLException
+    protected void write(int myInt) throws IOException, THLException,
+            InterruptedException
     {
         assertWriteMode();
         dataOutput.writeInt(myInt);
     }
 
-    protected void write(long seqno) throws IOException, THLException
+    protected void write(long seqno) throws IOException, THLException,
+            InterruptedException
     {
         assertWriteMode();
         dataOutput.writeLong(seqno);
     }
 
-    protected void write(short myShort) throws IOException, THLException
+    protected void write(short myShort) throws IOException, THLException,
+            InterruptedException
     {
         assertWriteMode();
         dataOutput.writeShort(myShort);
@@ -649,7 +660,7 @@ public class LogFile
         dataOutput.writeByte(record.getCrcType());
         dataOutput.writeLong(record.getCrc());
 
-        // Record that we need a flush. 
+        // Record that we need a flush.
         needsFlush = true;
 
         // See if we have exceeded the maximum number of bytes per log file.
@@ -663,7 +674,8 @@ public class LogFile
      * Synchronizes file writes using flush with optional fsync. You must call
      * this method to commit data.
      */
-    public synchronized void flush() throws IOException, THLException
+    public synchronized void flush() throws IOException, THLException,
+            InterruptedException
     {
         // Only proceed if we need flush.
         if (!needsFlush)

@@ -23,7 +23,7 @@
 package com.continuent.tungsten.replicator.storage.parallel;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 
 /**
  * Implements an algorithm to divide replicator events into partitions.
@@ -34,15 +34,21 @@ import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 public interface Partitioner
 {
     /**
+     * Sets the number of available partitions.
+     * 
+     * @param availablePartitions Number of partitions available
+     */
+    public void setPartitions(int availablePartitions);
+
+    /**
      * Assign an event to a particular partition. All fragments of a particular
      * sequence number must go to the same partition.
      * 
      * @param event Event to be assigned a partition
-     * @param availablePartitions Number of partitions available
      * @param taskId Task id of input thread
      * @return Response containing partition ID and whether event requires a
      *         critical section
      */
-    public PartitionerResponse partition(ReplDBMSEvent event,
-            int availablePartitions, int taskId) throws ReplicatorException;
+    public PartitionerResponse partition(ReplDBMSHeader event, int taskId)
+            throws ReplicatorException;
 }
