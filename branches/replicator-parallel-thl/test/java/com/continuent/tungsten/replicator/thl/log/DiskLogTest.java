@@ -36,6 +36,7 @@ import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.event.DBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSFilteredEvent;
+import com.continuent.tungsten.replicator.event.ReplEvent;
 import com.continuent.tungsten.replicator.thl.THLEvent;
 import com.continuent.tungsten.replicator.thl.THLException;
 import com.continuent.tungsten.replicator.thl.serializer.ProtobufSerializer;
@@ -287,10 +288,10 @@ public class DiskLogTest extends TestCase
             assertTrue(conn.seek(i));
         }
 
-        // Confirm that we seek the next number but it is not present. 
+        // Confirm that we seek the next number but it is not present.
         assertTrue("can seek to end", conn.seek(3));
         assertNull("cannot read past end", conn.next(false));
-        
+
         // Confirm that seek does not find events with higher sequence numbers.
         for (int i = 4; i < 10; i++)
         {
@@ -378,7 +379,7 @@ public class DiskLogTest extends TestCase
         log.setTimeoutMillis(1000);
         writeEventsToLog(log, 0, 10);
 
-        // Confirm that 9 is the last sequence number, then seek to 10. 
+        // Confirm that 9 is the last sequence number, then seek to 10.
         assertEquals("expected last sequence number", 9, log.getMaxSeqno());
         LogConnection conn = log.connect(true);
         assertTrue("Seeking last event", conn.seek(10));
@@ -1089,6 +1090,70 @@ public class DiskLogTest extends TestCase
         }
 
         // Release the log.
+        log.release();
+    }
+
+    /**
+     * Confirm that basic read filtering on header fields such as seqno and
+     * shard ID returns only those records that match the filter predicate.
+     */
+    public void testReadFiltering() throws Exception
+    {
+        // Open the log.
+        File logDir = prepareLogDir("testReadFiltering");
+        DiskLog log = openLog(logDir, false);
+
+        // Write 30 events to the log using different shard IDs.
+        LogConnection conn = log.connect(false);
+        for (int i = 0; i < 30; i++)
+        {
+            String eventId = new Long(i).toString();
+            ReplDBMSEvent replEvent = new ReplDBMSEvent(i, (short) 0, true,
+                    "local", 1, new Timestamp(System.currentTimeMillis()),
+                    new DBMSEvent());
+            replEvent.setShardId("shard_" + i);
+            conn.store(new THLEvent(eventId, replEvent), false);
+        }
+        conn.commit();
+        conn.release();
+
+        // Create a filter for events with sequence numbers between 10 and 19
+        // inclusive.
+        LogConnection conn1 = log.connect(true);
+        LogEventReadFilter filter1 = new LogEventReadFilter()
+        {
+            public boolean accept(LogEventReplReader reader)
+                    throws THLException
+            {
+                long seqno = reader.getSeqno();
+                return seqno >= 10 && seqno <= 19;
+            }
+        };
+        conn1.setReadFilter(filter1);
+
+        // Confirm that the filter reads only the selected events.
+        int readCount = 0;
+        int selectCount = 0;
+        conn1.seek(0);
+        THLEvent e = null;
+        while ((e = conn1.next(false)) != null)
+        {
+            ReplEvent re = e.getReplEvent();
+            readCount++;
+            if (re != null)
+            {
+                assertTrue("Seqno matches: " + re.getSeqno(),
+                        re.getSeqno() >= 10);
+                assertTrue("Seqno matches: " + re.getSeqno(),
+                        re.getSeqno() <= 19);
+                selectCount++;
+            }
+        }
+        assertEquals("Selected correct number", 10, selectCount);
+        assertEquals("Read correct number", 30, readCount);
+
+        // Release the connection and log.
+        conn1.release();
         log.release();
     }
 

@@ -101,7 +101,7 @@ public class ParallelQueueExtractor implements ParallelExtractor
                 return ((ReplDBMSEvent) event).getEventId();
             else if (event instanceof ReplControlEvent)
             {
-                ReplDBMSEvent event2 = ((ReplControlEvent) event).getEvent();
+                ReplDBMSHeader event2 = ((ReplControlEvent) event).getHeader();
                 if (event2 == null)
                     return null;
                 else

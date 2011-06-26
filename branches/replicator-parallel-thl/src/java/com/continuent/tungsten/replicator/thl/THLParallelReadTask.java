@@ -22,6 +22,7 @@
 
 package com.continuent.tungsten.replicator.thl;
 
+import java.sql.Timestamp;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,56 +53,55 @@ import com.continuent.tungsten.replicator.util.AtomicCounter;
  */
 public class THLParallelReadTask implements Runnable
 {
-    private static Logger                         logger                  = Logger.getLogger(THLParallelReadTask.class);
+    private static Logger                  logger        = Logger.getLogger(THLParallelReadTask.class);
 
     // Task number on whose behalf we are reading.
-    private final int                             taskId;
+    private final int                      taskId;
 
     // Partitioner instance.
-    private final Partitioner                     partitioner;
+    private final Partitioner              partitioner;
 
     // Counters to coordinate queue operation.
-    private AtomicCounter                         headSeqnoCounter;
-    private AtomicLong                            highWaterMark           = new AtomicLong(
-                                                                                  0);
-    private AtomicLong                            discardCount            = new AtomicLong(
-                                                                                  0);
+    private AtomicCounter                  headSeqnoCounter;
+    private AtomicLong                     highWaterMark = new AtomicLong(0);
+    private AtomicLong                     discardCount  = new AtomicLong(0);
 
-    // Ordered queue of events for reading and current seqno for reading.
-    private final BlockingQueue<ReplEvent>        eventQueue;
-    private long                                  readSeqno               = 0;
-    private boolean                               inFragmentedTransaction = false;
+    // Ordered queue of events for clients.
+    private final BlockingQueue<ReplEvent> eventQueue;
+
+    // Queue parameters.
+    private final int                      maxControlEvents;
+    private long                           startSeqno;
 
     // Pending control events to be integrated into the event queue and seqno
     // of next event if known.
-    private final BlockingQueue<ReplControlEvent> controlQueue;
-    private long                                  nextControlSeqno        = Long.MAX_VALUE;
+    private THLParallelReadQueue           readQueue;
 
     // Connection to the log.
-    private THL                                   thl;
-    private LogConnection                         connection;
+    private THL                            thl;
+    private LogConnection                  connection;
 
     // Throwable trapped from run loop.
-    private Throwable                             throwable;
+    private Throwable                      throwable;
 
     // Thread ID for this read task.
-    private volatile Thread                       taskThread;
+    private volatile Thread                taskThread;
 
     // Flag indicating task is cancelled.
-    private volatile boolean                      cancelled               = false;
+    private volatile boolean               cancelled     = false;
 
     /**
      * Instantiate a read task.
      */
     public THLParallelReadTask(int taskId, THL thl, Partitioner partitioner,
-            AtomicCounter headSeqnoCounter, int maxSize)
+            AtomicCounter headSeqnoCounter, int maxSize, int maxControlEvents)
     {
         this.taskId = taskId;
         this.thl = thl;
         this.partitioner = partitioner;
         this.headSeqnoCounter = headSeqnoCounter;
+        this.maxControlEvents = maxControlEvents;
         this.eventQueue = new LinkedBlockingQueue<ReplEvent>(maxSize);
-        this.controlQueue = new LinkedBlockingQueue<ReplControlEvent>(maxSize);
     }
 
     /**
@@ -110,7 +110,7 @@ public class THLParallelReadTask implements Runnable
      */
     public synchronized void setSeqno(long seqno)
     {
-        this.readSeqno = seqno;
+        this.startSeqno = seqno;
     }
 
     /**
@@ -120,18 +120,23 @@ public class THLParallelReadTask implements Runnable
     public synchronized void prepare(PluginContext context)
             throws THLException, InterruptedException
     {
+        // Set up the read queue.
+        this.readQueue = new THLParallelReadQueue(eventQueue, maxControlEvents,
+                startSeqno);
+
         // Connect to the log and seek to the current record.
         connection = thl.connect(true);
-        if (!connection.seek(readSeqno))
+        if (!connection.seek(startSeqno))
         {
             throw new THLException(
                     "Unable to locate starting seqno in log: seqno="
-                            + readSeqno + " store=" + thl.getName()
+                            + startSeqno + " store=" + thl.getName()
                             + " taskId=" + taskId);
         }
 
         // Add a read filter that will accept only events that are in this
-        // partition.
+        // partition. We use an inner class so we can access the partitioner
+        // and task id easily.
         LogEventReadFilter filter = new LogEventReadFilter()
         {
             public boolean accept(LogEventReplReader reader)
@@ -141,7 +146,7 @@ public class THLParallelReadTask implements Runnable
                         reader.getSeqno(), reader.getFragno(),
                         reader.isLastFrag(), reader.getSourceId(),
                         reader.getEpochNumber(), reader.getEventId(),
-                        reader.getShardId());
+                        reader.getShardId(), new Timestamp(reader.getSourceTStamp()));
                 PartitionerResponse response;
                 try
                 {
@@ -203,8 +208,8 @@ public class THLParallelReadTask implements Runnable
         {
             connection.release();
             connection = null;
-            controlQueue.clear();
             eventQueue.clear();
+            readQueue.release();
         }
     }
 
@@ -215,91 +220,50 @@ public class THLParallelReadTask implements Runnable
     public void run()
     {
         // Connect to store.
+        long readSeqno = startSeqno;
         try
         {
             while (!cancelled)
             {
-                // Check for a new control event.
-                if (nextControlSeqno == Long.MAX_VALUE)
+                // Read next event from the log.
+                THLEvent thlEvent = connection.next();
+                readSeqno = thlEvent.getSeqno();
+                highWaterMark.set(readSeqno);
+
+                // If we do not want it, just go to the next event. This
+                // would be null if the read filter discarded the event due
+                // to it being in another partition.
+                ReplDBMSEvent replDBMSEvent = (ReplDBMSEvent) thlEvent
+                        .getReplEvent();
+                if (replDBMSEvent == null)
                 {
-                    ReplEvent controlEvent = controlQueue.peek();
-                    if (controlEvent != null)
-                    {
-                        nextControlSeqno = controlEvent.getSeqno();
-                        if (logger.isDebugEnabled())
-                        {
-                            logger.debug("Detected pending control event:  taskId="
-                                    + taskId + " seqno=" + nextControlSeqno);
-                        }
-                    }
+                    discardCount.incrementAndGet();
+                    readQueue.sync(thlEvent.getSeqno(), thlEvent.getLastFrag());
+                    continue;
                 }
 
-                // If there is a pending control event, we know we want to
-                // grab that, provided we are not in a fragmented transaction.
-                // Otherwise try to get an event from the log.
-                if (nextControlSeqno <= readSeqno
-                        && !this.inFragmentedTransaction)
+                // Discard empty events. These should not be common.
+                DBMSEvent dbmsEvent = replDBMSEvent.getDBMSEvent();
+                if (dbmsEvent == null | dbmsEvent instanceof DBMSEmptyEvent
+                        || dbmsEvent.getData().size() == 0)
                 {
-                    // We know we want this event, so just grab it.
-                    ReplControlEvent replEvent = controlQueue.take();
-                    readSeqno = replEvent.getSeqno();
-
-                    // Add to queue.
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Adding control event to parallel queue:  taskId="
-                                + taskId
-                                + " seqno="
-                                + nextControlSeqno
-                                + " type=" + replEvent.getEventType());
-                    }
-                    eventQueue.put(replEvent);
-
-                    // Reset pending control event.
-                    nextControlSeqno = Long.MAX_VALUE;
+                    discardCount.incrementAndGet();
+                    readQueue.sync(thlEvent.getSeqno(), thlEvent.getLastFrag());
+                    continue;
                 }
-                else
+
+                // Ensure it is safe to process this value.
+                headSeqnoCounter
+                        .waitSeqnoGreaterEqual(replDBMSEvent.getSeqno());
+
+                // Add to queue.
+                if (logger.isDebugEnabled())
                 {
-                    // If we don't have a control event, read the next event
-                    // from the log.
-                    THLEvent thlEvent = connection.next();
-                    readSeqno = thlEvent.getSeqno();
-                    inFragmentedTransaction = !thlEvent.getLastFrag();
-                    highWaterMark.set(readSeqno);
-
-                    // If we do not want it, just go to the next event. This
-                    // would be null if the read filter discarded the event due
-                    // to it being in another partition.
-                    ReplDBMSEvent replDBMSEvent = (ReplDBMSEvent) thlEvent
-                            .getReplEvent();
-                    if (replDBMSEvent == null)
-                    {
-                        discardCount.incrementAndGet();
-                        continue;
-                    }
-
-                    // Discard empty events. These should not be common.
-                    DBMSEvent dbmsEvent = replDBMSEvent.getDBMSEvent();
-                    if (dbmsEvent == null | dbmsEvent instanceof DBMSEmptyEvent
-                            || dbmsEvent.getData().size() == 0)
-                    {
-                        discardCount.incrementAndGet();
-                        continue;
-                    }
-
-                    // Ensure it is safe to process this value.
-                    headSeqnoCounter.waitSeqnoGreaterEqual(replDBMSEvent
-                            .getSeqno());
-
-                    // Add to queue.
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Adding event to parallel queue:  taskId="
-                                + taskId + " seqno=" + replDBMSEvent.getSeqno()
-                                + " fragno=" + replDBMSEvent.getFragno());
-                    }
-                    eventQueue.put(replDBMSEvent);
+                    logger.debug("Adding event to parallel queue:  taskId="
+                            + taskId + " seqno=" + replDBMSEvent.getSeqno()
+                            + " fragno=" + replDBMSEvent.getFragno());
                 }
+                readQueue.post(replDBMSEvent);
             }
         }
         catch (InterruptedException e)
@@ -366,15 +330,12 @@ public class THLParallelReadTask implements Runnable
         return eventQueue.peek();
     }
 
-    // Inserts a control event in local queue.
+    /**
+     * Inserts a control event.
+     */
     public void putControlEvent(ReplControlEvent controlEvent)
             throws InterruptedException
     {
-        synchronized (eventQueue)
-        {
-            // See if we need to put the control event directly in the event
-            // queue.
-            controlQueue.put(controlEvent);
-        }
+        readQueue.post(controlEvent);
     }
 }

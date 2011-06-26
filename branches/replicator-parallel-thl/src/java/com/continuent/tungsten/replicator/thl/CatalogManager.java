@@ -147,7 +147,8 @@ public class CatalogManager
         // Recreate header data.
         ReplDBMSHeaderData header = new ReplDBMSHeaderData(event.getSeqno(),
                 event.getFragno(), event.getLastFrag(), event.getSourceId(),
-                event.getEpochNumber(), event.getEventId(), event.getShardId());
+                event.getEpochNumber(), event.getEventId(), event.getShardId(),
+                event.getSourceTstamp());
         long applyLatency = (System.currentTimeMillis() - event
                 .getSourceTstamp().getTime()) / 1000;
         commitSeqnoTable.updateLastCommitSeqno(taskId, header, applyLatency);

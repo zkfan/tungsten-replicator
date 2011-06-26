@@ -220,7 +220,7 @@ public class THLStoreApplier implements Applier
                                 return (ReplDBMSEvent) replEvent;
                             else if (replEvent instanceof ReplControlEvent)
                                 return ((ReplControlEvent) replEvent)
-                                        .getEvent();
+                                        .getHeader();
                             else
                             {
                                 // Should be unreachable.
@@ -246,8 +246,8 @@ public class THLStoreApplier implements Applier
                 conn.release();
             }
         }
-        
-        // If we get here, there's nothing to find.  Return null. 
+
+        // If we get here, there's nothing to find. Return null.
         return null;
     }
 }

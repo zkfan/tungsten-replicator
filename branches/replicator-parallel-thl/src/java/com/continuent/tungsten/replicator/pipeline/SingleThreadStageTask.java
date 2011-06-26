@@ -157,7 +157,7 @@ public class SingleThreadStageTask implements Runnable
         runTask();
 
         logInfo("Terminating processing for stage", null);
-        ReplDBMSEvent lastEvent = stage.getProgressTracker()
+        ReplDBMSHeader lastEvent = stage.getProgressTracker()
                 .getLastProcessedEvent(taskId);
         if (lastEvent != null)
         {
@@ -511,7 +511,7 @@ public class SingleThreadStageTask implements Runnable
         if (replEvent instanceof ReplControlEvent)
         {
             ReplControlEvent controlEvent = (ReplControlEvent) replEvent;
-            header = controlEvent.getEvent();
+            header = controlEvent.getHeader();
         }
         else if (replEvent instanceof ReplDBMSEvent)
         {

@@ -41,7 +41,7 @@ import com.continuent.tungsten.replicator.applier.RawApplier;
 import com.continuent.tungsten.replicator.conf.ReplicatorMonitor;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntime;
 import com.continuent.tungsten.replicator.dbms.StatementData;
-import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.extractor.DummyExtractor;
 import com.continuent.tungsten.replicator.extractor.ExtractorWrapper;
 import com.continuent.tungsten.replicator.management.MockOpenReplicatorContext;
@@ -330,9 +330,9 @@ public class PipelineTest extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Test for successfully applied and extracted sequence numbers.
-        Future<ReplDBMSEvent> future = pipeline
+        Future<ReplDBMSHeader> future = pipeline
                 .watchForAppliedSequenceNumber(9);
-        ReplDBMSEvent matchingEvent = future.get(3, TimeUnit.SECONDS);
+        ReplDBMSHeader matchingEvent = future.get(3, TimeUnit.SECONDS);
         assertTrue("Applied sequence number matches",
                 matchingEvent.getSeqno() >= 9);
         assertTrue("Applied seqnence number not higher",
@@ -402,9 +402,9 @@ public class PipelineTest extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Test for successfully applied and extracted sequence numbers.
-        Future<ReplDBMSEvent> future = pipeline
+        Future<ReplDBMSHeader> future = pipeline
                 .watchForAppliedSequenceNumber(9);
-        ReplDBMSEvent matchingEvent = future.get(2, TimeUnit.SECONDS);
+        ReplDBMSHeader matchingEvent = future.get(2, TimeUnit.SECONDS);
         assertEquals("Applied sequence number matches", 9,
                 matchingEvent.getSeqno());
 
@@ -440,8 +440,8 @@ public class PipelineTest extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Wait for and verify events.
-        Future<ReplDBMSEvent> wait = pipeline.watchForAppliedSequenceNumber(9);
-        ReplDBMSEvent lastEvent = wait.get(10, TimeUnit.SECONDS);
+        Future<ReplDBMSHeader> wait = pipeline.watchForAppliedSequenceNumber(9);
+        ReplDBMSHeader lastEvent = wait.get(10, TimeUnit.SECONDS);
         assertEquals("Expected 10 sequence numbers", 9, lastEvent.getSeqno());
 
         // Confirm we have 30x2 statements, i.e., two statements for each
@@ -480,9 +480,9 @@ public class PipelineTest extends TestCase
         da.setStoreAppliedEvents(false);
 
         // Test for successfully applied and extracted sequence numbers.
-        Future<ReplDBMSEvent> future = pipeline
+        Future<ReplDBMSHeader> future = pipeline
                 .watchForAppliedSequenceNumber(maxEvents - 1);
-        ReplDBMSEvent matchingEvent = future.get(600, TimeUnit.SECONDS);
+        ReplDBMSHeader matchingEvent = future.get(600, TimeUnit.SECONDS);
         assertEquals("Applied sequence number matches", maxEvents - 1,
                 matchingEvent.getSeqno());
 

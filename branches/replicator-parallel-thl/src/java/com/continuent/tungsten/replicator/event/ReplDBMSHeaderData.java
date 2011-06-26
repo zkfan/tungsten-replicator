@@ -22,6 +22,8 @@
 
 package com.continuent.tungsten.replicator.event;
 
+import java.sql.Timestamp;
+
 /**
  * An implementation of replicator header information used to track position.
  * 
@@ -30,19 +32,21 @@ package com.continuent.tungsten.replicator.event;
  */
 public class ReplDBMSHeaderData implements ReplDBMSHeader
 {
-    private final long    seqno;
-    private final short   fragno;
-    private final boolean lastFrag;
-    private final String  sourceId;
-    private final long    epochNumber;
-    private final String  eventId;
-    private final String  shardId;
+    private final long      seqno;
+    private final short     fragno;
+    private final boolean   lastFrag;
+    private final String    sourceId;
+    private final long      epochNumber;
+    private final String    eventId;
+    private final String    shardId;
+    private final Timestamp extractedTstamp;
 
     /**
      * Create header instance from component parts.
      */
     public ReplDBMSHeaderData(long seqno, short fragno, boolean lastFrag,
-            String sourceId, long epochNumber, String eventId, String shardId)
+            String sourceId, long epochNumber, String eventId, String shardId,
+            Timestamp extractedTstamp)
     {
         this.seqno = seqno;
         this.fragno = fragno;
@@ -51,9 +55,10 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
         this.epochNumber = epochNumber;
         this.eventId = eventId;
         this.shardId = shardId;
+        this.extractedTstamp = extractedTstamp;
     }
 
-    public ReplDBMSHeaderData(ReplDBMSEvent event)
+    public ReplDBMSHeaderData(ReplDBMSHeader event)
     {
         this.seqno = event.getSeqno();
         this.fragno = event.getFragno();
@@ -62,6 +67,7 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
         this.epochNumber = event.getEpochNumber();
         this.eventId = event.getEventId();
         this.shardId = event.getShardId();
+        this.extractedTstamp = event.getExtractedTstamp();
     }
 
     public long getSeqno()
@@ -93,9 +99,14 @@ public class ReplDBMSHeaderData implements ReplDBMSHeader
     {
         return sourceId;
     }
-    
+
     public String getShardId()
     {
         return shardId;
+    }
+
+    public Timestamp getExtractedTstamp()
+    {
+        return extractedTstamp;
     }
 }

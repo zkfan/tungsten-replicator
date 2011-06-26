@@ -43,6 +43,7 @@ import com.continuent.tungsten.replicator.dbms.DBMSData;
 import com.continuent.tungsten.replicator.dbms.StatementData;
 import com.continuent.tungsten.replicator.event.DBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
 import com.continuent.tungsten.replicator.extractor.DummyExtractor;
 import com.continuent.tungsten.replicator.management.MockOpenReplicatorContext;
@@ -84,8 +85,8 @@ public class TestTHL2 extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Wait for and verify events.
-        Future<ReplDBMSEvent> wait = pipeline.watchForAppliedSequenceNumber(9);
-        ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+        Future<ReplDBMSHeader> wait = pipeline.watchForAppliedSequenceNumber(9);
+        ReplDBMSHeader lastEvent = wait.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 server events", 9, lastEvent.getSeqno());
 
         Store thl = pipeline.getStore("thl");
@@ -178,17 +179,17 @@ public class TestTHL2 extends TestCase
         clientPipeline.start(new EventDispatcher());
 
         // Wait for both pipelines to finish.
-        Future<ReplDBMSEvent> waitServer = serverPipeline
+        Future<ReplDBMSHeader> waitServer = serverPipeline
                 .watchForAppliedSequenceNumber(9);
-        Future<ReplDBMSEvent> waitClient = clientPipeline
+        Future<ReplDBMSHeader> waitClient = clientPipeline
                 .watchForAppliedSequenceNumber(9);
 
         logger.info("Waiting for server pipeline to clear");
-        ReplDBMSEvent lastMasterEvent = waitServer.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastMasterEvent = waitServer.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 server events", 9, lastMasterEvent.getSeqno());
 
         logger.info("Waiting for client pipeline to clear");
-        ReplDBMSEvent lastClientEvent = waitClient.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastClientEvent = waitClient.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 client events", 9, lastClientEvent.getSeqno());
 
         // Ensure each THL contains expected number of events.
@@ -266,17 +267,17 @@ public class TestTHL2 extends TestCase
         clientPipeline.start(new EventDispatcher());
 
         // Wait for both pipelines to finish.
-        Future<ReplDBMSEvent> waitServer = serverPipeline
+        Future<ReplDBMSHeader> waitServer = serverPipeline
                 .watchForAppliedSequenceNumber(9);
-        Future<ReplDBMSEvent> waitClient = clientPipeline
+        Future<ReplDBMSHeader> waitClient = clientPipeline
                 .watchForAppliedSequenceNumber(9);
 
         logger.info("Waiting for server pipeline to clear");
-        ReplDBMSEvent lastMasterEvent = waitServer.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastMasterEvent = waitServer.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 server events", 9, lastMasterEvent.getSeqno());
 
         logger.info("Waiting for client pipeline to clear");
-        ReplDBMSEvent lastClientEvent = waitClient.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastClientEvent = waitClient.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 client events", 9, lastClientEvent.getSeqno());
 
         // Ensure THL contains expected number of events.
@@ -332,10 +333,10 @@ public class TestTHL2 extends TestCase
         pipeline1.start(new EventDispatcher());
 
         // Wait for pipeline to finish.
-        Future<ReplDBMSEvent> wait1 = pipeline1
+        Future<ReplDBMSHeader> wait1 = pipeline1
                 .watchForAppliedSequenceNumber(9);
         logger.info("Waiting for pipeline #1 to clear");
-        ReplDBMSEvent lastEvent1 = wait1.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastEvent1 = wait1.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 events", 9, lastEvent1.getSeqno());
 
         // Shut down first pipeline.
@@ -352,10 +353,10 @@ public class TestTHL2 extends TestCase
         pipeline2.start(new EventDispatcher());
 
         // Wait for pipeline to finish. It should get to event #19.
-        Future<ReplDBMSEvent> wait2 = pipeline2
+        Future<ReplDBMSHeader> wait2 = pipeline2
                 .watchForAppliedSequenceNumber(19);
         logger.info("Waiting for pipeline #2 to clear");
-        ReplDBMSEvent lastEvent2 = wait2.get(5, TimeUnit.SECONDS);
+        ReplDBMSHeader lastEvent2 = wait2.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 20 events", 19, lastEvent2.getSeqno());
 
         // Ensure THL contains expected number of events.
@@ -417,8 +418,8 @@ public class TestTHL2 extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Wait for and verify events.
-        Future<ReplDBMSEvent> wait = pipeline.watchForAppliedSequenceNumber(9);
-        ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+        Future<ReplDBMSHeader> wait = pipeline.watchForAppliedSequenceNumber(9);
+        ReplDBMSHeader lastEvent = wait.get(5, TimeUnit.SECONDS);
         assertEquals("Expected 10 server events", 9, lastEvent.getSeqno());
 
         Store thl = pipeline.getStore("thl");
@@ -473,9 +474,9 @@ public class TestTHL2 extends TestCase
             queue.put(e);
 
             // Now wait for it.
-            Future<ReplDBMSEvent> wait = pipeline
+            Future<ReplDBMSHeader> wait = pipeline
                     .watchForAppliedSequenceNumber(i);
-            ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+            ReplDBMSHeader lastEvent = wait.get(5, TimeUnit.SECONDS);
             assertEquals("Expected event we put in", i, lastEvent.getSeqno());
         }
 
@@ -493,8 +494,8 @@ public class TestTHL2 extends TestCase
         pipeline.start(new EventDispatcher());
 
         // Feed events into the pipeline and confirm they reach the other side.
-        // We have a sleep to simulate not getting events into the THL for a 
-        // while.  
+        // We have a sleep to simulate not getting events into the THL for a
+        // while.
         Thread.sleep(1000);
         queue = (InMemoryQueueStore) pipeline.getStore("queue");
         for (int i = 10; i < 20; i++)
@@ -506,9 +507,9 @@ public class TestTHL2 extends TestCase
             queue.put(e);
 
             // Now wait for it.
-            Future<ReplDBMSEvent> wait = pipeline
+            Future<ReplDBMSHeader> wait = pipeline
                     .watchForAppliedSequenceNumber(i);
-            ReplDBMSEvent lastEvent = wait.get(5, TimeUnit.SECONDS);
+            ReplDBMSHeader lastEvent = wait.get(5, TimeUnit.SECONDS);
             assertEquals("Expected event we put in", i, lastEvent.getSeqno());
         }
 

@@ -477,7 +477,7 @@ public class THL implements Store
                             if (event instanceof ReplDBMSEvent)
                                 return (ReplDBMSEvent) event;
                             else if (event instanceof ReplControlEvent)
-                                return ((ReplControlEvent) event).getEvent();
+                                return ((ReplControlEvent) event).getHeader();
                         }
                     }
 

@@ -23,6 +23,7 @@
 package com.continuent.tungsten.replicator.thl.log;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 
 import org.apache.log4j.Logger;
 
@@ -273,15 +274,35 @@ public class LogConnection
         return (pendingEvent != null);
     }
 
-    // Deserialize the event we just found.
+    // Deserialize the event we just found. This takes into consideration
+    // the read filter, if present.
     private THLEvent deserialize(LogRecord logRecord) throws THLException
     {
         LogEventReplReader eventReader = new LogEventReplReader(logRecord,
                 eventSerializer, doChecksum);
-        THLEvent event = eventReader.deserializeEvent();
+        THLEvent event;
+
+        // If there is no read filter or if the filter asks us to accept, then
+        // deserialize fully. Otherwise generate a THLEvent from the header
+        // information only.
+        if (readFilter == null || readFilter.accept(eventReader))
+        {
+            event = eventReader.deserializeEvent();
+        }
+        else
+        {
+            event = new THLEvent(eventReader.getSeqno(),
+                    eventReader.getFragno(), eventReader.isLastFrag(),
+                    eventReader.getSourceId(),
+                    (short) THLEvent.REPL_DBMS_EVENT,
+                    eventReader.getEpochNumber(), new Timestamp(
+                            System.currentTimeMillis()), new Timestamp(
+                            eventReader.getSourceTStamp()), null,
+                    eventReader.getEventId(), eventReader.getShardId(), null);
+        }
+
         eventReader.done();
         return event;
-
     }
 
     /**
@@ -407,16 +428,7 @@ public class LogConnection
                 byte recordType = bytes[0];
                 if (recordType == LogRecord.EVENT_REPL)
                 {
-                    LogEventReplReader eventReader = new LogEventReplReader(
-                            logRecord, eventSerializer, doChecksum);
-
-                    // Found the event. If there is no read filter
-                    // or if the filter asks us to accept, then deserialize
-                    // fully.
-                    if (readFilter == null || readFilter.accept(eventReader))
-                    {
-                        event = eventReader.deserializeEvent();
-                    }
+                    event = deserialize(logRecord);
                     break;
                 }
                 else if (recordType == LogRecord.EVENT_ROTATE)

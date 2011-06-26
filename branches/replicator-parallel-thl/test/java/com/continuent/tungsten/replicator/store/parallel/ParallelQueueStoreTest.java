@@ -20,7 +20,6 @@
  * Contributor(s):
  */
 
-
 package com.continuent.tungsten.replicator.store.parallel;
 
 import java.io.File;
@@ -43,6 +42,7 @@ import com.continuent.tungsten.replicator.dbms.StatementData;
 import com.continuent.tungsten.replicator.event.DBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplControlEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplEvent;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
 import com.continuent.tungsten.replicator.management.MockOpenReplicatorContext;
@@ -60,8 +60,7 @@ import com.continuent.tungsten.replicator.util.SeqnoWatchPredicate;
  */
 public class ParallelQueueStoreTest extends TestCase
 {
-    private static Logger logger = Logger
-                                         .getLogger(ParallelQueueStoreTest.class);
+    private static Logger logger = Logger.getLogger(ParallelQueueStoreTest.class);
 
     /**
      * Setup.
@@ -84,15 +83,15 @@ public class ParallelQueueStoreTest extends TestCase
     }
 
     /**
-     * Confirm that we can setup of a parallel queue with a default partition
-     * size of 1.
+     * Confirm that we can set up a parallel queue with a default partition size
+     * of 1.
      */
     public void testSinglePartition() throws Exception
     {
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.configure(context);
         pqs.prepare(context);
@@ -109,8 +108,8 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.setPartitions(12);
         pqs.setMaxSize(2);
@@ -140,11 +139,11 @@ public class ParallelQueueStoreTest extends TestCase
         {
             int partId = i % 12;
             ReplDBMSEvent event1 = (ReplDBMSEvent) pqs.peek(partId);
-            assertEquals("First event has same seqno as partition", i, event1
-                    .getSeqno());
+            assertEquals("First event has same seqno as partition", i,
+                    event1.getSeqno());
             ReplDBMSEvent event2 = (ReplDBMSEvent) pqs.get(partId);
-            assertEquals("First event has same seqno as partition", i, event2
-                    .getSeqno());
+            assertEquals("First event has same seqno as partition", i,
+                    event2.getSeqno());
         }
 
         // Ensure queue is empty.
@@ -167,8 +166,8 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.setPartitions(3);
         pqs.setMaxSize(10);
@@ -203,7 +202,7 @@ public class ParallelQueueStoreTest extends TestCase
                 if (next instanceof ReplDBMSEvent)
                     curSeqno = ((ReplDBMSEvent) next).getSeqno();
                 else if (next instanceof ReplControlEvent)
-                    curSeqno = ((ReplControlEvent) next).getEvent().getSeqno();
+                    curSeqno = ((ReplControlEvent) next).getHeader().getSeqno();
                 else
                     throw new Exception("Unexpected event type: "
                             + next.getClass().toString());
@@ -233,8 +232,8 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.setPartitions(3);
         pqs.setMaxSize(10);
@@ -275,7 +274,7 @@ public class ParallelQueueStoreTest extends TestCase
                     curSeqno = ((ReplDBMSEvent) next).getSeqno();
                 else if (next instanceof ReplControlEvent)
                 {
-                    curSeqno = ((ReplControlEvent) next).getEvent().getSeqno();
+                    curSeqno = ((ReplControlEvent) next).getHeader().getSeqno();
                     assertTrue("Control events must be on even seqnos only",
                             curSeqno % 2 == 0);
                 }
@@ -305,16 +304,22 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.setPartitions(4);
         pqs.setMaxSize(10);
         pqs.setSyncEnabled(false);
+        pqs.setPartitionerClass(ShardListPartitioner.class.getName());
+
+        // Configure and prepare our humble store.
+        pqs.configure(context);
+        pqs.prepare(context);
 
         // Set up a list partitioner that will send db0-2 to specific
         // partitions and all others to last partition.
-        ShardListPartitioner partitioner = new ShardListPartitioner();
+        ShardListPartitioner partitioner = (ShardListPartitioner) pqs
+                .getPartitioner();
         TungstenProperties partCfg = new TungstenProperties();
         partCfg.setString("db0", "0");
         partCfg.setString("db1", "1");
@@ -325,11 +330,6 @@ public class ParallelQueueStoreTest extends TestCase
         partCfg.store(cfgFos);
         cfgFos.close();
         partitioner.setShardMap(partCfgFile);
-        pqs.setPartitioner(partitioner);
-
-        // Configure and prepare our humble store.
-        pqs.configure(context);
-        pqs.prepare(context);
 
         // Load 6 events with assigned shard IDs.
         // Pre-load watch events for event numbered sequence numbers.
@@ -348,20 +348,20 @@ public class ParallelQueueStoreTest extends TestCase
         for (int i = 0; i < 3; i++)
         {
             ReplDBMSEvent event = (ReplDBMSEvent) pqs.get(i);
-            assertEquals("Sequence number must match partition", i, event
-                    .getSeqno());
-            assertEquals("Total store size after removing 1", storeSize--, pqs
-                    .getStoreSize());
+            assertEquals("Sequence number must match partition", i,
+                    event.getSeqno());
+            assertEquals("Total store size after removing 1", storeSize--,
+                    pqs.getStoreSize());
         }
 
         // Last partition should have 3 events from db3-5.
         for (int i = 3; i < 6; i++)
         {
             ReplDBMSEvent event = (ReplDBMSEvent) pqs.get(3);
-            assertEquals("Sequence number must match partition", i, event
-                    .getSeqno());
-            assertEquals("Total store size after removing 1", storeSize--, pqs
-                    .getStoreSize());
+            assertEquals("Sequence number must match partition", i,
+                    event.getSeqno());
+            assertEquals("Total store size after removing 1", storeSize--,
+                    pqs.getStoreSize());
         }
 
         pqs.release(context);
@@ -379,17 +379,23 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
         ParallelQueueStore pqs = new ParallelQueueStore();
         pqs.setPartitions(4);
         pqs.setMaxSize(10);
         pqs.setSyncEnabled(false);
+        pqs.setPartitionerClass(ShardListPartitioner.class.getName());
+
+        // Configure and prepare our humble store.
+        pqs.configure(context);
+        pqs.prepare(context);
 
         // Set up a list partitioner that will hash all shards but will treat
         // db0 as a critical partition. We'll also confirm the hashing
         // algorithm.
-        ShardListPartitioner partitioner = new ShardListPartitioner();
+        ShardListPartitioner partitioner = (ShardListPartitioner) pqs
+                .getPartitioner();
         TungstenProperties partCfg = new TungstenProperties();
         partCfg.setString("(critical)", "db0");
         File partCfgFile = File.createTempFile("part2", "properties");
@@ -398,10 +404,6 @@ public class ParallelQueueStoreTest extends TestCase
         cfgFos.close();
         partitioner.setShardMap(partCfgFile);
         pqs.setPartitioner(partitioner);
-
-        // Configure and prepare our humble store.
-        pqs.configure(context);
-        pqs.prepare(context);
 
         // Load 3 events with shard IDs and read them back out. We use this to
         // find out how the events get hashed by the partitioner.
@@ -437,8 +439,8 @@ public class ParallelQueueStoreTest extends TestCase
             pqs.put(0, event);
 
             // Read it out and confirm identity.
-            assertNotNull("Must see event in queue", pqs
-                    .peek(eventPartitions[p]));
+            assertNotNull("Must see event in queue",
+                    pqs.peek(eventPartitions[p]));
             ReplDBMSEvent event2 = (ReplDBMSEvent) pqs.get(eventPartitions[p]);
             assertNotNull("Must have found event again", event2);
             assertEquals("Sequence number must match", i, event2.getSeqno());
@@ -463,8 +465,8 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
 
         // Confirm sync events are generated at expected intervals.
         for (int syncInterval = 1; syncInterval < 10; syncInterval++)
@@ -478,8 +480,8 @@ public class ParallelQueueStoreTest extends TestCase
             pqs.configure(context);
             pqs.prepare(context);
             assertEquals("1 partition defined", 1, pqs.getPartitions());
-            assertEquals("Sync interval set", syncInterval, pqs
-                    .getSyncInterval());
+            assertEquals("Sync interval set", syncInterval,
+                    pqs.getSyncInterval());
             logger.info("Sync interval: " + syncInterval);
 
             // Write events to partitions.
@@ -508,7 +510,8 @@ public class ParallelQueueStoreTest extends TestCase
                 {
                     ReplEvent ctl = pqs.get(0);
                     assertTrue("Control event", ctl instanceof ReplControlEvent);
-                    ReplDBMSEvent event2 = ((ReplControlEvent) ctl).getEvent();
+                    ReplDBMSHeader event2 = ((ReplControlEvent) ctl)
+                            .getHeader();
                     assertEquals("Control event contains previous event",
                             event1.getSeqno(), event2.getSeqno());
                 }
@@ -531,8 +534,8 @@ public class ParallelQueueStoreTest extends TestCase
         // Configure and prepare store.
         TungstenProperties conf = generateConfig();
         PluginContext context = new ReplicatorRuntime(conf,
-                new MockOpenReplicatorContext(), ReplicatorMonitor
-                        .getInstance());
+                new MockOpenReplicatorContext(),
+                ReplicatorMonitor.getInstance());
 
         // Confirm sync events are generated at expected intervals.
         for (int queueCount = 1; queueCount < 10; queueCount++)
@@ -545,8 +548,8 @@ public class ParallelQueueStoreTest extends TestCase
             pqs.setSyncInterval(syncInterval);
             pqs.configure(context);
             pqs.prepare(context);
-            assertEquals("N partitions defined", queueCount, pqs
-                    .getPartitions());
+            assertEquals("N partitions defined", queueCount,
+                    pqs.getPartitions());
             logger.info("# of partitions: " + queueCount);
 
             // Write events to partitions.
@@ -575,7 +578,8 @@ public class ParallelQueueStoreTest extends TestCase
                 {
                     ReplEvent ctl = pqs.get(0);
                     assertTrue("Control event", ctl instanceof ReplControlEvent);
-                    ReplDBMSEvent event2 = ((ReplControlEvent) ctl).getEvent();
+                    ReplDBMSHeader event2 = ((ReplControlEvent) ctl)
+                            .getHeader();
                     assertEquals("Control event contains previous event",
                             event1.getSeqno(), event2.getSeqno());
                 }

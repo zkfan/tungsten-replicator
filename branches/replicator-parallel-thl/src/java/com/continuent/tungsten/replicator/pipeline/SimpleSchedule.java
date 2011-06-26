@@ -24,6 +24,7 @@ package com.continuent.tungsten.replicator.pipeline;
 
 import com.continuent.tungsten.replicator.event.ReplControlEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplEvent;
 
 /**
@@ -73,7 +74,7 @@ public class SimpleSchedule implements Schedule
                 return QUIT;
             else if (controlEvent.getEventType() == ReplControlEvent.SYNC)
             {
-                ReplDBMSEvent syncEvent = controlEvent.getEvent();
+                ReplDBMSHeader syncEvent = controlEvent.getHeader();
                 stage.getProgressTracker().setLastProcessedEvent(
                         task.getTaskId(), syncEvent);
                 return CONTINUE_NEXT;

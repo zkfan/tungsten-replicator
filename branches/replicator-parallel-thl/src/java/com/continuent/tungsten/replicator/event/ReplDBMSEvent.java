@@ -189,6 +189,15 @@ public class ReplDBMSEvent extends ReplEvent implements ReplDBMSHeader
     }
 
     /**
+     * Sets the shard ID. This can be assigned after the event is created.
+     */
+    public void setShardId(String shardId)
+    {
+        this.getDBMSEvent().setMetaDataOption(ReplOptionParams.SHARD_ID,
+                shardId);
+    }
+
+    /**
      * Returns the raw DBMS event containing SQL data.
      */
     public DBMSEvent getDBMSEvent()

@@ -25,7 +25,6 @@ package com.continuent.tungsten.replicator.thl;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
-import com.continuent.tungsten.replicator.event.ReplControlEvent;
 import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.event.ReplEvent;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
@@ -66,6 +65,7 @@ public class THLEvent implements Serializable
     private final Timestamp   processedTstamp;
     private String            comment;
     private final String      eventId;
+    private final String      shardId;
     private final ReplEvent   event;
 
     /**
@@ -87,6 +87,7 @@ public class THLEvent implements Serializable
         this.processedTstamp = null;
         this.comment = null;
         this.eventId = eventId;
+        this.shardId = event.getShardId();
         this.event = event;
     }
 
@@ -107,7 +108,8 @@ public class THLEvent implements Serializable
     public THLEvent(long seqno, short fragno, boolean lastFrag,
             String sourceId, short type, long epochNumber,
             Timestamp localEnqueueTstamp, Timestamp sourceTstamp,
-            Timestamp processedTstamp, String eventId, ReplEvent event)
+            Timestamp processedTstamp, String eventId, String shardId,
+            ReplEvent event)
     {
         this.seqno = seqno;
         this.fragno = fragno;
@@ -119,6 +121,7 @@ public class THLEvent implements Serializable
         this.sourceTstamp = sourceTstamp;
         this.processedTstamp = processedTstamp;
         this.eventId = eventId;
+        this.shardId = shardId;
         this.event = event;
     }
 
@@ -237,26 +240,10 @@ public class THLEvent implements Serializable
      */
     public String getShardId()
     {
-        // TODO: The shard ID should live in the THL event instead of requiring
-        // hacky code like the following.
-        if (event == null)
-        {
+        if (shardId == null)
             return ReplOptionParams.SHARD_ID_UNKNOWN;
-        }
-        else if (event instanceof ReplDBMSEvent)
-        {
-            return ((ReplDBMSEvent) event).getDBMSEvent()
-                    .getMetadataOptionValue(ReplOptionParams.SHARD_ID);
-        }
-        else if (event instanceof ReplControlEvent)
-        {
-            return ((ReplControlEvent) event).getEvent().getDBMSEvent()
-                    .getMetadataOptionValue(ReplOptionParams.SHARD_ID);
-        }
         else
-        {
-            return ReplOptionParams.SHARD_ID_UNKNOWN;
-        }
+            return shardId;
     }
 
     /**

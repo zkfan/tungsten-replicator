@@ -123,7 +123,7 @@ public class THLStoreExtractor implements Extractor
      * 
      * @see com.continuent.tungsten.replicator.extractor.Extractor#extract()
      */
-    public ReplDBMSEvent extract() throws ExtractorException,
+    public ReplEvent extract() throws ExtractorException,
             InterruptedException
     {
         // If we did not position for the first time yet, do so now.
@@ -167,11 +167,11 @@ public class THLStoreExtractor implements Extractor
             }
             else if (replEvent instanceof ReplControlEvent)
             {
-                ReplDBMSEvent replDbmsEvent = ((ReplControlEvent) replEvent)
-                        .getEvent();
-                seqno = replDbmsEvent.getSeqno();
-                fragno = replDbmsEvent.getFragno();
-                return replDbmsEvent;
+                ReplDBMSHeader replDbmsHeader = ((ReplControlEvent) replEvent)
+                        .getHeader();
+                seqno = replDbmsHeader.getSeqno();
+                fragno = replDbmsHeader.getFragno();
+                return replEvent;
             }
             else
             {

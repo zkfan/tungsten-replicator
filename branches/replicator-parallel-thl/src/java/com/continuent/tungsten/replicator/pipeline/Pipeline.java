@@ -41,7 +41,7 @@ import com.continuent.tungsten.replicator.EventDispatcher;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.applier.Applier;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntime;
-import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.extractor.Extractor;
 import com.continuent.tungsten.replicator.management.events.GoOfflineEvent;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
@@ -283,7 +283,7 @@ public class Pipeline implements ReplicatorPlugin
             throws InterruptedException, ReplicatorException
     {
         // Queue watches on all stages.
-        ArrayList<Future<ReplDBMSEvent>> taskShutdownFutures = new ArrayList<Future<ReplDBMSEvent>>();
+        ArrayList<Future<ReplDBMSHeader>> taskShutdownFutures = new ArrayList<Future<ReplDBMSHeader>>();
         for (int i = 0; i < stages.size(); i++)
         {
             taskShutdownFutures.add(stages.get(i)
@@ -304,7 +304,7 @@ public class Pipeline implements ReplicatorPlugin
             throws InterruptedException, ReplicatorException
     {
         // Queue watches on all stages.
-        ArrayList<Future<ReplDBMSEvent>> taskShutdownFutures = new ArrayList<Future<ReplDBMSEvent>>();
+        ArrayList<Future<ReplDBMSHeader>> taskShutdownFutures = new ArrayList<Future<ReplDBMSHeader>>();
         for (int i = 0; i < stages.size(); i++)
         {
             taskShutdownFutures.add(stages.get(i).watchForProcessedEventId(
@@ -324,7 +324,7 @@ public class Pipeline implements ReplicatorPlugin
             throws InterruptedException, ReplicatorException
     {
         // Queue watches on all stages.
-        ArrayList<Future<ReplDBMSEvent>> taskShutdownFutures = new ArrayList<Future<ReplDBMSEvent>>();
+        ArrayList<Future<ReplDBMSHeader>> taskShutdownFutures = new ArrayList<Future<ReplDBMSHeader>>();
         for (int i = 0; i < stages.size(); i++)
         {
             taskShutdownFutures.add(stages.get(i).watchForProcessedHeartbeat(
@@ -346,7 +346,7 @@ public class Pipeline implements ReplicatorPlugin
             throws InterruptedException, ReplicatorException
     {
         // Queue watches on all stages.
-        ArrayList<Future<ReplDBMSEvent>> taskShutdownFutures = new ArrayList<Future<ReplDBMSEvent>>();
+        ArrayList<Future<ReplDBMSHeader>> taskShutdownFutures = new ArrayList<Future<ReplDBMSHeader>>();
         for (int i = 0; i < stages.size(); i++)
         {
             taskShutdownFutures.add(stages.get(i).watchForProcessedTimestamp(
@@ -359,7 +359,7 @@ public class Pipeline implements ReplicatorPlugin
 
     // Enqueue a future to wait for task completion.
     private Future<Pipeline> scheduleWait(String name,
-            List<Future<ReplDBMSEvent>> taskFutures)
+            List<Future<ReplDBMSHeader>> taskFutures)
     {
         DeferredShutdownTask shutdownCallable = new DeferredShutdownTask(this,
                 taskFutures);
@@ -397,7 +397,7 @@ public class Pipeline implements ReplicatorPlugin
     }
 
     /** Returns the last event applied in the last stage. */
-    public ReplDBMSEvent getLastAppliedEvent()
+    public ReplDBMSHeader getLastAppliedEvent()
     {
         return stages.getLast().getProgressTracker().getMinLastEvent();
     }
@@ -510,7 +510,7 @@ public class Pipeline implements ReplicatorPlugin
      * @return Returns a watch on a corresponding event
      * @throws InterruptedException if cancelled
      */
-    public Future<ReplDBMSEvent> watchForExtractedSequenceNumber(long seqno)
+    public Future<ReplDBMSHeader> watchForExtractedSequenceNumber(long seqno)
             throws InterruptedException
     {
         return stages.getFirst().watchForProcessedSequenceNumber(seqno, false);
@@ -523,7 +523,7 @@ public class Pipeline implements ReplicatorPlugin
      * @return Returns a watch on a corresponding event
      * @throws InterruptedException if cancelled
      */
-    public Future<ReplDBMSEvent> watchForExtractedEventId(String eventId)
+    public Future<ReplDBMSHeader> watchForExtractedEventId(String eventId)
             throws InterruptedException
     {
         return stages.getFirst().watchForProcessedEventId(eventId, false);
@@ -536,7 +536,7 @@ public class Pipeline implements ReplicatorPlugin
      * @return Returns a future on the event that meets criterion
      * @throws InterruptedException if cancelled
      */
-    public Future<ReplDBMSEvent> watchForAppliedSequenceNumber(long seqno)
+    public Future<ReplDBMSHeader> watchForAppliedSequenceNumber(long seqno)
             throws InterruptedException
     {
         return stages.getLast().watchForProcessedSequenceNumber(seqno, false);
@@ -549,7 +549,7 @@ public class Pipeline implements ReplicatorPlugin
      * @return Returns a watch on a corresponding event
      * @throws InterruptedException if canceled
      */
-    public Future<ReplDBMSEvent> watchForAppliedEventId(String eventId)
+    public Future<ReplDBMSHeader> watchForAppliedEventId(String eventId)
             throws InterruptedException
     {
         return stages.getLast().watchForProcessedEventId(eventId, false);
@@ -564,7 +564,7 @@ public class Pipeline implements ReplicatorPlugin
      * @throws InterruptedException
      * @throws THLException
      */
-    public Future<ReplDBMSEvent> flush() throws InterruptedException,
+    public Future<ReplDBMSHeader> flush() throws InterruptedException,
             ReplicatorException
     {
         Extractor extractor = stages.getFirst().getExtractor0();
@@ -612,10 +612,10 @@ class DeferredShutdownTask implements Callable<Pipeline>
 {
     private static final Logger               logger = Logger.getLogger(DeferredShutdownTask.class);
     private final Pipeline                    pipeline;
-    private final List<Future<ReplDBMSEvent>> taskWaits;
+    private final List<Future<ReplDBMSHeader>> taskWaits;
 
     DeferredShutdownTask(Pipeline pipeline,
-            List<Future<ReplDBMSEvent>> taskWaits)
+            List<Future<ReplDBMSHeader>> taskWaits)
     {
         this.pipeline = pipeline;
         this.taskWaits = taskWaits;
@@ -633,9 +633,9 @@ class DeferredShutdownTask implements Callable<Pipeline>
         try
         {
             // Wait for tasks to hit the event on which we are waiting.
-            for (Future<ReplDBMSEvent> taskWait : taskWaits)
+            for (Future<ReplDBMSHeader> taskWait : taskWaits)
             {
-                ReplDBMSEvent event = taskWait.get();
+                ReplDBMSHeader event = taskWait.get();
                 if (logger.isDebugEnabled())
                 {
                     logger.debug("Reached event: " + event.getSeqno());

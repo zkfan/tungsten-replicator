@@ -103,7 +103,7 @@ public class LogRecordTest extends TestCase
         assertEquals("Checking epoch", 1, reader.getEpochNumber());
         assertEquals("Checking sourceId", "unittest", reader.getSourceId());
         assertEquals("Checking eventId", "dummy", reader.getEventId());
-        assertEquals("Checking shardId", "#DEFAULT", reader.getShardId());
+        assertEquals("Checking shardId", "#UNKNOWN", reader.getShardId());
         assertEquals("Checking source tstamp", inputEvent.getSourceTstamp(),
                 new Timestamp(reader.getSourceTStamp()));
 

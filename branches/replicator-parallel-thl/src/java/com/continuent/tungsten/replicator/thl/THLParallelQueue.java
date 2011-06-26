@@ -59,9 +59,10 @@ public class THLParallelQueue implements ParallelStore
 
     // Queue parameters.
     private String                    name;
-    private int                       maxSize             = 1;
+    private int                       maxSize             = 100;
+    private int                       maxControlEvents    = 1000;
     private int                       partitions          = 1;
-    private boolean                   syncEnabled         = true;
+    private boolean                   syncEnabled         = false;
     private int                       syncInterval        = 20000;
     private int                       maxCriticalSections = 10000;
     private String                    thlStoreName        = "thl";
@@ -93,29 +94,29 @@ public class THLParallelQueue implements ParallelStore
     }
 
     // Queue of pending critical sections.
-    private BlockingQueue<CriticalSection>                     criticalSections;
-    CriticalSection                                            pendingCriticalSection;
+    private BlockingQueue<CriticalSection>                      criticalSections;
+    CriticalSection                                             pendingCriticalSection;
 
     // Partitioner configuration variables.
-    private Partitioner                                        partitioner;
-    private String                                             partitionerClass   = SimplePartitioner.class
-                                                                                          .getName();
-    private long                                               transactionCount   = 0;
-    private long                                               serializationCount = 0;
-    private long                                               discardCount       = 0;
+    private Partitioner                                         partitioner;
+    private String                                              partitionerClass   = SimplePartitioner.class
+                                                                                           .getName();
+    private long                                                transactionCount   = 0;
+    private long                                                serializationCount = 0;
+    private long                                                discardCount       = 0;
 
     // Queue for predicates belonging to pending wait synchronization requests.
-    private LinkedBlockingQueue<WatchPredicate<ReplDBMSEvent>> watchPredicates;
+    private LinkedBlockingQueue<WatchPredicate<ReplDBMSHeader>> watchPredicates;
 
     // Flag to insert stop synchronization event at next transaction boundary.
-    private boolean                                            stopRequested      = false;
+    private boolean                                             stopRequested      = false;
 
     // Counter to force synchronization events at intervals so all queues remain
     // up-to-date.
-    private int                                                syncCounter        = 1;
+    private int                                                 syncCounter        = 1;
 
     // Control information for event serialization to support shard processing.
-    private int                                                criticalPartition  = -1;
+    private int                                                 criticalPartition  = -1;
 
     public String getName()
     {
@@ -328,8 +329,8 @@ public class THLParallelQueue implements ParallelStore
         if (event.getLastFrag() && watchPredicates.size() > 0)
         {
             // Scan for matches and add control events for each.
-            List<WatchPredicate<ReplDBMSEvent>> removeList = new ArrayList<WatchPredicate<ReplDBMSEvent>>();
-            for (WatchPredicate<ReplDBMSEvent> predicate : watchPredicates)
+            List<WatchPredicate<ReplDBMSHeader>> removeList = new ArrayList<WatchPredicate<ReplDBMSHeader>>();
+            for (WatchPredicate<ReplDBMSHeader> predicate : watchPredicates)
             {
                 if (predicate.match(event))
                 {
@@ -452,7 +453,7 @@ public class THLParallelQueue implements ParallelStore
 
         // Allocate queue for watch predicates.
         // TODO: Get this to work.
-        watchPredicates = new LinkedBlockingQueue<WatchPredicate<ReplDBMSEvent>>();
+        watchPredicates = new LinkedBlockingQueue<WatchPredicate<ReplDBMSHeader>>();
 
         // Allocate queue for critical sections.
         criticalSections = new LinkedBlockingQueue<CriticalSection>(
@@ -490,7 +491,7 @@ public class THLParallelQueue implements ParallelStore
         for (int i = 0; i < partitions; i++)
         {
             THLParallelReadTask readTask = new THLParallelReadTask(i, thl,
-                    partitioner, headSeqnoCounter, maxSize);
+                    partitioner, headSeqnoCounter, maxSize, maxControlEvents);
             readTasks.add(readTask);
             readTask.prepare(context);
         }
@@ -558,7 +559,7 @@ public class THLParallelQueue implements ParallelStore
      * 
      * @see com.continuent.tungsten.replicator.storage.ParallelStore#insertWatchSyncEvent(com.continuent.tungsten.replicator.util.WatchPredicate)
      */
-    public void insertWatchSyncEvent(WatchPredicate<ReplDBMSEvent> predicate)
+    public void insertWatchSyncEvent(WatchPredicate<ReplDBMSHeader> predicate)
             throws InterruptedException
     {
         this.watchPredicates.add(predicate);

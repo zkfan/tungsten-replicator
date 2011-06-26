@@ -48,7 +48,7 @@ import com.continuent.tungsten.replicator.event.ReplDBMSHeaderData;
  * is stored.</li>
  * <li>Slave - Slave must update trep_commit_seqno whenever an event is applied</li>
  * </ul>
- *
+ * 
  * @author <a href="mailto:robert.hodges@continuent.com">Robert Hodges</a>
  * @version 1.0
  */
@@ -71,6 +71,7 @@ public class CommitSeqnoTable
     private Column             commitSeqnoTableEpochNumber;
     private Column             commitSeqnoTableEventId;
     private Column             commitSeqnoTableAppliedLatency;
+    private Column             commitSeqnoTableExtractTimestamp;
     private Column             commitSeqnoTableUpdateTimestamp;
     private Column             commitSeqnoTableShardId;
 
@@ -106,6 +107,8 @@ public class CommitSeqnoTable
         commitSeqnoTableEventId = new Column("eventid", Types.VARCHAR, 128);
         commitSeqnoTableAppliedLatency = new Column("applied_latency",
                 Types.INTEGER);
+        commitSeqnoTableExtractTimestamp = new Column("extract_timestamp",
+                Types.TIMESTAMP);
         commitSeqnoTableUpdateTimestamp = new Column("update_timestamp",
                 Types.TIMESTAMP);
         commitSeqnoTableShardId = new Column("shard_id", Types.VARCHAR, 128);
@@ -120,6 +123,7 @@ public class CommitSeqnoTable
         commitSeqnoTable.AddColumn(commitSeqnoTableAppliedLatency);
         commitSeqnoTable.AddColumn(commitSeqnoTableUpdateTimestamp);
         commitSeqnoTable.AddColumn(commitSeqnoTableShardId);
+        commitSeqnoTable.AddColumn(commitSeqnoTableExtractTimestamp);
 
         Key pkey = new Key(Key.Primary);
         pkey.AddColumn(commitSeqnoTableTaskId);
@@ -140,7 +144,8 @@ public class CommitSeqnoTable
                 + commitSeqnoTableEpochNumber.getName() + "=?, "
                 + commitSeqnoTableEventId.getName() + "=?, "
                 + commitSeqnoTableAppliedLatency.getName() + "=?, "
-                + commitSeqnoTableUpdateTimestamp.getName() + "=? " + "WHERE "
+                + commitSeqnoTableExtractTimestamp.getName() + "=?, "
+                + commitSeqnoTableUpdateTimestamp.getName() + "=? "
                 + commitSeqnoTableShardId.getName() + "=? " + "WHERE "
                 + commitSeqnoTableTaskId.getName() + "=?");
 
@@ -244,7 +249,7 @@ public class CommitSeqnoTable
         {
             // Scan task positions.
             allSeqnosQuery = database
-                    .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id, task_id from "
+                    .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id, extract_timestamp, task_id from "
                             + schema + "." + TABLE_NAME);
             rs = allSeqnosQuery.executeQuery();
             while (rs.next())
@@ -327,9 +332,10 @@ public class CommitSeqnoTable
         long epochNumber = rs.getLong(5);
         String eventId = rs.getString(6);
         String shardId = rs.getString(7);
+        Timestamp extractTimestamp = rs.getTimestamp(8);
 
         return new ReplDBMSHeaderData(seqno, fragno, lastFrag, sourceId,
-                epochNumber, eventId, shardId);
+                epochNumber, eventId, shardId, extractTimestamp);
     }
 
     // Close a result set properly.
