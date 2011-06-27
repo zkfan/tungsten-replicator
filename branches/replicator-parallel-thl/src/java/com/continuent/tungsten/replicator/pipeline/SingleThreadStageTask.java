@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2010 Continuent Inc.
+ * Copyright (C) 2010-2011 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
  * Initial developer(s): Robert Hodges
- * Contributor(s):
+ * Contributor(s): Stephane Giron
  */
 
 package com.continuent.tungsten.replicator.pipeline;
@@ -379,7 +379,7 @@ public class SingleThreadStageTask implements Runnable
                             taskProgress.beginInterval();
                             applier.apply(new ReplDBMSFilteredEvent(
                                     firstFilteredEvent, lastFilteredEvent),
-                                    true, syncTHLWithExtractor);
+                                    true, false, syncTHLWithExtractor);
                             taskProgress.endApplyInterval();
                             firstFilteredEvent = null;
                             lastFilteredEvent = null;
@@ -407,14 +407,59 @@ public class SingleThreadStageTask implements Runnable
                     }
                 }
 
-                // Commit when :
+                boolean doRollback = false;
+                boolean unsafeForBlockCommit = event.getDBMSEvent()
+                        .getMetadataOptionValue(
+                                ReplOptionParams.UNSAFE_FOR_BLOCK_COMMIT) != null;
+
+                // Handle implicit commit, if next transaction is fragmented, if
+                // next transaction is a DDL or if next transaction rollbacks
+                if (event.getFragno() == 0 && !event.getLastFrag())
+                {
+                    // Starting a new fragmented transaction
+                    applier.commit();
+                    blockEventCount = 0;
+                }
+                else
+                {
+                    boolean isRollback = event.getDBMSEvent()
+                            .getMetadataOptionValue(ReplOptionParams.ROLLBACK) != null;
+                    if (event.getFragno() == 0 && isRollback)
+                    {
+                        // This is a transaction that rollbacks at the end :
+                        // commit previous work, but only if it is not a
+                        // fragmented transaction, as if it is fragmented
+                        // transaction, previous work was already committed
+                        // and the whole current transaction should be rolled
+                        // back
+                        applier.commit();
+                        blockEventCount = 0;
+                        doRollback = true;
+                    }
+                    else if (unsafeForBlockCommit)
+                    {
+                        // Commit previous work and force transaction to commit
+                        // afterwards.
+                        applier.commit();
+                        blockEventCount = 0;
+
+                    }
+
+                }
+
+                // Should commit when :
                 // 1. block commit is not used AND this is the last
                 // fragment of the transaction
                 // 2. (When maximum number of events is reached
                 // OR when queue is empty)
                 // AND this is the last fragment of the transaction
                 boolean doCommit = false;
-                if (usingBlockCommit)
+
+                if (unsafeForBlockCommit)
+                {
+                    doCommit = true;
+                }
+                else if (usingBlockCommit)
                 {
                     blockEventCount++;
                     if (event.getLastFrag()
@@ -440,7 +485,10 @@ public class SingleThreadStageTask implements Runnable
                                 + event.getFragno() + " doCommit=" + doCommit);
                     }
                     taskProgress.beginInterval();
-                    applier.apply(event, doCommit, syncTHLWithExtractor);
+                    // doCommit should be false if doRollback is true, but
+                    // anyway, enforcing this here by testing both values
+                    applier.apply(event, doCommit, doRollback,
+                            syncTHLWithExtractor);
                     taskProgress.endApplyInterval();
                 }
                 catch (ApplierException e)

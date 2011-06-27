@@ -106,11 +106,11 @@ public class ParallelQueueApplier implements ParallelApplier
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.applier.Applier#apply(com.continuent.tungsten.replicator.event.ReplDBMSEvent,
-     *      boolean, boolean)
+     *      boolean, boolean, boolean)
      */
-    public void apply(ReplDBMSEvent event, boolean doCommit, boolean syncTHL)
-            throws ReplicatorException, ConsistencyException,
-            InterruptedException
+    public void apply(ReplDBMSEvent event, boolean doCommit,
+            boolean doRollback, boolean syncTHL) throws ReplicatorException,
+            ConsistencyException, InterruptedException
     {
         parallelQueue.put(taskId, event);
     }

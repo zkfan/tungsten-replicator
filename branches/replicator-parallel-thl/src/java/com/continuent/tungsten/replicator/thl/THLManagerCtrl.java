@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2007-2010 Continuent Inc.
+ * Copyright (C) 2007-2011 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -401,8 +401,9 @@ public class THLManagerCtrl
         {
             if (sb.length() > 1)
                 sb.append(";");
-            sb.append(option.getOptionName()).append("=")
-                    .append(option.getOptionValue());
+            String value = option.getOptionValue();
+            sb.append(option.getOptionName()).append(
+                    (value != null && value.length() > 0 ? "=" + value : ""));
         }
         sb.append("]");
         println(stringBuilder, "- METADATA = " + sb.toString());

@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.database.Column;
 import com.continuent.tungsten.replicator.database.Database;
+import com.continuent.tungsten.replicator.database.GreenplumDatabase;
 import com.continuent.tungsten.replicator.database.Key;
 import com.continuent.tungsten.replicator.database.Table;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
@@ -54,9 +55,9 @@ import com.continuent.tungsten.replicator.event.ReplDBMSHeaderData;
  */
 public class CommitSeqnoTable
 {
-    private static Logger      logger     = Logger.getLogger(CommitSeqnoTable.class);
+    private static Logger      logger                   = Logger.getLogger(CommitSeqnoTable.class);
 
-    public static final String TABLE_NAME = "trep_commit_seqno";
+    public static final String TABLE_NAME               = "trep_commit_seqno";
 
     // Properties.
     private final String       schema;
@@ -74,6 +75,9 @@ public class CommitSeqnoTable
     private Column             commitSeqnoTableExtractTimestamp;
     private Column             commitSeqnoTableUpdateTimestamp;
     private Column             commitSeqnoTableShardId;
+
+    /* Greenplum specifics */
+    private String             GREENPLUM_DISTRIBUTED_BY = "greenplumn_id";
 
     private PreparedStatement  commitSeqnoUpdate;
     private PreparedStatement  lastSeqnoQuery;
@@ -107,11 +111,11 @@ public class CommitSeqnoTable
         commitSeqnoTableEventId = new Column("eventid", Types.VARCHAR, 128);
         commitSeqnoTableAppliedLatency = new Column("applied_latency",
                 Types.INTEGER);
-        commitSeqnoTableExtractTimestamp = new Column("extract_timestamp",
-                Types.TIMESTAMP);
         commitSeqnoTableUpdateTimestamp = new Column("update_timestamp",
                 Types.TIMESTAMP);
         commitSeqnoTableShardId = new Column("shard_id", Types.VARCHAR, 128);
+        commitSeqnoTableExtractTimestamp = new Column("extract_timestamp",
+                Types.TIMESTAMP);
 
         commitSeqnoTable.AddColumn(commitSeqnoTableTaskId);
         commitSeqnoTable.AddColumn(commitSeqnoTableSeqno);
@@ -125,13 +129,21 @@ public class CommitSeqnoTable
         commitSeqnoTable.AddColumn(commitSeqnoTableShardId);
         commitSeqnoTable.AddColumn(commitSeqnoTableExtractTimestamp);
 
+        if (database instanceof GreenplumDatabase)
+        {
+            // Add a serialized distribution column for the table.
+            Column commitSeqnoTableGreenplumId = new Column(
+                    GREENPLUM_DISTRIBUTED_BY, java.sql.Types.INTEGER);
+            commitSeqnoTable.AddColumn(commitSeqnoTableGreenplumId);
+        }
+
         Key pkey = new Key(Key.Primary);
         pkey.AddColumn(commitSeqnoTableTaskId);
         commitSeqnoTable.AddKey(pkey);
 
         // Prepare SQL.
         lastSeqnoQuery = database
-                .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id from "
+                .prepareStatement("SELECT seqno, fragno, last_frag, source_id, epoch_number, eventid, shard_id, extract_timestamp from "
                         + schema + "." + TABLE_NAME + " WHERE task_id=?");
 
         commitSeqnoUpdate = database.prepareStatement("UPDATE "
@@ -144,9 +156,9 @@ public class CommitSeqnoTable
                 + commitSeqnoTableEpochNumber.getName() + "=?, "
                 + commitSeqnoTableEventId.getName() + "=?, "
                 + commitSeqnoTableAppliedLatency.getName() + "=?, "
-                + commitSeqnoTableExtractTimestamp.getName() + "=?, "
-                + commitSeqnoTableUpdateTimestamp.getName() + "=? "
-                + commitSeqnoTableShardId.getName() + "=? " + "WHERE "
+                + commitSeqnoTableUpdateTimestamp.getName() + "=?, "
+                + commitSeqnoTableShardId.getName() + "=?, "
+                + commitSeqnoTableExtractTimestamp.getName() + "=? " + "WHERE "
                 + commitSeqnoTableTaskId.getName() + "=?");
 
         // Create the table if it does not exist.
@@ -154,6 +166,13 @@ public class CommitSeqnoTable
             logger.debug("Initializing " + TABLE_NAME + " table");
 
         database.createTable(commitSeqnoTable, false, tableType);
+
+        if (database instanceof GreenplumDatabase)
+        {
+            // Specify distribution column for the table.
+            ((GreenplumDatabase) database).setDistributedBy(schema,
+                    commitSeqnoTable.getName(), GREENPLUM_DISTRIBUTED_BY);
+        }
 
         // Check to see if we need to initialize data for this task ID.
         if (lastCommitSeqno(taskId) == null)
@@ -262,7 +281,7 @@ public class CommitSeqnoTable
                     hasCommonSeqno = false;
 
                 // Check for task 0.
-                int task_id = rs.getInt(8);
+                int task_id = rs.getInt(9);
                 if (task_id == 0)
                     hasTask0 = true;
             }
@@ -313,10 +332,12 @@ public class CommitSeqnoTable
         commitSeqnoUpdate.setString(6, header.getEventId());
         // Latency can go negative due to clock differences. Round up to 0.
         commitSeqnoUpdate.setLong(7, Math.abs(appliedLatency));
+        new Timestamp(System.currentTimeMillis());
         commitSeqnoUpdate.setTimestamp(8,
                 new Timestamp(System.currentTimeMillis()));
-        commitSeqnoUpdate.setInt(9, taskId);
-        commitSeqnoUpdate.setString(10, header.getShardId());
+        commitSeqnoUpdate.setString(9, header.getShardId());
+        commitSeqnoUpdate.setTimestamp(10, header.getExtractedTstamp());
+        commitSeqnoUpdate.setInt(11, taskId);
 
         commitSeqnoUpdate.executeUpdate();
     }

@@ -107,10 +107,11 @@ public class InMemoryMultiQueueApplier implements ParallelApplier
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.applier.Applier#apply(ReplDBMSEvent,
-     *      boolean, boolean)
+     *      boolean, boolean, boolean)
      */
-    public void apply(ReplDBMSEvent event, boolean doCommit, boolean syncTHL)
-            throws ApplierException, ConsistencyException, InterruptedException
+    public void apply(ReplDBMSEvent event, boolean doCommit,
+            boolean doRollback, boolean syncTHL) throws ApplierException,
+            ConsistencyException, InterruptedException
     {
         queueStore.put(taskId, event);
     }

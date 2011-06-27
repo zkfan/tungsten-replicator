@@ -118,10 +118,11 @@ public class THLStoreApplier implements Applier
      * {@inheritDoc}
      * 
      * @see com.continuent.tungsten.replicator.applier.Applier#apply(ReplDBMSEvent,
-     *      boolean, boolean)
+     *      boolean, boolean, boolean)
      */
-    public void apply(ReplDBMSEvent event, boolean doCommit, boolean syncTHL)
-            throws ApplierException, InterruptedException
+    public void apply(ReplDBMSEvent event, boolean doCommit,
+            boolean doRollback, boolean syncTHL) throws ApplierException,
+            InterruptedException
     {
         THLEvent thlEvent = new THLEvent(event.getEventId(), event);
         try
