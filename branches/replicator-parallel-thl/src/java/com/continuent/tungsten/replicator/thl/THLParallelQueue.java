@@ -62,9 +62,9 @@ public class THLParallelQueue implements ParallelStore
     private int                       maxSize             = 100;
     private int                       maxControlEvents    = 1000;
     private int                       partitions          = 1;
-    private boolean                   syncEnabled         = false;
-    private int                       syncInterval        = 20000;
-    private int                       maxCriticalSections = 10000;
+    private boolean                   syncEnabled         = true;
+    private int                       syncInterval        = 2000;
+    private int                       maxCriticalSections = 1000;
     private String                    thlStoreName        = "thl";
 
     // THL for which we are implementing a parallel queue.
@@ -247,6 +247,12 @@ public class THLParallelQueue implements ParallelStore
             throws InterruptedException, ReplicatorException
     {
         boolean needsSync = false;
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Received event: seqno=" + event.getSeqno()
+                    + " fragno=" + event.getFragno() + " lastFrag="
+                    + event.getLastFrag());
+        }
 
         // Update transaction count at end.
         if (event.getLastFrag())
@@ -286,7 +292,6 @@ public class THLParallelQueue implements ParallelStore
                 // Case 3: We are switching between critical sections. Enqueue
                 // previous critical section and start a new one.
                 criticalSections.put(pendingCriticalSection);
-                headSeqnoCounter.setSeqno(pendingCriticalSection.endSeqno);
                 pendingCriticalSection = new CriticalSection(
                         response.getPartition(), event.getSeqno(),
                         event.getSeqno());
@@ -297,7 +302,6 @@ public class THLParallelQueue implements ParallelStore
             if (pendingCriticalSection == null)
             {
                 // Case 4: Not in a critical section. Just advance the counter.
-                headSeqnoCounter.incrAndGetSeqno();
             }
             else
             {
@@ -306,9 +310,17 @@ public class THLParallelQueue implements ParallelStore
                 // counter.
                 criticalSections.put(pendingCriticalSection);
                 pendingCriticalSection = null;
-                headSeqnoCounter.setSeqno(pendingCriticalSection.endSeqno);
             }
         }
+
+        // Advance the head seqno counter. This allows all eligible threads to
+        // advance.
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Updating head seqno counter: seqno="
+                    + event.getSeqno());
+        }
+        headSeqnoCounter.setSeqno(event.getSeqno());
 
         // Record last event handled.
         lastInsertedEvent = event;
@@ -573,6 +585,7 @@ public class THLParallelQueue implements ParallelStore
     public TungstenProperties status()
     {
         TungstenProperties props = new TungstenProperties();
+        props.setLong("headSeqno", headSeqnoCounter.getSeqno());
         props.setLong("maxSize", maxSize);
         props.setLong("eventCount", transactionCount);
         props.setLong("discardCount", discardCount);
@@ -585,7 +598,7 @@ public class THLParallelQueue implements ParallelStore
         props.setInt("criticalPartition", criticalPartition);
         for (int i = 0; i < readTasks.size(); i++)
         {
-            props.setInt("store.queueSize." + i, readTasks.get(i).size());
+            props.setString("store." + i, readTasks.get(i).toString());
         }
         return props;
     }

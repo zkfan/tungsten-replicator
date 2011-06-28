@@ -64,7 +64,9 @@ public class THLParallelReadTask implements Runnable
     // Counters to coordinate queue operation.
     private AtomicCounter                  headSeqnoCounter;
     private AtomicLong                     highWaterMark = new AtomicLong(0);
+    private AtomicLong                     lowWaterMark  = new AtomicLong(0);
     private AtomicLong                     discardCount  = new AtomicLong(0);
+    private AtomicLong                     readCount     = new AtomicLong(0);
 
     // Ordered queue of events for clients.
     private final BlockingQueue<ReplEvent> eventQueue;
@@ -146,7 +148,8 @@ public class THLParallelReadTask implements Runnable
                         reader.getSeqno(), reader.getFragno(),
                         reader.isLastFrag(), reader.getSourceId(),
                         reader.getEpochNumber(), reader.getEventId(),
-                        reader.getShardId(), new Timestamp(reader.getSourceTStamp()));
+                        reader.getShardId(), new Timestamp(
+                                reader.getSourceTStamp()));
                 PartitionerResponse response;
                 try
                 {
@@ -229,6 +232,17 @@ public class THLParallelReadTask implements Runnable
                 THLEvent thlEvent = connection.next();
                 readSeqno = thlEvent.getSeqno();
                 highWaterMark.set(readSeqno);
+                if (lowWaterMark.get() == 0)
+                    lowWaterMark.set(readSeqno);
+                readCount.incrementAndGet();
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Read event from THL: seqno="
+                            + thlEvent.getSeqno() + " fragno="
+                            + thlEvent.getFragno() + " lastFrag="
+                            + thlEvent.getLastFrag() + " deserialized="
+                            + (thlEvent.getReplEvent() != null));
+                }
 
                 // If we do not want it, just go to the next event. This
                 // would be null if the read filter discarded the event due
@@ -239,6 +253,12 @@ public class THLParallelReadTask implements Runnable
                 {
                     discardCount.incrementAndGet();
                     readQueue.sync(thlEvent.getSeqno(), thlEvent.getLastFrag());
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Discarded null event: seqno="
+                                + thlEvent.getSeqno() + " fragno="
+                                + thlEvent.getFragno());
+                    }
                     continue;
                 }
 
@@ -248,6 +268,12 @@ public class THLParallelReadTask implements Runnable
                         || dbmsEvent.getData().size() == 0)
                 {
                     discardCount.incrementAndGet();
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Discarded empty event: seqno="
+                                + thlEvent.getSeqno() + " fragno="
+                                + thlEvent.getFragno());
+                    }
                     readQueue.sync(thlEvent.getSeqno(), thlEvent.getLastFrag());
                     continue;
                 }
@@ -337,5 +363,28 @@ public class THLParallelReadTask implements Runnable
             throws InterruptedException
     {
         readQueue.post(controlEvent);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    public String toString()
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append(this.getClass().getSimpleName());
+        sb.append(" task_id=").append(taskId);
+        sb.append(" thread_name=");
+        if (taskThread == null)
+            sb.append("null");
+        else
+            sb.append(taskThread.getName());
+        sb.append(" hi_seqno=").append(highWaterMark.get());
+        sb.append(" lo_seqno=").append(lowWaterMark.get());
+        sb.append(" read=").append(readCount);
+        sb.append(" discarded=").append(discardCount);
+        sb.append(" events=").append(eventQueue.size());
+        return sb.toString();
     }
 }

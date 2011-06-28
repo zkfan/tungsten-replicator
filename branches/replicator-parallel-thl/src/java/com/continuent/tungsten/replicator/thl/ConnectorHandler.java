@@ -183,7 +183,7 @@ public class ConnectorHandler implements ReplicatorPlugin, Runnable
             // Name the thread so that developers can see which source ID we
             // are serving.
             Thread.currentThread().setName(
-                    "ConnectorHandler: " + protocol.getClientSourceId());
+                    "connector-handler-" + protocol.getClientSourceId());
 
             // Loop until we are cancelled.
             while (!cancelled)
