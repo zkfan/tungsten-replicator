@@ -8,18 +8,96 @@ The Transaction History Log, or THL, provides persistent storage of transactions
 
 == Embedded Execution Model ==
 
+The THL functions as an embedded database within the replicator process.  It also runs inside the *thl* utility, which is a simple command-line tool to read the log.  The log files are protected by a file lock that permits multiple processes from writing to the log at the same time.  
+
+The THL data consist of immutable transaction records or "events" written in a series of log files.  A single thread  writes log records.  Any number of threads can read records.  
+
+== Java Class Structure == 
+
+The classes that implement the THL are spread out over the following packages.  
+
+|| *Package* || *Description ||
+|| com.continuent.tungsten.replicator.thl || Adapts THL to pipeline interfaces (e.g., Store, Extractor, Applier) and to implement THL server ||
+|| com.continuent.tungsten.replicator.thl.log || Log API and implementation classes ||
+|| com.continuent.tungsten.replicator.thl.protobuf || Generated classes to implement serialization of events to/from Protobuf messages ||
+|| com.continuent.tungsten.replicator.thl.serializer || Serialization adapter classes ||
+
+The Log API in package com.continuent.tungsten.replicator.thl.log is completely self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors. 
+
 == Log Organization ==
 
 === File Layout ===
 
+Log files are stored in a single log directory, which is specified by the THL logDir parameter.  The following listing shows typical log file contents: 
+
+{{{
+-rw-r--r-- 1 tungsten tungsten         0 2011-06-28 22:01 disklog.lck
+-rw-r--r-- 1 tungsten tungsten 100000231 2011-06-28 22:15 thl.data.0000000001
+-rw-r--r-- 1 tungsten tungsten 100006532 2011-06-28 22:58 thl.data.0000000002
+-rw-r--r-- 1 tungsten tungsten   9731148 2011-06-28 23:04 thl.data.0000000003
+}}}
+
+The disklog.lck is a lock file.  The THL code must get an exclusive lock on this file to write to the log.  Otherwise the THL can only read data.  The lock file is always present event if no process is using it.  If you delete the lock file by accident, the THL code will create a new one the next time you open the file.  
+
+Data files have the form thl.data.nnnnnnnnnn, where the n's increase monotonically with each new log file.  
+
 === Record Formats === 
+
+Data files consist of records, which in the current implementation come in three different flavors.  Record fields are stored in the 
+
+==== Header Record =====
+
+Each data file starts with a single header record that provides a magic number, version number, and previous log file sequence number.  
+
+|| *Name* || *Format* || *Description* ||
+|| magic_number || 4 bytes, int || Log file identifier (x'C00lCAFE') ||
+|| major_version || 2 bytes, short || x'0001', Major version of log format ||
+|| minor_version || 2 bytes, short || x'0001', Minor version of log format || 
+|| prev_seqno || 8 bytes, long ||Last seqno in previous log ||
+
+==== Event Record ====
+
+Event records contain a header followed by a serialized ReplDBMSEvent.   The record format is as follows.  
+
+|| *Name*        || *Format* || *Description* ||
+|| record_length || 4 bytes, int || Full length of record including record_length field ||
+|| record_type   || 1 byte || Event record type identifier (x'01') ||
+|| header_length || 4 bytes, unsigned int || Length of the event header.  (Not used but may be in future) ||
+|| seqno         || 8 bytes, unsigned long || Log sequence number || 
+|| fragno        || 2 bytes, unsigned short || Event fragment number ||
+|| last_frag     || 1 byte || x'01' or x'00' where x'01' denotes last fragment of event||
+|| epoch number  || 8 bytes, unsigned long || Event epoch number ||
+|| source_id     || null terminated UTF-8 string || Event source ID ||
+|| event_id      || null terminated UTF-8 string || Native DBMS event ID ||
+|| shard_id      || null terminated UTF-8 string || Name of the shard to which this event belongs ||
+|| tstamp        || 8 bytes, unsigned long || Time of commit in milliseconds since 1970 (standard Java timestamp format) ||
+|| data_length   || 4 bytes unsigned int || Length of serialized event data ||
+|| event         || Up to 2^32 - 1 bytes || Serialized Java object (e.g. ReplDBMSEvent) ||
+|| crc_method    || 1 byte || Method used to compute CRC where x'00' means no CRC and x'01' means CRC-32 ||
+|| crc           || 4 bytes, unsigned int || CRC of record excluding the CRC itself ||
+
+==== Log Rotation Record ====
+Log rotation records are written at the end of the file log file.  They are a signal to clients to switch to the next log file.  
+
+|| *Name*        || *Format* || *Description* ||
+|| record_length || 4 bytes, int || Full length of record including record_length field ||
+|| record_type   || 1 byte || Log rotation record type identifier (x'02') ||
+|| next_file_name || null terminated UTF-8 string || Name of the next log file ||
+|| crc_method    || 1 byte || Method used to compute CRC where x'00' means no CRC and x'01' means CRC-32 ||
+|| crc           || 4 bytes, unsigned int || CRC of record excluding the CRC itself ||
+
+=== Transaction Serialization ===
 
 === Indexing ===
 
-= Configuration and Management = 
+= Management = 
 
 == Configuration Parameters ==
 
 == 'thl' Utility ==
 
 = APIs = 
+
+= Development = 
+
+= Troubleshooting = 
