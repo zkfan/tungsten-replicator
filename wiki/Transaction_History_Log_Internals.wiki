@@ -18,18 +18,6 @@ The THL is a log and therefore differs from traditional databases in the followi
 
 In other respects the THL behaves much like a pocket DBMS such as Derby or SQLLite, albeit without using SQL.  THL storage is self-maintaining.  There is a simple cursor-like API to seek to a specific position and step through records.  
 
-== Java Class Structure == 
-
-The classes that implement the THL are spread out over the following packages.  
-
-|| *Package* || *Description ||
-|| com.continuent.tungsten.replicator.thl || Adapts THL to pipeline interfaces (e.g., Store, Extractor, Applier) and to implement THL server ||
-|| com.continuent.tungsten.replicator.thl.log || Log API and implementation classes ||
-|| com.continuent.tungsten.replicator.thl.protobuf || Generated classes to implement serialization of events to/from Protobuf messages ||
-|| com.continuent.tungsten.replicator.thl.serializer || Serialization adapter classes ||
-
-The Log API in package com.continuent.tungsten.replicator.thl.log is completely self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors. 
-
 == Log Organization ==
 
 === File Layout ===
@@ -47,9 +35,9 @@ The disklog.lck is a lock file.  The THL code must get an exclusive lock on this
 
 Data files have the form thl.data.nnnnnnnnnn, where the n's increase monotonically with each new log file.  
 
-=== Record Formats === 
+=== Log Record Formats === 
 
-Data files consist of records, which in the current implementation come in three different flavors.  Record fields are stored in the 
+Log data files consist of primitive records, which in the current implementation come in three different flavors.  The primitive record formats are optimized for quick reading of header information without the need to invoke full object serialization. 
 
 ==== Header Record =====
 
@@ -94,15 +82,57 @@ Log rotation records are written at the end of the file log file.  They are a si
 
 === Transaction Serialization ===
 
+DBMS transactions are stored as serialized objects of the Java ReplDBMSEvent, which Tungsten uses to represent transaction fragments in memory.   The default serialization method uses Google Protobuf, version 2.3.0. Google Protobuf uses message definition formats stored in protobuf/TungstenProtobufMessage.  We generate Java support code for serialization from this definition.  
+
+It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 used this.  However, Java serialization is extremely verbose and may not handle upgrades well.  
+
 === Indexing ===
 
-= Management = 
+= Log Management =
 
-== Configuration Parameters ==
+The THL has user-settable configuration parameters as well as a utility to read and manage log records directly.  
+
+== Configuration ==
+
+Current THL property settings are documented in the replication service template files.  For detailed information check out the Javadoc and source code, especially the following classes: 
+
+[http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/thl/THL.java com.continuent.tungsten.replicator.thl.THL]
+
+[http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/thl/log/DiskLog.java com.continuent.tungsten.replicator.thl.log.DiskLog]
+
+The following table provides a summary of current THL class properties and their meanings.  
+
+|| *Property* || *Description* ||
+|| bufferSize || Buffer size used for reads and writes from/to storage.  This should never be less than the size of pages in persistent storage ||
+|| doCheckSum || If true, enable CRC checksums on records.  Can impact log performance by up to 50% if enabled but allows unambiguous detection of log record corruption. ||
+|| eventSerializer || Name of event serialization class.  Normally not changed as it defaults to protobuf serialization. || 
+|| flushIntervalMillis || Interval in milliseconds for flushing writes to disk, which in turn affects how quickly log readers see them, hence the applied latency on stages that read from the log ||
+|| fsyncOnFlush || If true fsync to disk when flushing.  Log writes normally just do a Java flush() command, which makes writes visible to readers but does not guarantee they are fully stored ||
+|| logConnectionTimeout || Timeout for dropping log connections and freeing file descriptors.  This value is obsolete and may be removed in future. ||
+|| logDir || Directory in which log files are stored.  Created automatically if it does not exist, though the parent directly of logDir must exist and be writable. ||
+|| logFileRetention || Amount of time to retain log files, using a flexible time interface format.  "12h" means to preserve logs for 12 hours.  Based on the time log files are written, not the age of the transactions. ||
+|| logFileSize || Maximum number of bytes to write before rotating to a new log file.  The actual lengths of files can be greater as we never rotate in the middle of fragmented transactions. ||
+|| password || DBMS password where replication service catalog tables are stored ||
+|| resetPeriod || How often to reset the output stream used to transmit the stream of events from a THL server.  Larger values use network bandwidth more efficiently.  ||
+|| URL || JDBC URL of DBMS and schema where replication service catalog tables are stored ||
+|| user || DBMS user where replication service catalog tables are stored ||
+
 
 == 'thl' Utility ==
 
-= APIs = 
+= Java APIs and Programming Model = 
+
+== Java Class Structure == 
+
+The classes that implement the THL are spread out over the following packages.  
+
+|| *Package* || *Description ||
+|| com.continuent.tungsten.replicator.thl || Adapts THL to pipeline interfaces (e.g., Store, Extractor, Applier) and to implement THL server ||
+|| com.continuent.tungsten.replicator.thl.log || Log API and implementation classes ||
+|| com.continuent.tungsten.replicator.thl.protobuf || Generated classes to implement serialization of events to/from Protobuf messages ||
+|| com.continuent.tungsten.replicator.thl.serializer || Serialization adapter classes ||
+
+The Log API in package com.continuent.tungsten.replicator.thl.log is essentially self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors. 
 
 = Development = 
 
