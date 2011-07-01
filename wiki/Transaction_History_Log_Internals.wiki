@@ -6,11 +6,17 @@ The Transaction History Log, or THL, provides persistent storage of transactions
 
 = Architecture =
 
-== Embedded Execution Model ==
+== Embedded, Queue-Based Model ==
 
 The THL functions as an embedded database within the replicator process.  It also runs inside the *thl* utility, which is a simple command-line tool to read the log.  The log files are protected by a file lock that permits multiple processes from writing to the log at the same time.  
 
-The THL data consist of immutable transaction records or "events" written in a series of log files.  A single thread  writes log records.  Any number of threads can read records.  
+The THL is a log and therefore differs from traditional databases in the following ways. 
+
+  # The THL is a queue.  It is is optimized for reading and writing sequentially.  A single thread  writes log records.  Any number of threads can read records.  The API is optimized to deliver written records quickly to waiting readers in a queue-like fashion. 
+  # THL records are immutable.  Once written, THL records do not change. 
+  # No buffer cache.  The THL currently depends on OS-level buffering.  It does not attempt to maintain its own page cache.  
+
+In other respects the THL behaves much like a pocket DBMS such as Derby or SQLLite, albeit without using SQL.  THL storage is self-maintaining.  There is a simple cursor-like API to seek to a specific position and step through records.  
 
 == Java Class Structure == 
 
