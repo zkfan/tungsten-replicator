@@ -6,6 +6,8 @@ The Transaction History Log, or THL, provides persistent storage of transactions
 
 This wiki page provides insight into THL internals to help developers,  QA, and advanced users.  It is not product documentation.  For information on operating Tungsten Replicator check out the [http://www.continuent.com/downloads/documentation regular product documentation]. 
 
+If you plan to change the implementation in any way, please ensure you read the entire wiki page including the last sentence.  
+
 = Architecture =
 
 == Embedded, Queue-Based Model ==
@@ -259,6 +261,16 @@ log.release();
 
 This pattern is repeated widely in the THL code.  
 
+= Development = 
+
 == Protobuf Code Generation ==
 
-To be added.  
+You can regenerate Protobuf support classes using the 'ant protos' target in the replicator [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/build.xml build.xml] file.  For this to work you must have the *protoc* version 2.3.0 binary in your path.  
+
+== Testing Changes == 
+
+The THL is the single most critical component in the Tungsten replicator.  Errors in the log can lead to downed sites and mix up or corrupt user data.  The THL therefore has a wide range of test cases to ensure log correctness and catch regressions.  There are currently 55 Junit tests for the disk log classes alone.  The THL is also checked through extensive regression tests in the Continuent test suite.  
+
+Always run the unit tests and the fullest possible regression test to check changes to the log.  Unit tests should always be 100% clean.  Regression tests are typically less than 100% depending on the state of the product, but any test problems related to data consistency or log operation must be diagnosed prior to check-in.  
+
+Making changes to the THL without running every test possible is stupid.  Always extend the tests for new features and ensure _all_ tests are clean before you check in. 
