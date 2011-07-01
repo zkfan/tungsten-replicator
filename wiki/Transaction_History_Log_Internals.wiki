@@ -84,9 +84,17 @@ Log rotation records are written at the end of the file log file.  They are a si
 
 DBMS transactions are stored as serialized objects of the Java ReplDBMSEvent, which Tungsten uses to represent transaction fragments in memory.   The default serialization method uses Google Protobuf, version 2.3.0. Google Protobuf uses message definition formats stored in protobuf/TungstenProtobufMessage.  We generate Java support code for serialization from this definition.  
 
-It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 used this.  However, Java serialization is extremely verbose and may not handle upgrades well.  
+It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 do so.  Java serialization is extremely verbose and may not handle upgrades well.  For this reason it is no longer used by default or recommended.  
 
 === Indexing ===
+
+The THL does not have a persistent index.  Instead an in-memory index is computed each time the log is opened.  The current implemention reads the header of each log data and opens and reads to the end of the last data file in order to compute the index.  
+
+Due to the fact that the implementation reads the last log file, you can improve start-up times by restricting log file size to 100Mb or less.  The THL code reads a file of this size in 2 seconds or so whereas reading a 1GB log data file may take 20 seconds or more depending on the speed of storage.  
+
+The in-memory log is less efficient for start-up but has the advantage that it is recomputed each time the replicator starts, hence is theoretically never out-of-sync with file contents.  This does mean, however, that if you delete a log file while the replicator is live the in-memory index will not know about it.  If the replicator needs to read the deleted file (for example when a slave connects) the THL behavior may be unpredictable.  
+
+You may safely delete old log files when the replication service is offline or the replicator process is stopped.  Automatic log file purging updates the in-memory index.  
 
 = Log Management =
 
@@ -117,8 +125,15 @@ The following table provides a summary of current THL class properties and their
 || URL || JDBC URL of DBMS and schema where replication service catalog tables are stored ||
 || user || DBMS user where replication service catalog tables are stored ||
 
-
 == 'thl' Utility ==
+
+The *thl* utility looks scans and can optionally delete portions of the log.  It is documented in the [Tungsten Replicator product documentation.  
+
+*thl* depends on THL file locking to work correctly.  If you run the THL against a log that is also being used by 
+
+== Troubleshooting and Caveats ==
+
+
 
 = Java APIs and Programming Model = 
 
@@ -132,8 +147,8 @@ The classes that implement the THL are spread out over the following packages.
 || com.continuent.tungsten.replicator.thl.protobuf || Generated classes to implement serialization of events to/from Protobuf messages ||
 || com.continuent.tungsten.replicator.thl.serializer || Serialization adapter classes ||
 
-The Log API in package com.continuent.tungsten.replicator.thl.log is essentially self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors. 
+The thl package classes are tightly coupled with the rest of the replicator.  They cannot be separated from the rest of Tungsten.  
+
+On the other hand, the Log API in package com.continuent.tungsten.replicator.thl.log is largely self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors.  
 
 = Development = 
-
-= Troubleshooting = 
