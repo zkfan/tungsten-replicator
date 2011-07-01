@@ -4,6 +4,8 @@
 
 The Transaction History Log, or THL, provides persistent storage of transactions.  It enables very fast transfer of transactions between locations while at the same time preventing data loss due to failures of hosts, processes, and DBMS software. 
 
+This wiki page provides insight into THL internals to help developers,  QA, and advanced users.  It is not product documentation.  For information on operating Tungsten Replicator check out the [http://www.continuent.com/downloads/documentation regular product documentation]. 
+
 = Architecture =
 
 == Embedded, Queue-Based Model ==
@@ -82,9 +84,9 @@ Log rotation records are written at the end of the file log file.  They are a si
 
 === Transaction Serialization ===
 
-DBMS transactions are stored as serialized objects of the Java ReplDBMSEvent, which Tungsten uses to represent transaction fragments in memory.   The default serialization method uses Google Protobuf, version 2.3.0. Google Protobuf uses message definition formats stored in protobuf/TungstenProtobufMessage.  We generate Java support code for serialization from this definition.  
+DBMS transactions are stored as serialized objects of the Java ReplDBMSEvent class, which Tungsten uses to represent transaction fragments in memory.   The default serialization method uses Google Protobuf, version 2.3.0. Google Protobuf uses message definition formats stored in protobuf/TungstenProtobufMessage.  We generate Java support code for serialization from this definition.  
 
-It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 do so.  Java serialization is extremely verbose and may not handle upgrades well.  For this reason it is no longer used by default or recommended.  
+It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 do so.  Java serialization is extremely verbose and may not handle upgrades well.  For this reason it is no longer used by default or even recommended for use. 
 
 === Indexing ===
 
@@ -127,13 +129,56 @@ The following table provides a summary of current THL class properties and their
 
 == 'thl' Utility ==
 
-The *thl* utility looks scans and can optionally delete portions of the log.  It is documented in the [Tungsten Replicator product documentation.  
+The *thl* utility looks scans and can optionally delete portions of the log.  It is described in the [http://www.continuent.com/downloads/documentation Tungsten Replicator product documentation].   
 
-*thl* depends on THL file locking to work correctly.  If you run the THL against a log that is also being used by 
+The following example shows the thl in use to seek a specific sequence number: 
+
+{{{
+$ thl -service percona list -seqno 5
+2011-07-01 15:15:24,883 INFO  thl.log.DiskLog Using directory '/opt/tungsten/thl-logs/percona/' for replicator logs
+2011-07-01 15:15:24,883 INFO  thl.log.DiskLog Checksums enabled for log records: true
+2011-07-01 15:15:24,883 INFO  thl.log.DiskLog Using read-only log connection
+2011-07-01 15:15:24,888 INFO  thl.log.DiskLog Loaded event serializer class: com.continuent.tungsten.replicator.thl.serializer.ProtobufSerializer
+2011-07-01 15:15:24,889 INFO  thl.log.LogIndex Building file index on log directory: /opt/rhodges4/thl-logs/percona
+2011-07-01 15:15:24,897 INFO  thl.log.LogIndex Constructed index; total log files added=1
+2011-07-01 15:15:24,898 INFO  thl.log.DiskLog Validating last log file: /opt/tungsten/thl-logs/percona/thl.data.0000000001
+2011-07-01 15:15:24,898 INFO  thl.log.DiskLog Setting up log flush policy: fsyncIntervalMillis=0 fsyncOnFlush=false
+2011-07-01 15:15:24,899 INFO  thl.log.DiskLog Idle log connection timeout: 28800000ms
+2011-07-01 15:15:24,899 INFO  thl.log.DiskLog Log preparation is complete
+SEQ# = 5 / FRAG# = 0 (last frag)
+- TIME = 2011-07-01 15:15:17.0
+- EPOCH# = 0
+- EVENTID = 000868:0000000000001025;193351
+- SOURCEID = logos2
+- METADATA = [mysql_server_id=1;service=percona;shard=test]
+- TYPE = com.continuent.tungsten.replicator.event.ReplDBMSEvent
+- OPTIONS = [##charset = ISO8859_1, autocommit = 1, sql_auto_is_null = 1, foreign_key_checks = 1, unique_checks = 1, sql_mode = '', character_set_client = 8, collation_connection = 8, collation_server = 8]
+- SCHEMA = test
+- SQL(0) = insert into foo values(4) /* ___SERVICE___ = [percona] */
+}}}
+
+The *thl* internally uses exactly the same APIs as the replicator.  You can run read-only commands like *thl list* while a replicator is using the same log files but write operations like *thl purge* will be blocked by the file lock.  For this reason, you may not be able to bring a replicator online while processing a *thl purge* command as the replicator will not be able to get the read lock. 
 
 == Troubleshooting and Caveats ==
 
+The THL is designed to be very reliable but there are still various ways to mess up logs, thereby resulting in considerable unhappiness.  
 
+=== Deleting Log Files under Running Replicator ===
+
+Replicator log files should only be deleted when the replication service is offline or the replicator process is completely stopped.  It is safe to delete older log files manually provided you do not leave gaps and provided no slave needs them. 
+
+=== File Locks ===
+
+The disklog.lck should never be deleted unless you want to clear logs completely.  If you delete the disklog.lck file while replication is running it removes the protection against a second process (either a replication service or *thl* command) modifying the files.  This would be very bad. 
+
+=== Clearing Log Files ===
+
+It is generally safe to clear log files completely while replication is offline or stopped.  This is recommended, for example, when restoring a backup to eliminate the possibility of the restored data conflicting with the log.  
+
+If you do clear logs observe the following caveats. 
+
+  # Only clear logs on a master replicator service if the master DBMS is idle.  Clearing logs on a busy master and restarting replication may cause the replicator to extract transactions again. 
+  # Clearing slave logs can cause problems for failover.  The slave will accumulate logs from the current seqno marked in the trep_commit_seqno table.  If you then promote the slave it may lack logs necessary for other slaves.  Don't forget that slaves may lag far behind the current master due to restart or reprovisioning from backup. 
 
 = Java APIs and Programming Model = 
 
@@ -151,4 +196,69 @@ The thl package classes are tightly coupled with the rest of the replicator.  Th
 
 On the other hand, the Log API in package com.continuent.tungsten.replicator.thl.log is largely self-contained and is the main interface for testing.  There are over 50 unit test cases on the public API and individual log implementation classes.  The goal of these test cases is to ensure that the log is fast and free from errors.  
 
-= Development = 
+== Log Access APIs ==
+
+You can find many examples of reading and writing to the THL using the log APIs within the Tungsten source code as well as unit tests like [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/test/java/com/continuent/tungsten/replicator/thl/log/DiskLogTest.java DiskLogTest].  Here are a couple of examples that illustrate the programming model. 
+
+=== Writing to the THL ===
+
+To write records to the THL, get a [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/thl/log/LogConnection.java LogConnection] instance and issue store() methods.  Records always go to the end of the log, so you do not have to worry about positioning before writing. 
+
+{{{
+// Open the log.  This creates if it does not exist. 
+DiskLog log = new DiskLog();
+log.setLogDir("/opt/tungsten/thl-logs/mylogDir");
+log.setReadOnly(false);
+log.prepare();
+
+// Connect. 
+LogConnection conn = log.connect(false);
+
+// Write a transaction to the log. 
+THLEvent thlEvent = createSomeTHLEvent();
+conn.store(e, false);
+conn.commit();
+
+// Release the connection and the log. 
+conn.release();
+log.release();
+}}}
+
+=== Reading from the THL ===
+
+To read records from the THL, get a [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/thl/log/LogConnection.java LogConnection] instance, seek to where you would like to start reading, and issue next() calls to read records for as long as you would like.  By default next() waits for new records to show up, which makes the log behave like a queue.  
+
+{{{
+// Open the log.  The log must exist. 
+DiskLog log = new DiskLog();
+log.setLogDir("/opt/tungsten/thl-logs/mylogDir");
+log.setReadOnly(true);
+log.prepare();
+
+// Get a read-only connection. 
+LogConnection conn = log.connect(true);
+
+// Seek to a starting seqno in the log. 
+if (! conn.seek(355))
+{
+    throw new Exception("Unable to find seqno: " + 355);
+}
+
+// Read successive records, waiting if necessary for them to appear
+// in the log. 
+while (true)
+{
+    THLEvent thlEvent = conn.next();
+    // Do something with the event...
+}
+
+// Release the connection and the log. 
+conn.release();
+log.release();
+}}}
+
+This pattern is repeated widely in the THL code.  
+
+== Protobuf Code Generation ==
+
+To be added.  
