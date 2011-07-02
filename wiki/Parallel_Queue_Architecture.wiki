@@ -29,4 +29,8 @@ There are many ways to implement this model in practice.  The following sections
 
 = In-Memory Parallel Store =
 
+[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/Tungsten-ParallelQueueStore.jpg]
+
 = Disk-Based Parallel Store =
+
+[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/Tungsten-THLParallelQueue.jpg]
