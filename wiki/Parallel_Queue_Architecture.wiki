@@ -1,4 +1,4 @@
-#Parallel Store Architecture
+#summary Parallel Store Architecture
 
 = Overview =
 
