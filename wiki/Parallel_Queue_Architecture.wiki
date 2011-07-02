@@ -1,19 +1,34 @@
-#Parallel Queue Architecture
+#Parallel Store Architecture
 
 = Overview =
 
-Tungsten Replicator uses _parallel queues_ to implement pipeline stages in which multiple tasks read and apply transactions concurrently.  The most significant application of this technique is known as _parallel apply_, which speeds up replication by executing slave updates on different shards in parallel.  
+Tungsten Replicator uses _parallel stores_ to implement pipeline stages in which multiple tasks read and apply transactions concurrently.  The most significant application of this technique is known as _parallel apply_, which speeds up replication by executing slave updates on different shards in parallel.  
 
-This wiki page summarizes the current parallel queue implementations.  It is not user documentation but rather describes the motivations behind the code as it currently stands and to make clear the trade-offs between different parallel queue approaches.  The goal is to provide orientation to help read the code, design tests, and develop new applications for parallel queues. 
+This wiki page summarizes the current parallel store implementations.  It is not user documentation but rather describes the algorithms behind the code as it currently stands and illustrates the trade-offs between different parallel store approaches.  The goal is to provide orientation when reading the code, designing tests, and developing new applications for parallel stores. 
 
 = General Approach = 
 
-== What We Mean by a Tungsten Parallel Queue == 
+== What We Mean by a Tungsten Parallel Store == 
 
-Tungsten Replicator uses a pipeline-based execution model, where pipelines are event flows that extract from a source and apply to a sink at the other end.  Pipelines consist of one or more stages, which implement extract-filter-apply loops to transfer events.  Stores sit between stages and buffer events as they pass through the pipeline. 
+Tungsten Replicator uses a pipeline-based execution model, where pipelines are event flows that extract from a source and apply to a sink at the other end.  Pipelines consist of one or more stages, which implement extract-filter-apply loops to transfer events.  Stores sit between stages and buffer events as they pass through the pipeline.  Stores therefore act as queues within the pipeline and may be either persistent (like the THL) or non-persistent in-memory buffers. 
 
-A Tungsten parallel queue is a type of [ Store] that demultiplexes a serialized store of events into multiple queues.   
+A Tungsten parallel store is a type of [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/storage/Store.java Store] that demultiplexes a serialized store of events into multiple queues.  Parallel stores implement an additional [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/storage/ParallelStore.java ParallelStore] interface that provides control methods to enable safe shutdown.  
 
-= In-Memory Parallel Replication =
+The following diagrams shows how parallel stores work in general.  A single stage task delivers serialized events to the store.  The store demultiplexes the events into parallel queues that feed multiple tasks in the next stage.  
 
-= Disk-Based Parallel Replication =
+[https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/Tungsten-Parallel-Queue-Model.jpg]
+
+Parallel threads are referred to as _channels_ in user documentation.  Channels are implemented so far as queues within the parallel store that serve corresponding tasks in the stage that extracts from the store.  Extractors on the parallel store therefore have an additional method documented in interface [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/extractor/ParallelExtractor.java ParallelExtractor] to set the task ID so that each task extracts from the correct queue.  
+
+ParallelStore implementations must deal with a number of practical issues that make the implementations a little harder than one might think at first. 
+
+  * Partitioning.  All current implementations call an instance of the [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/storage/parallel/Partitioner.java Partitioner] interface to split events into separate channels.  This is not formally part of the model though it probably should be.  Partitioning algorithms must always be idempotent and return the same channel assignment for a given number of channels.  
+  * Full serialization.  Some transactions cannot safely run in parallel.  Internally we call these critical events.  Parallel stores must be able to revert to fully serialized operation when a critical event appears. 
+  * Restart.  Tungsten marks the current seqno of each apply task (usually in the trep_commit_seqno table for SQL databases).  For single-threaded tasks, this is easy because there is a constant stream of events so we update the restart position at the end of each block.  However, with parallel operation we may find that some queues are empty for prolonged periods of time and do not mark position.  This causes a problem when a replicator crashes or is terminated, because the applier restarts at the least advanced position.  In pathological cases this can cause replicators to rescan millions of transactions to find the restart position.  Current implementations solve this by periodically inserting synthetic control events that cause the down streams tasks to update their position.  
+  * Clean shutdown.  Parallel stores need to be able to bring all channels to the same point and shut down.  This allows users to change the number of channels or revert back to non-parallel operation safely We currently handle this by inserting a stop control event on all channels.  When the downstream stage tasks receive this event they shut down.  Clean shutdown is complete when all stage tasks have shut down in this way. 
+
+There are many ways to implement this model in practice.  The following sections describe the current implementations. 
+
+= In-Memory Parallel Store =
+
+= Disk-Based Parallel Store =
