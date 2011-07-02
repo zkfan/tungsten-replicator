@@ -1,14 +1,12 @@
-#summary Parallel Store Architecture
+#summary Design and Implementation of Parallel Queues using ParallelStore
 
 = Overview =
 
-Tungsten Replicator uses _parallel stores_ to implement pipeline stages in which multiple tasks read and apply transactions concurrently.  The most significant application of this technique is known as _parallel apply_, which speeds up replication by executing slave updates on different shards in parallel.  
+Tungsten Replicator uses _parallel stores_ to implement pipeline stages in which multiple tasks read and apply transactions concurrently.  The most significant application of this technique is known as _parallel apply_, which speeds up replication by executing slave updates on different shards in parallel.  Parallel stores split serialized transactions into multiple output queues, which is why we sometimes call them _parallel queues_.  
 
 This wiki page summarizes the current parallel store implementations.  It is not user documentation but rather describes the algorithms behind the code as it currently stands and illustrates the trade-offs between different parallel store approaches.  The goal is to provide orientation when reading the code, designing tests, and developing new applications for parallel stores. 
 
-= General Approach = 
-
-== What We Mean by a Tungsten Parallel Store == 
+= What We Mean by a Tungsten Parallel Store = 
 
 Tungsten Replicator uses a pipeline-based execution model, where pipelines are event flows that extract from a source and apply to a sink at the other end.  Pipelines consist of one or more stages, which implement extract-filter-apply loops to transfer events.  Stores sit between stages and buffer events as they pass through the pipeline.  Stores therefore act as queues within the pipeline and may be either persistent (like the THL) or non-persistent in-memory buffers. 
 
