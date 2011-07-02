@@ -1,10 +1,26 @@
 #summary Design and Implementation of Parallel Queues using ParallelStore
 
-= Overview =
+= Introduction =
+
+== Overview ==
 
 Tungsten Replicator uses _parallel stores_ to implement pipeline stages in which multiple tasks read and apply transactions concurrently.  The most significant application of this technique is known as _parallel apply_, which speeds up replication by executing slave updates on different shards in parallel.  Parallel stores split serialized transactions into multiple output queues, which is why we sometimes call them _parallel queues_.  
 
 This wiki page summarizes the current parallel store implementations.  It is not user documentation but rather describes the algorithms behind the code as it currently stands and illustrates the trade-offs between different parallel store approaches.  The goal is to provide orientation when reading the code, designing tests, and developing new applications for parallel stores. 
+
+== Caveats ==
+
+The Tungsten solution to parallel replication has developed incrementally over a period of a couple of years.  Our understanding of the problem and solutions has evolved considerably during this time.  This means that while the overall model and general algorithms are fairly consistent, some of the interfaces and naming for individual classes are not.  There will consequently need to be some clean-up over time to rationalize naming and restructure interfaces.  
+
+== Additional References ==
+
+For more information on the overall approach to parallel replication in Tungsten, see the following: 
+
+  * [http://www.continuent.com/downloads/documentation Continuent Product Documentation]
+
+  * [http://scale-out-blog.blogspot.com/2010/10/parallel-replication-on-mysql-report.html Parallel Replication on MySQL: Report from the Trenches]
+
+  * [http://scale-out-blog.blogspot.com/2011/03/parallel-replication-using-shards-is.html Parallelization Using Shards Is the Only Workable Approach for SQL]
 
 = What We Mean by a Tungsten Parallel Store = 
 
@@ -29,7 +45,37 @@ There are many ways to implement this model in practice.  The following sections
 
 = In-Memory Parallel Store =
 
+== [http://code.google.com/p/tungsten-replicator/source/browse/trunk/replicator/src/java/com/continuent/tungsten/replicator/storage/parallel/ParallelQueueStore.java ParallelQueueStore] ==
+
+=== Architecture ===
+
+This implemention works by splitting applied events into a separate queue for each channel.  One task thread applies new events.  A task thread in the succeeding stage extracts from each individual queue.  The general flow is illustrated in the following diagram. 
+
 [https://s3.amazonaws.com/extras.continuent.com/code.google.com-images/Tungsten-ParallelQueueStore.jpg]
+
+=== Implementation Notes ===
+
+The implementation partitions events into channels using a partitioner, as described in the general discussion of parallel stores.  All processing including putting events into queues and fetching them out again occurs in the task threads, which means that no additional threads are required within the store itself.  
+
+Queues are implemented using Java blocking queues, e.g., implementations of java.util.concurrency.BlockingQueue.  Each queue has a maximum size (maxSize property) and blocks when it is reached.  Blocking queues have the advantage that queue methods synchronize on the queue, which ensures that data are properly visible across queue reader and writer threads in accordance with guarantees of visibility provided by Java locks.  
+
+=== Advantages ===
+
+The ParallelQueueStore has a number of advantages. 
+
+  # There is no latency between reading and writing, since everything is in-memory. 
+  # It is relatively simple to implement correct serialization and clean shutdown in this model.  
+  # The fact that no extra threads are necessary eliminates coordination complexity within the store and reduces the number of cases that need to be tested to confirm correct operation. 
+  # There is no persistent state to manage if we crash and restart. 
+
+=== Disadvantages ===
+
+On the other hand there are problems with the in-memory design that make it difficult to use on some workloads.  The main reason is that even on systems with "nice" shard partitioning patterns across channels, events tend to show up in groups in different channels, so that at any given instant it is common to have many events on some channels and few or none on the rest.  This leads in turn to the following problems. 
+
+  # You need to allocate enormous queue sizes to get good serialization.  Otherwise, one busy channel will fill up the overall parallel queue capacity, effectively serializing everything.  This turns the replicator into a bloated memory hog.  It is especially problematic with row replication, which generates an update for every row that changes. 
+  # Even with large queues you still get serialization problems.  It is not uncommon for some SQL statements to execute very slowly, for example following a restart when DBMS caches are cold.  Consequently, you may again find that all channels block behind one or two slow statements.  
+
+Systems that process large numbers of transactions per second tend to see these problems in spades.  On a system that processes 1000/TPS 60 seconds of processing is 60K transactions, which in turn could be 200GB of memory in the Java heap.  This kind of math quickly leads to very large memory allocations to prevent serialization. 
 
 = Disk-Based Parallel Store =
 
