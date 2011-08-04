@@ -44,7 +44,7 @@ In this use case a new customer A is defined in the application with NYC as prim
 
 During normal operation an update on the customer A primary site NYC will replicate to the backup schema copy on the SJC backup site.  The update to the backup copy will appear in the backup site DBMS binlog and can replicate to slaves on the backup site.  However, the primary site NYC will will not accept the change back again. 
 
-=== Use Case 3: Switching Customer Home between Sites ===
+=== Use Case 3: Switching Customer Master between Sites ===
 
 In this case the SaaS operators switch the customer primary site from NYC to SJC.  The SaaS operators first quiesce transactions for the customer in question on site NYC.  Once transactions have stopped *and* have replicated from the primary to the backup site, the SaaS operators will update shard processing rules to the reverse of Use Case 1 (accept transactions for shard "a" on NYC coming from SJC and refuse them from NYC to SJC). 
 
@@ -91,11 +91,11 @@ The trep_shard table contains the following columns.
 
 || *Name*      || *Type*       || *Key* || *Description* ||
 || name        || varchar(128) || PRI   || Shard name      ||
-|| home        || varchar(128) ||       || Home service name ||
+|| master      || varchar(128) ||       || Home service name ||
 || critical    || char(1)      ||       || If true, must serialize ||
 || channel     || int(11)      ||       || Explicit channel or null ||
 
-The home column determine the system that "owns" the shard.  The shard may only replicate from the data service name matches the home. 
+The master column determine the system that "owns" the shard.  The shard may only replicate from the data service name matches the master name.
 
 == JMX API ==
 
@@ -176,14 +176,14 @@ Here is a simple example of usage.
     // Insert a shard. 
     shard = new HashMap<String,String>();
     shard.put("name", "test");
-    shard.put("home", "nyc");
+    shard.put("master", "nyc");
     shard.put("critical", "false");
     args.add(shard);
     mbean.insert(args);
         
-    // Update a shard to change the home. 
+    // Update a shard to change the master. 
     args.clear();
-    shard.put("home", "sjc");
+    shard.put("master", "sjc");
     args.add(shard);
     mbean.update(args);
         
@@ -206,7 +206,7 @@ trepctl [-service name] shard { -insert | -update | -delete | -list}
 The -list command lists all shards using a CSV format that looks like the following.  The first line is a comment with header values, while subsequent lines are whitespace-separated values. 
 
 {{{
-# name    home        critical    channel
+# name    master        critical    channel
 db1       sjc         true        1
 db2       nyc         false       3
 }}}
@@ -232,20 +232,20 @@ The shard filter class has the following properties that may be set in the repli
 
 || *Property* || *Description* ||
 || autoCreate         || Automatically add new shards to catalog ||
-|| enforceHome        || If true, allow update from home service only ||
+|| enforceHome        || If true, allow update from master service only ||
 
 The shard filter class can be added to any stage of any pipeline.  It will be installed on remote pipelines by default.  Only one such filter per pipeline is supported.  Adding additional filters may cause primary key errors and other problems.  
 
 The shard filter reads the shard catalog table when its prepare() method is called.  It stores the shard definition in an in-memory cache.  
 
-If the shard filter sees a new shard that is not in the catalog and the autoCreate property is true, it will create a new shard record.  The shard will receive the current service as home.  
+If the shard filter sees a new shard that is not in the catalog and the autoCreate property is true, it will create a new shard record.  The shard will receive the current service as master.  
 
 If the enforceHome property is true, the shard filter handles transactions as follows: 
 
-  # If the filter is running in a local service, all transaction are  accepted.  For example, if the filter is running in local service "sjc" it accepts all shards regardless of the home value.  This means that the "sjc" master forwards all shards it finds and "sjc" local slaves accept all shards.  This behavior is identical to standard master/slave behavior. 
+  # If the filter is running in a local service, all transaction are  accepted.  For example, if the filter is running in local service "sjc" it accepts all shards regardless of the master value.  This means that the "sjc" master forwards all shards it finds and "sjc" local slaves accept all shards.  This behavior is identical to standard master/slave behavior. 
   ## If the filter is running in a remote service, there are two cases to consider. 
-   # Shard home matches replicator service name.  Transaction is applied.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "sjc", it will be applied.  This means that "sjc" updates are propagated from the home.  
-   ## Shard home does not match replicator service name.  Transaction is dropped.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "nyc", it will be dropped.  This means that "nyc" updates are not propagated back from "sjc," thereby avoiding loops. 
+   # Shard master matches replicator service name.  Transaction is applied.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "sjc", it will be applied.  This means that "sjc" updates are propagated from the master.  
+   ## Shard master does not match replicator service name.  Transaction is dropped.  For example, if a transaction from shard "sjc" is processed by a shard filter in remote process "nyc", it will be dropped.  This means that "nyc" updates are not propagated back from "sjc," thereby avoiding loops. 
 
 If enforceHome property is true but autoCreate is false, shards without previously defined catalog entries will be dropped.  There could be a policy for this case.  In some cases one might want to have the replicator fail so the problem would be noticed and fixed. 
 
@@ -265,7 +265,7 @@ In this final section we consider practical application to the use cases mention
 
 {{{
 # Configure shard filter for system-of-record enforcement.  Shards must
-# be explicitly defined.  Shard homes are enforced. 
+# be explicitly defined.  Shard masters are enforced. 
 replicator.filter.shard=com.continuent.tungsten.enterprise.replicator.filter.ShardFilter
 replicator.filter.shard.autoCreate=false
 replicator.filter.shard.enforceHome=true
@@ -275,10 +275,10 @@ We further assume that all shard definitions are defined in a text file called '
 
 == Example 1: Definition of New Customer ==
 
-To define a new customer cust_c whose home is "nyc," the steps are as follows. 
+To define a new customer cust_c whose master is "nyc," the steps are as follows. 
   # Edit the shards.txt file and add the following line. 
 {{{
-# name    home        critical    channel
+# name    master        critical    channel
 ...
 cust_c    nyc         false       null
 }}}
@@ -292,13 +292,13 @@ trepctl -host nyc1 -service nyc shard -update < shards.txt
   ## Start processing for customer cust_c on the "nyc" host.  This 
 can occur as soon as the trepctl commands complete successfully. 
 
-== Example 2: Switching Customer Home ==
+== Example 2: Switching Customer Master ==
 
-To switch the home for cust_c from "nyc" to "sjc" the steps are as follows. 
+To switch the master for cust_c from "nyc" to "sjc" the steps are as follows. 
 
   # Edit the shards.txt file and edit the following line. 
 {{{
-# name    home        critical    channel
+# name    master      critical    channel
 ...
 cust_c    sjc         false       null
 }}}
