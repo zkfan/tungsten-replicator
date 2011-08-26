@@ -93,9 +93,10 @@ The trep_shard table contains the following columns.
 || name        || varchar(128) || PRI   || Shard name      ||
 || master      || varchar(128) ||       || Home service name ||
 || critical    || char(1)      ||       || If true, must serialize ||
-|| channel     || int(11)      ||       || Explicit channel or null ||
 
-The master column determine the system that "owns" the shard.  The shard may only replicate from the data service name matches the master name.
+_Note_:  The 'critical' field may be dropped if we cannot link it in satisfactory way to the shard partitioning logic in classes like THLParallelQueue. 
+
+The master column determines the system that "owns" the shard.  The shard may only replicate from the data service name matches the master name.
 
 == JMX API ==
 
@@ -203,12 +204,12 @@ The trepctl utility will be extended to add support for shard management.  There
 trepctl [-service name] shard { -insert | -update | -delete | -list}
 }}}
 
-The -list command lists all shards using a CSV format that looks like the following.  The first line is a comment with header values, while subsequent lines are whitespace-separated values. 
+The -list command lists all shards using a CSV format that looks like the following.  The first line contains column names, while subsequent lines are whitespace-separated values.  Separator characters are space, tab, and comma.  Multiple separator characters in succession are treated as a single separator. 
 
 {{{
-# name    master        critical    channel
-db1       sjc         true        1
-db2       nyc         false       3
+name    master        critical
+db1       sjc         true
+db2       nyc         false
 }}}
 
 The -insert, -update, and -delete options accept the same file type as 
@@ -217,12 +218,12 @@ input.  When reading input, blank lines and any line that starts with a # are ig
 You can use these commands to do quick and easy edits on the shard catalog.  The following example shows how to dump the shard catalog, edit it, and reload.  
 
 {{{
-bin/trepctl -service test shard -list > file.out
-vi file.out
-bin/trepctl shard -service test -update < file.out
+bin/trepctl -service test shard -list > shard.map
+vi shard.map
+bin/trepctl shard -service test -update < shard.map
 }}}
 
-The last command will import the file and process data from it, updating rows that are found in the table and inserting new rows when not found.  The file processing will skip commented lines (#) as well as blank lines.
+The last command will import the file and process data from it, updating rows that are found in the table and inserting new rows when not found.  
 
 == Shard Filter == 
 
@@ -232,7 +233,7 @@ The shard filter class has the following properties that may be set in the repli
 
 || *Property* || *Description* ||
 || autoCreate         || Automatically add new shards to catalog ||
-|| enforceHome        || If true, allow update from master service only ||
+|| enforceHome        || If true, allow update from master service only; otherwise drop the value ||
 
 The shard filter class can be added to any stage of any pipeline.  It will be installed on remote pipelines by default.  Only one such filter per pipeline is supported.  Adding additional filters may cause primary key errors and other problems.  
 
