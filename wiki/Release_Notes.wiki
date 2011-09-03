@@ -17,7 +17,7 @@ This release requires careful attention to upgrade due to the following changes:
 
 2.) The trep_commit_seqno table includes additional columns.  
 
-Logs and other data structures should be backwards compatible.  However, due to the nature of these changes we recommend for the safest upgrade that you stop traffic on the master server, quiesce replication fully, delete existing THL logs as well as tungsten_<svcname> databases, then restart with new version 2.0.4 installations.  
+Logs and other data structures should be backwards compatible.  However, due to the nature of these changes we recommend for the safest upgrade that you stop traffic on the master server, quiesce replication fully, delete existing THL logs as well as tungsten_svcname databases, then restart with new version 2.0.4 installations.  
 
 The change in installations is a one-time occurrence that is necessary to provide better installation procedures that are fully scriptable.  
 
