@@ -25,19 +25,21 @@ Issue 28 - Upgrade THL to use buffered I/O
 
 Issue 36 - Single command setup for replication   
 
-Issue 42 - tungsten-replicator duplicates tarball expanded directory
+Issue 42 - Tungsten-replicator duplicates tarball expanded directory
 
 Issue 71 - Enhance THL durability against failures
 
 Issue 82 - Implement THL ParallelQueue Support, aka on-disk queues
 
-Issue 83 - trepctl should take the RMI port from configuration files
+Issue 83 - Trepctl should take the RMI port from configuration files
 
-Issue 97 - mysqldump options are not optimal
+Issue 97 - Mysqldump options are not optimal
 
-Issue 98 - properties file uses hardcoded file names for backup and other        
+Issue 98 - Properties file uses hardcoded file names for backup and other        
 
-Issue 99 - tungsten installer does not detect running MySQL native replication   
+Issue 99 - Tungsten installer does not detect running MySQL native replication   
+
+Issue 102 - Implement shard control API
 
 Issue 103 - Replicator parsing for MySQL has a number of missing cases that result in large numbers of #UNKNOWN shards
 
@@ -45,7 +47,7 @@ Issue 106 - MySQL extractor fails to extract server_id value from first transact
 
 Issue 109 - Slave replicator loses track of position after a process restart     
 
-Issue 113 - tungsten installer detects privileges for the wrong user
+Issue 113 - Tungsten installer detects privileges for the wrong user
 
 Issue 117 - Report null values distinctly in `./thl list` output          
 
@@ -53,23 +55,23 @@ Issue 122 - PrimaryKeyFilter throws NullPointerException if it can't find the ta
 
 Issue 124 - UPDATE multiple rows with different values in a single SQL leads to inconsistency   
 
-Issue 125 - tungsten-installer fails on Ubuntu 9.10      
+Issue 125 - Tungsten-installer fails on Ubuntu 9.10      
 
 Issue 126 - Merge Greenplum support            
 
-Issue 130 - tools/tungsten-installer does not issue warnings when the master-host is incorrect   
+Issue 130 - Tools/tungsten-installer does not issue warnings when the master-host is incorrect   
 
 Issue 133 - Make replicator use relay logs as their default      
 
-Issue 138 - tungsten-installer should be able to accept properties values        
+Issue 138 - Tungsten-installer should be able to accept properties values        
 
-Issue 140 - tungsten-installer issues confusing error about server ID if MySL login credentials are wrong        
+Issue 140 - Tungsten-installer issues confusing error about server ID if MySL login credentials are wrong        
 
-Issue 141 - tools/configure-service does not update services             
+Issue 141 - Tools/configure-service does not update services             
 
 Issue 142 - Tungsten-installer :: Ruby issues :: NilClass (NoMethodError)        
 
-Issue 146 - tungsten-installer hangs when there is a non-breaking space in the command arguments         
+Issue 146 - Tungsten-installer hangs when there is a non-breaking space in the command arguments         
 
 Issue 151 - Enable seamless migration from and to MySQL replication   Sponsored            
 
@@ -77,9 +79,9 @@ Issue 159 - Flush operation does not return the right sequence number (returns t
 
 Issue 160 - DatabaseTransformFilter fails with NullPointerException if an event does not have a default schema           
 
-Issue 167 - broken installation in build 192   
+Issue 167 - Broken installation in build 192   
 
-Issue 169 - trepctl offline is ignored in some states, such as during replicator synchronization with master   
+Issue 169 - Trepctl offline is ignored in some states, such as during replicator synchronization with master   
 
 Issue 170 - Shard status list does not show latency correctly            
 
@@ -101,17 +103,17 @@ Issue 198 - Tungsten Replicator retention option does not purge logs
 
 Issue 199 - Tungsten-installer --help-all command hangs on Ubuntu
 
-Issue 202 - configure-service concatenates properties
+Issue 202 - Configure-service concatenates properties
 
 Issue 203 - Slave replicator incorrectly commits following lock wait timeout
 
 Issue 205 - Heterogeneous installer: do not transfer strings as bytes
 
-Issue 206 - tungsten-installer does not check for binlog being enabled.          
+Issue 206 - Tungsten-installer does not check for binlog being enabled.          
 
-Issue 207 - tungsten installer does not parse --native-slave-takeover correctly  
+Issue 207 - Tungsten installer does not parse --native-slave-takeover correctly  
 
-Issue 208 - tungsten-installer does not detect the server-id correctly
+Issue 208 - Tungsten-installer does not detect the server-id correctly
 
 Issue 209 - Inserting data into a myisam table with auto_increment primary key breaks multi master replication
 
