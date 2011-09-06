@@ -27,6 +27,7 @@ If any of the above conditions is not met, the installer will complain and refus
 
 === Java ===
 
+Java must be installed for Tungsten to run. It requires Java 1.6, regardless of the package. Tungsten rungs fine with the official Sun/Oracle Java, both JRE or JDK, and with openJDK.
 
 === Ruby ===
 
@@ -35,4 +36,14 @@ If you decide to install Ruby on your own, by compiling from source, be aware th
 
 == Problems with ./configure ==
 
-If you are having problems with the _./configure_, then you are using an outdated version of Tungsten Replicator. As of version 2.0.4, _./configure_ and _./configure-service_ are deprecated. Instead, you should use *./tools/tungsten-installer* and *./tools/configure-service*. The documentation covers their usage in detail
+If you are having problems with the _./configure_, then you are using an outdated version of Tungsten Replicator. As of version 2.0.4, _./configure_ and _./configure-service_ are deprecated. Instead, you should use *./tools/tungsten-installer* and *./tools/configure-service*. The documentation covers their usage in detail.
+
+== Problems with *second* installation ==
+If you have installed Tungsten, and then you want to reinstall with the same servers, either because there was an error, or you have realized that you would like to install with different parameters, you must make sure that the previous installation is removed.
+Therefore, before installing Tungsten again, do the following in all the servers where Tungsten was installed:
+
+ * stop the replicator service. ({{{$tungsten_base/tungsten/tungsten-replicator/bin/replicator stop}}}).  
+ * make sure the replicator is stopped, using the 'ps' command. If for any reason the replicator does not stop regularly (it may happen if there is a bug or the wrong procedure was used before), you must force it to stop using 'kill'.
+ * remove all the THL files (usually in $tungsten_home/thl/svc_name) 
+ * drop the tungsten_svc_name schema from MySQL
+ * Either run 'reset master', or use the appropriate options when installing ({{{--master-log-file}}} and {{{--master-log-port}}}).
