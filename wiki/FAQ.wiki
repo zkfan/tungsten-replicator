@@ -35,3 +35,8 @@ Those are the "Tungsten Swans."  The [http://en.wikipedia.org/wiki/Whooper_Swan 
 == Can you replicate from one SQL platform to another? Example: Replicate from MySQL to PostgreSQL? ==
 
 Yes. Currently we can replicate from MySQL to PostgreSQL, Oracle, and MongoDB (experimental), from PostgreSQL to PostgreSQL. Please see the [http://www.continuent.com/downloads/documentation official documentation] for more detail. 
+
+
+== I have a problem with the installation. Where do I go? ==
+
+There is a [http://code.google.com/p/tungsten-replicator/wiki/Troubleshooting troubleshooting page] in this wiki. If your problem is not covered, you may use the IRC ( irc://freenode.net #tungsten) and the [http://groups.google.com/group/tungsten-replicator-discuss mailing list].
