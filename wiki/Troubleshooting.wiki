@@ -11,14 +11,27 @@ Tungsten is a complex piece of software. Although we are striving to make the in
 === Operating system ===
 
  * *ssh*. The operating system user must be able to connect to the other nodes in the cluster to perform the installation. Such user must connect without need for a password, which you can do either by setting a SSH key without a passphrase, or by using ssh-agent. Either way, if the installer complains about something related to SSH, you should make sure that the user can run a command remotely. 
- * *sudo*. This is a tricky requirement. You will need sudo access only if you plan to use a backup method that requires root access (such as xtrabackup). If you are using mysqldump, you don't need it, and you can force installation by skipping this validation ({{{--skip-validation-check=SudoCheck}}}). If you want to use this feature, though, you need to enable sudo broadly for this user, making sure that _requiretty_ is not set in /etc/sudoers
+ * *sudo*. This is a tricky requirement. You will need sudo access only if you plan to use a backup method that requires root access (such as xtrabackup). If you are using mysqldump, you don't need it, and you can force installation by skipping this validation ({{{--skip-validation-check=SudoCheck}}}). If you want to use this feature, though, you need to enable sudo broadly for this user, making sure that _requiretty_ is not set in /etc/sudoers;
+ * the user must be able to read MySQL binary logs. The simplest way to meet this requirement is making sure that the MySQL data directory is group readable, and assigning the 'mysql' group to the installation user.
 
 === MySQL ===
 
+MySQL is supported from version 4.1 to 5.5. In order to install Tungsten, you need to make sure of the following:
+ * Binary logs must be enabled;
+ * Either the binary log name is 'mysql-bin' or you need to specify how the name pattern;
+ * Every server must have a unique server ID;
+ * MySQL replication must not be active (unless you are installing with the {{{--direct}}} method);
+ * the MySQL user that Tungsten will use for replication must have all privileges with grants option;
+
+If any of the above conditions is not met, the installer will complain and refuse to install.
+
 === Java ===
+
 
 === Ruby ===
 
+Ruby 1.8.5 is required. Installing it is straightforward. Depending on the flavor of your OS, either {{{apt-get ruby}}} or {{{yum ruby}}} will get the job done. If you see errors complaining about missing libraries, probably you need to install a package called {{{ruby-libs}}}.
+If you decide to install Ruby on your own, by compiling from source, be aware that one of the libraries ({{{openssl.rb}}}) is compiled only if you have installed a package called {{{openssl-devel}}}. If that package is missing, Ruby compiles without errors, but then the Tungsten installer will complain that Ruby can't find a given library.
 
 == Problems with ./configure ==
 
