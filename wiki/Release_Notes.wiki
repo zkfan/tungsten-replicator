@@ -13,13 +13,11 @@ This release contains greatly improved parallel replication capabilities includi
 
 This release requires careful attention to upgrade due to the following changes: 
 
-1.) *Installation procedures* have changed substantially.  The old tungsten.cfg is not compatible with the new tungsten.cfg file format, which is JSON-based. The new installation uses *./tools/tungsten-installer*, which is also a validation tool.
-
-2.) The *trep_commit_seqno* table includes additional columns.  
-
-3.) The replicator logs are now integrated by a *user.log*, a more concise and user friendly log.
-
-4.) The installation tools can handle all values in the properties file. In addition to being a single-command installation, the procedure can also customize the replicator properties from the start.
+ # *Installation procedures* have changed substantially.  The old tungsten.cfg is not compatible with the new tungsten.cfg file format, which is JSON-based. The new installation uses *./tools/tungsten-installer*, which is also a validation tool.
+ # Installing a direct slave (useful for parallel replication) is simpler and straightforward. Taking over from MySQL native replication and handing back over to the old slave is also easy. 
+ # The *trep_commit_seqno* table includes additional columns.  
+ # The replicator logs are now integrated by a *user.log*, a more concise and user friendly log.
+ # The installation tools can handle all values in the properties file. In addition to being a single-command installation, the procedure can also customize the replicator properties from the start.
 
 Logs and other data structures should be backwards compatible.  However, due to the nature of these changes we recommend for the safest upgrade that you stop traffic on the master server, quiesce replication fully, delete existing THL logs as well as tungsten_svcname databases, then restart with new version 2.0.4 installations.  
 
