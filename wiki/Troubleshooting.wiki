@@ -1,5 +1,4 @@
 #labels Featured,Phase-Support,Phase-Requirements
-# Troubleshooting Tungsten Replicator installation
 # WORK IN PROGRESS
 
 = Trouble shooting =
