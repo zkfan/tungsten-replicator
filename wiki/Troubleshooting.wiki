@@ -1,0 +1,24 @@
+#labels Featured,Phase-Support,Phase-Requirements
+#Troubleshooting Tungsten Replicator installation
+= Trouble shooting =
+
+Tungsten is a complex piece of software. Although we are striving to make the installation process as easy as possible, there are many places where something can go wrong. This page lists the most frequent cases.
+
+
+== Requirement problems ==
+
+=== Operating system ===
+
+ * ssh
+ * sudo 
+
+=== MySQL ===
+
+=== Java ===
+
+=== Ruby ===
+
+
+== Problems with ./configure ==
+
+If you are having problems with the _./configure_, then you are using an outdated version of Tungsten Replicator. As of version 2.0.4, _./configure_ and _./configure-service_ are deprecated. Instead, you should use *./tools/tungsten-installer* and *./tools/configure-service*. The documentation covers their usage in detail
