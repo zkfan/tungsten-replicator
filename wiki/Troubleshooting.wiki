@@ -1,5 +1,7 @@
 #labels Featured,Phase-Support,Phase-Requirements
-#Troubleshooting Tungsten Replicator installation
+# Troubleshooting Tungsten Replicator installation
+# WORK IN PROGRESS
+
 = Trouble shooting =
 
 Tungsten is a complex piece of software. Although we are striving to make the installation process as easy as possible, there are many places where something can go wrong. This page lists the most frequent cases.
