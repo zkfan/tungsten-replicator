@@ -31,3 +31,7 @@ Continuent offers commercial support and feature development for Tungsten Replic
 == What are the birds on the site logo? ==
 
 Those are the "Tungsten Swans."  The [http://en.wikipedia.org/wiki/Whooper_Swan Whooper Swan] is the national bird of Finland, where Continuent originated.  Swans are also a symbol of beauty and grace.  Ours are replicated of course.  Also, our swans are _not_ geese.  And they are _really not_ ducks. 
+
+== Can you replicate from one SQL platform to another? Example: Replicate from MySQL to PostgreSQL? ==
+
+Yes. Currently we can replicate from MySQL to PostgreSQL, Oracle, and MongoDB (experimental), from PostgreSQL to PostgreSQL. Please see the [http://www.continuent.com/downloads/documentation official documentation] for more detail. 
