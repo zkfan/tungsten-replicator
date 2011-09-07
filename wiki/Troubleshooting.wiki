@@ -12,7 +12,7 @@ Tungsten is a complex piece of software. Although we are striving to make the in
 
  * *ssh*. The operating system user must be able to connect to the other nodes in the cluster to perform the installation. Such user must connect without need for a password, which you can do either by setting a SSH key without a passphrase, or by using ssh-agent. Either way, if the installer complains about something related to SSH, you should make sure that the user can run a command remotely. 
  * *sudo*. This is a tricky requirement. You will need sudo access only if you plan to use a backup method that requires root access (such as xtrabackup). If you are using mysqldump, you don't need it, and you can force installation by skipping this validation ({{{--skip-validation-check=SudoCheck}}}). If you want to use this feature, though, you need to enable sudo broadly for this user, making sure that _requiretty_ is not set in /etc/sudoers;
- * the user must be able to read MySQL binary logs. The simplest way to meet this requirement is making sure that the MySQL data directory is group readable, and assigning the 'mysql' group to the installation user.
+ * the user must be able to *read MySQL binary logs*. The simplest way to meet this requirement is making sure that the MySQL data directory is group readable, and assigning the 'mysql' group to the installation user.
 
 === MySQL ===
 
