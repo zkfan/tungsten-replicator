@@ -1,5 +1,5 @@
 #labels Featured,Phase-Support,Phase-Requirements
-# WORK IN PROGRESS
+# summary Tungsten Replicator troubleshooting (http://bit.ly/trtshoot)
 
 = Trouble shooting =
 
