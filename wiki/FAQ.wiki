@@ -44,9 +44,9 @@ There is a [http://code.google.com/p/tungsten-replicator/wiki/Troubleshooting tr
 
 == How do I install a master-slave replication cluster? ==
 
-Look for {{{tungsten-installer}} in the [http://www.continuent.com/downloads/documentation Tungsten Documentation]. There is a simple example of how to create a cluster with a single command.
+Look for {{{tungsten-installer}}} in the [http://www.continuent.com/downloads/documentation Tungsten Documentation]. There is a simple example of how to create a cluster with a single command.
 
 
 == How do I add a slave to an existing cluster? ==
 
-The procedure is almost the same used to create a master-slave cluster. You use a similar command, with --master-slave and --master-host as in the full cluster installation command. The difference is that the --cluster-hosts list will only contain the slave host. Tungsten will do the right thing.
+The procedure is almost the same used to create a master-slave cluster. You use a similar command, with {{{--master-slave}}} and {{{--master-host}}} as in the full cluster installation command. The difference is that the {{{--cluster-hosts}}} list will only contain the slave host. Tungsten will do the right thing.
