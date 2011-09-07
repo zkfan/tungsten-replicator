@@ -1,5 +1,5 @@
+#summary Tungsten Replicator troubleshooting (http://bit.ly/trtshoot)
 #labels Featured,Phase-Support,Phase-Requirements
-# summary Tungsten Replicator troubleshooting
 
 = Trouble shooting =
 
