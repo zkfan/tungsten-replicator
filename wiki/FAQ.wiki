@@ -40,3 +40,13 @@ Yes. Currently we can replicate from MySQL to PostgreSQL, Oracle, and MongoDB (e
 == I have a problem with the installation. Where do I go? ==
 
 There is a [http://code.google.com/p/tungsten-replicator/wiki/Troubleshooting troubleshooting page] in this wiki. If your problem is not covered, you may use the IRC ( irc://freenode.net #tungsten) and the [http://groups.google.com/group/tungsten-replicator-discuss mailing list].
+
+
+== How do I install a master-slave replication cluster? ==
+
+Look for {{{tungsten-installer}} in the [http://www.continuent.com/downloads/documentation Tungsten Documentation]. There is a simple example of how to create a cluster with a single command.
+
+
+== How do I add a slave to an existing cluster? ==
+
+The procedure is almost the same used to create a master-slave cluster. You use a similar command, with --master-slave and --master-host as in the full cluster installation command. The difference is that the --cluster-hosts list will only contain the slave host. Tungsten will do the right thing.
