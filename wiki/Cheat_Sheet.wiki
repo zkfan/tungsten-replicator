@@ -30,3 +30,5 @@ This is work in progress. Please check this page from time to time as we will ad
 || inspecting a relay log || `mysqlbinlog relay_log_name` || `thl -service name list` ||
 || Skipping a statement || `set global  sql_slave_skip_counter =N` || `trepctl -service name online -skip-seqno X,Y,Z `|| 
 || slave lag || Look at `Seconds behind master` in `SHOW SLAVE STATUS` || look for `appliedLatency` in `trepctl status` ||
+
+Short link to this page: [http://bit.ly/tr20_cheat http://bit.ly/tr20_cheat]
