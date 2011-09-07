@@ -27,7 +27,7 @@ If any of the above conditions is not met, the installer will complain and refus
 
 === Java ===
 
-Java must be installed for Tungsten to run. It requires Java 1.6, regardless of the package. Tungsten rungs fine with the official Sun/Oracle Java, both JRE or JDK, and with openJDK.
+Java must be installed for Tungsten to run. It requires Java 1.6, regardless of the package. Tungsten runs fine with the official Sun/Oracle Java, both JRE or JDK, and with openJDK.
 
 === Ruby ===
 
