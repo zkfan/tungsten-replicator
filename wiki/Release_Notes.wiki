@@ -35,6 +35,8 @@ Issue 82 - Implement THL ParallelQueue Support, aka on-disk queues
 
 Issue 83 - Trepctl should take the RMI port from configuration files
 
+Issue 93 - Duplicate issues in static-servicename.properties
+
 Issue 97 - Mysqldump options are not optimal
 
 Issue 98 - Properties file uses hardcoded file names for backup and other        
@@ -52,6 +54,8 @@ Issue 109 - Slave replicator loses track of position after a process restart
 Issue 113 - Tungsten installer detects privileges for the wrong user
 
 Issue 117 - Report null values distinctly in `./thl list` output          
+
+Issue 120 - Fix issues identified by RandomQueryGenerator tests
 
 Issue 122 - PrimaryKeyFilter throws NullPointerException if it can't find the table  
 
@@ -79,7 +83,9 @@ Issue 151 - Enable seamless migration from and to MySQL replication   Sponsored
 
 Issue 159 - Flush operation does not return the right sequence number (returns the last but one)         
 
-Issue 160 - DatabaseTransformFilter fails with NullPointerException if an event does not have a default schema           
+Issue 160 - DatabaseTransformFilter fails with NullPointerException if an event does not have a default schema
+
+Issue 164 - Merge MySQL->Oracle support           
 
 Issue 167 - Broken installation in build 192   
 
@@ -94,6 +100,8 @@ Issue 176 - Slave replicator does not reliably reconnect when master IP goes dow
 Issue 177 - On-disk queues fail due to apparent race condition but do not stop the replicator            
 
 Issue 180 - Parallel queues are not crash safe
+
+Issue 182 - Tungsten-installer fails master/slave validation if OpenJDK is installed
 
 Issue 184 - Race condition at start-up of THLParallelQueue causes intermittent pipeline failure
 
