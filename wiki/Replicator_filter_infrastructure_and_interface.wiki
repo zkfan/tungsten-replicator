@@ -52,3 +52,37 @@ The replicator will complain when users try to modify a filter without providing
 
 
 
+== On-the-fly filters ==
+
+Probably dreaming, but here's a wish list:
+
+{{{
+
+## rename schemas
+
+   trepctl [-service svc_name] filter -add filter_name \
+      -stage stage_name 
+      -from schema=schema_name \
+      -to schema=new_schema_name
+
+## renames columns
+
+   trepctl [-service svc_name] filter -add filter_name \
+      -stage stage_name 
+      -from table=schema_name.table_name \
+      -to table=new_schema_name.new_table_name
+
+## renames columns 
+   trepctl [-service svc_name] filter -add filter_name \
+      -stage stage_name 
+      -from column=schema_name.table_name.column_name \
+      -to column=new_schema_name.new_table_name.column_name
+
+## modifies content 
+   trepctl [-service svc_name] filter -add filter_name \
+      -stage stage_name 
+      -from column=schema_name.table_name.column_name \
+      -content regex=/Parmesan/Camembert/
+
+}}}
+
