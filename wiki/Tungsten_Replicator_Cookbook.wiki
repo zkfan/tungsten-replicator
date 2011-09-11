@@ -1,7 +1,7 @@
 #summary Tungsten Replicator cookbook
 #labels Featured,Phase-Deploy
 
-= Tungesten Replicator Cookbook =
+= Tungsten Replicator Cookbook =
 
 This is a collection of practical recipes to deal with Tungsten Replicator.
 
