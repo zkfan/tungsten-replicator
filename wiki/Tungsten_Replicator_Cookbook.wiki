@@ -463,18 +463,88 @@ Notice that we don't give the complete binlog file name, but only the extension.
 
 == 2. Administration ==
 
-=== 2.1 Check replication status ===
+=== 2.1 Check replication services ===
+
+The tool that helps you look inside the replicator is called {{{trepctl}}}, and it's located under $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin.
+
+To get a list of the existing services, run:
+
+{{{
+TUNGSTEN_BIN=$TUNGSTEN_HOME/tungsten/tungsten-replicator/bin
+
+$TUNGSTEN_BIN/trepctl services
+}}}
+
 
 === 2.2 Check replication status ===
 
+The 'status' option of trepctl will give you detailed information about the health of the replicator.
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name status
+}}}
+
+
 === 2.3 Suspend and resume replication ===
 
+To suspend a replicator service, put it offline:
+
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name offline
+}}}
+
+Notice that this operation will not affect other services, if your replicator is running more than one.
+
+To put it back online, you change the keyword.
+
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name offline
+}}}
+
+You may go online with several options, such as skipping one or more transactions, or replicating from a different file/position.
+
 === 2.4 Inspect Transaction History Logs ===
+
+The THL (Transaction History Logs) is the data that Tungsten has taken from the master's binary logs and transported to its servers, with the addition of some metadata.
+
+There is a tool, called 'thl', which allows you to see the status of the logs and eventually list its contents. 
+
+{{{
+$TUNGSTEN_BIN/thl -service service_name info
+}}}
+This command will give you a summary of what you may find in the THL.
+
+{{{
+$TUNGSTEN_BIN/thl -service service_name index
+}}}
+Similar to the previous one, it will give you a list of the available THL files, with the minimum and maximum transaction number for each file.
+
+{{{
+$TUNGSTEN_BIN/thl -service service_name list
+}}}
+This command will list all the transactions that are available for the given service. This is potentially dangerous, since it may list millions of transactions on your screen. See the next ones for more options.
+
+{{{
+$TUNGSTEN_BIN/thl -service service_name list -low 0 -high 1858
+$TUNGSTEN_BIN/thl -service service_name list -seqno 34902
+}}}
+The first command lists transactions in a given range, while the second lists only one specific transaction.
 
 === 2.5 Check parallel replication status ===
 
 ==== 2.5.1 Shards ====
 
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name status -name shards
+}}}
+
 ==== 2.5.2 Tasks ====
 
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name status -name tasks
+}}}
+
 ==== 2.5.3 Stores ====
+
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name status -name stores
+}}}
