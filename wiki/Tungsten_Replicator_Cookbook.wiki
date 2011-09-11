@@ -56,7 +56,8 @@ You should add these options to the installation command.
 
 {{{
   --datasource-port=${MASTER_MYSQL_PORT} \
-  --datasource-log-directory=/path/to/your/binary/logs
+  --datasource-log-directory=/path/to/your/binary/logs \
+  --datasource-log-pattern=my-bin
 }}}
 
 
@@ -79,8 +80,53 @@ For example:
 
 === 1.5 Install a direct slave with parallel replication ===
 
+Direct slave replication is a quick method to set replication in a slave, without installing a master replicator.
+It works by establishing a connection with the master, fetching the binary logs locally, and creating a THL stream with that.
+The additional effort of creating relay logs is then compensated by using parallel replication.
 
+This installation assumes that the slave is not running native MySQL replication. For that case, see recipe 1.6.
 
+{{{
+  TUNGSTEN_HOME=$HOME/replication
+  MASTER=m1.mynetwork.com
+  SLAVE1=m2.mynetwork.com
+  ./tools/tungsten-installer \
+    --direct \
+    --master-host=$MASTER \
+    --slave-host=$SLAVE \
+    --master-user=tungsten \
+    --slave-user=tungsten \
+    --master-password=secret \
+    --slave-password=secret \
+    --service-name=mydirect \
+    --channels=10 \
+    --home-directory=$TUNGSTEN_BASE \
+    --svc-parallelization-type=disk \
+    --start-and-report 
+}}}
+
+Notice that you need to pass connection credentials for both the master and the slave. As in regular master/slave replication, there are defaults, which you can override using the following options (defaults in brackets)
+
+{{{
+  --master-host
+  --master-port [3306]
+  --master-user
+  --master-password
+  --master-log-directory  [/var/lib/mysql]
+  --master-log-pattern    [mysql-bin]
+}}}
+
+=== 1.6 taking over replication from a MySQL slave in direct mode ===
+
+In the previous recipe, we have shown how to start replication from a MySQL master, without a replicator on the master side. 
+If the slave is already using MySQL native replication with the intended master, you can take over from the native replication stream simply adding to your installation command
+{{{
+--native-slave-takeover 
+}}}
+
+With this command, Tungsten stops the MySQL slave, gets the binlog file and position from the slave status, and starts replicating from that point.
+
+When the replicator goes offline, it will send a "CHANGE MASTER TO" command to the slave to update log file and position, so that you can continue moving data either with Tungsten or with native replication.
 
 === Install bi-directional replication ===
 
