@@ -77,8 +77,10 @@ For example:
   --rmi-port=10500 \
 }}}
 
+=== 1.5 Install a direct slave with parallel replication ===
 
-=== Install a direct slave with parallel replication ===
+
+
 
 === Install bi-directional replication ===
 
