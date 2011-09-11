@@ -212,7 +212,217 @@ The only difference is SLAVE1 in the --cluster-hosts list, and Tungsten will tak
 
 === 1.9 Install a three masters replication ===
 
+This recipe is left as an exercise for readers who have successfully managed recipe 1.10.
+
 === 1.10 Install a four masters replication ===
+
+You want to install four nodes, in such a way that each node is a master, and each one receives changes from all other nodes.
+
+As in bi-directional replication, you install the master services first.
+
+{{{
+TUNGSTEN_HOME=$HOME/replication
+MASTER1=m1.mynetwork.com
+MASTER1=m2.mynetwork.com
+MASTER3=m3.mynetwork.com
+MASTER4=m4.mynetwork.com
+
+./tools/tungsten-installer \
+   --master-slave \
+   --master-host=$MASTER1 \
+   --datasource-user=tungsten \
+   --datasource-password=secret \
+   --service-name=alpha \
+   --home-directory=/home/tungsten/installs/four_masters \
+   --cluster-hosts=$MASTER1 --start-and-report
+
+./tools/tungsten-installer \
+   --master-slave \
+   --master-host=$MASTER2 \
+   --datasource-user=tungsten \
+   --datasource-password=secret \
+   --service-name=alpha \
+   --home-directory=/home/tungsten/installs/four_masters \
+   --cluster-hosts=$MASTER2 --start-and-report
+
+./tools/tungsten-installer \
+   --master-slave \
+   --master-host=$MASTER3 \
+   --datasource-user=tungsten \
+   --datasource-password=secret \
+   --service-name=alpha \
+   --home-directory=/home/tungsten/installs/four_masters \
+   --cluster-hosts=$MASTER3 --start-and-report
+
+./tools/tungsten-installer \
+   --master-slave \
+   --master-host=$MASTER4 \
+   --datasource-user=tungsten \
+   --datasource-password=secret \
+   --service-name=alpha \
+   --home-directory=/home/tungsten/installs/four_masters \
+   --cluster-hosts=$MASTER4 --start-and-report
+}}}
+
+Next, you will install three slave services for each master.
+
+{{{
+TUNGSTEN_TOOLS=$TUNGSTEN_HOME/tungsten/tools
+
+# MASTER 1
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER1 \
+  --datasource=m1_mynetwork_com \
+  --local-service-name=alpha \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER2 \
+  --svc-start bravo
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER1 \
+  --datasource=m1_mynetwork_com \
+  --local-service-name=alpha \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER3 \
+  --svc-start charlie
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER1 \
+  --datasource=m1_mynetwork_com \
+  --local-service-name=alpha \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER4 \
+  --svc-start delta
+}}}
+
+Let's see master 2 
+
+{{{
+# MASTER 2
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER2 \
+  --datasource=m2_mynetwork_com \
+  --local-service-name=bravo \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER1 \
+  --svc-start alpha
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER2 \
+  --datasource=m2_mynetwork_com \
+  --local-service-name=bravo \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER3 \
+  --svc-start charlie
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER2 \
+  --datasource=m2_mynetwork_com \
+  --local-service-name=bravo \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER4 \
+  --svc-start delta
+}}}
+
+And master 3:
+
+{{{
+# MASTER 3
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER3 \
+  --datasource=m3_mynetwork_com \
+  --local-service-name=charlie \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER1 \
+  --svc-start alpha
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER3 \
+  --datasource=m3_mynetwork_com \
+  --local-service-name=charlie \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER2 \
+  --svc-start bravo
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER4 \
+  --datasource=m3_mynetwork_com \
+  --local-service-name=bravo \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER4 \
+  --svc-start delta
+}}}
+
+And finally master 4:
+
+{{{
+# MASTER 4
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER4 \
+  --datasource=m4_mynetwork_com \
+  --local-service-name=delta \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER1 \
+  --svc-start alpha
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER4 \
+  --datasource=m4_mynetwork_com \
+  --local-service-name=bravo \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER2 \
+  --svc-start bravo
+
+$TUNGSTEN_TOOLS/configure-service \
+  -C --quiet \
+  --host=$MASTER4 \
+  --datasource=m4_mynetwork_com \
+  --local-service-name=delta \
+  --role=slave \
+  --service-type=remote \
+  --release-directory=$TUNGSTEN_HOME/tungsten \
+  --master-thl-host=$MASTER3 \
+  --svc-start charlie
+}}}
+
+The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.
 
 === 1.11 Add one slave to an existing master ===
 
