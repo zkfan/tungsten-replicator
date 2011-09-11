@@ -5,9 +5,78 @@
 
 This is a collection of practical recipes to deal with Tungsten Replicator.
 
-== Installation ==
+== 1. Installation ==
 
-=== Install a master / slave cluster ===
+=== 1.1 Get the replicator ===
+
+All the recipes about installation require that you get Tungsten Replicator binaries. This recipe explains how to do it once for ever.
+
+ # Determine which is the latest version. The latest stable version is the one featured on [http://code.google.com/p/tungsten-replicator/ Tungsten Replicator project page]
+ # If you want the latest release, which probably has more features, more bug fixes, and possibly more unknown bugs, you may get the very latest binaries [http://s3.amazonaws.com/files.continuent.com/builds/nightly/tungsten-2.0-snapshots/index.html from the build server].
+ # Download the replicator
+ # Create a temporary directory. This is *not* the directory where you want to install Tungsten. You will use it only to launch the installation command. 
+ # Expand the tarball
+ # Get inside the newly created directory
+ # We refer to this directory as the *release directory*
+ # Now you can follow the directions from another recipe.
+
+=== 1.2 Install a master / slave cluster ===
+
+ # make sure that all the hosts meet the [https://s3.amazonaws.com/releases.continuent.com/doc/replicator-2.0.4/html/Tungsten-Installation-Guide-mysql/content/ch05.html requirements]
+ # create a directory where you want to install the replicator. We refer to this directory as the * Tungsten home directory*;
+ # Get the replicator binaries using recipe 1.1
+ # Run the following command, after changing the directory and host names to match your environment.
+
+{{{
+  TUNGSTEN_HOME=$HOME/replication
+  MASTER=m1.mynetwork.com
+  SLAVE1=m3.mynetwork.com
+  SLAVE2=m3.mynetwork.com
+  ./tools/tungsten-installer \
+    --master-slave \
+    --master-host=$MASTER \
+    --datasource-user=MYUSER \
+    --datasource-password=MYPWD \
+    --service-name=dragon \
+    --home-directory=$TUNGSTEN_HOME \
+    --cluster-hosts=$MASTER,$SLAVE1,$SLAVE2 \
+    --start-and-report
+}}}
+
+This command takes several defaults into account.
+It assumes that MySQL is installed in {{{/var/lib/mysql/}}}, that the server uses port {{{3306}}}, and that the binary logs are in the data directory. We use these values because they are the ones used by RPM installers.
+If you use different values, please see recipe 1.3.
+
+
+=== 1.3 Install a master slave directory with customized parameters ===
+
+If the defaults used in recipe 1.2 are not convenient, you can instruct the replicator to use paths and ports that describe your server.
+
+You should add these options to the installation command.
+
+{{{
+  --datasource-port=${MASTER_MYSQL_PORT} \
+  --datasource-log-directory=/path/to/your/binary/logs
+}}}
+
+
+=== 1.4 Install more than one Tungsten Replicator in one host ===
+
+You may install more than one Tungsten Replicator in the same host.
+One good reason for doing it may be because you want to test several servers at once, or because you have more MySQL servers in the same host and they need to replicate from different masters.
+In the first case, you may want to have a look at [http://code.google.com/p/tungsten-toolbox/ Tungsten sandbox]. But if you want to do that on your own, you need to make sure that there is no overlapping of three base elements in the replicator: 
+
+* the THL directory, which is the place where the Transaction history logs are stored. This directory contains one directory for every service. It is important that you don't use two replicators with the same service name pointing at this directory.
+* The THL port. This is the port used by the replicator to send the transaction records.
+* The RMI port. This port is used to send JMX messages that the replicator uses for its own functioning.
+
+For example:
+{{{
+  --thl-directory=/path/to/THL/files \
+  --thl-port=22000 \
+  --rmi-port=10500 \
+}}}
+
 
 === Install a direct slave with parallel replication ===
 
