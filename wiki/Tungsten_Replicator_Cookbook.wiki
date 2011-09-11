@@ -130,7 +130,85 @@ When the replicator goes offline, it will send a "CHANGE MASTER TO" command to t
 
 === 1.7 Install bi-directional replication ===
 
+To install multiple replication services on two nodes, you need first to install the master service. This is similar to master-slave installation, with the difference that we are not installing any slaves. Only masters.
+
+{{{
+TUNGSTEN_HOME=$HOME/replication
+MASTER1=m1.mynetwork.com
+MASTER1=m2.mynetwork.com
+
+./tools/tungsten-installer \
+    --master-slave \
+    --master-host=$MASTER1 \
+    --datasource-user=tungsten \
+    --datasource-password=secret \
+    --service-name=charlie \
+    --home-directory=$TUNGSTEN_HOME \
+    --cluster-hosts=$MASTER1 \
+    --start-and-report
+
+  ./tools/tungsten-installer \
+    --master-slave \
+    --master-host=$MASTER2 \
+    --datasource-user=tungsten \
+    --datasource-password=secret \
+    --service-name=delta \
+    --home-directory=$TUNGSTEN_HOME \
+    --cluster-hosts=$MASTER2 \
+    --start-and-report
+
+}}}
+
+You run the above commands from the *release directory*. After that, the *Tungsten home directory* is populated, and the following commands need to run from there.
+
+What we need to do is creating, on each host, a slave service for the corresponding master on the other host. Thus, since we have "charlie" on MASTER1 and "delta" on MASTER2, we will create a slave service "delta" on MASTER1 and "charlie" on MASTER2.
+
+{{{
+TUNGSTEN_TOOLS=$TUNGSTEN_HOME/tungsten/tools
+
+$TUNGSTEN_TOOLS/configure-service \
+   --host $MASTER1 \
+   -C -q \
+   --local-service-name=charlie \
+   --role=slave \
+   --service-type=remote \
+   --datasource=m1_mynetwork_com \
+   --master-thl-host=$MASTER2 \
+   --svc-start delta
+
+$TUNGSTEN_TOOLS/configure-service 
+  --host $MASTER2 \
+  -C -q \
+    --local-service-name=delta \
+    --role=slave \
+    --service-type=remote \
+    --datasource=m2_mynetwork_com
+    --master-thl-host=$MASTER1 \
+    --svc-start charlie
+}}}
+
+The datasource name is the name of the local hostname, with dots replaced by underscores. (Note to self: this needs to become a bit easier to deal with).
+
 === 1.8 Install bi-directional replication with additional slave ===
+
+The recipe is similar to 1.7.
+Assuming that we have a candidate slave m3.mynetwork.com, which we want to be slave of m2, what we will do is simply add this information to the second installation command:
+
+{{{
+SLAVE1=m3.mynetwork.com
+
+  ./tools/tungsten-installer \
+    --master-slave \
+    --master-host=$MASTER2 \
+    --datasource-user=tungsten \
+    --datasource-password=secret \
+    --service-name=delta \
+    --home-directory=$TUNGSTEN_HOME \
+    --cluster-hosts=$MASTER2,SLAVE1 \
+    --start-and-report
+}}}
+
+The only difference is SLAVE1 in the --cluster-hosts list, and Tungsten will take care of the rest.
 
 === 1.9 Install a three masters replication ===
 
