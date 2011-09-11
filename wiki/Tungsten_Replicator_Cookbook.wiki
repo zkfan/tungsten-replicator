@@ -128,31 +128,31 @@ With this command, Tungsten stops the MySQL slave, gets the binlog file and posi
 
 When the replicator goes offline, it will send a "CHANGE MASTER TO" command to the slave to update log file and position, so that you can continue moving data either with Tungsten or with native replication.
 
-=== Install bi-directional replication ===
+=== 1.7 Install bi-directional replication ===
 
-=== Install bi-directional replication with additional slave ===
+=== 1.8 Install bi-directional replication with additional slave ===
 
-=== Install a three masters replication ===
+=== 1.9 Install a three masters replication ===
 
-=== Install a four masters replication ===
+=== 1.10 Install a four masters replication ===
 
-=== Add one slave to an existing master ===
+=== 1.11 Add one slave to an existing master ===
 
-=== Start a master with a given binlog/position ===
+=== 1.12 Start a master with a given binlog and position ===
 
 
-== Administration ==
+== 2. Administration ==
 
-=== Check replication status ===
+=== 2.1 Check replication status ===
 
-=== Suspend and resume replication ===
+=== 2.2 Suspend and resume replication ===
 
-=== Inspect Transaction History Logs ===
+=== 2.3 Inspect Transaction History Logs ===
 
-=== Check parallel replication status ===
+=== 2.4 Check parallel replication status ===
 
-==== Shards ====
+==== 2.4.1 Shards ====
 
-==== Tasks ====
+==== 2.4.2 Tasks ====
 
-==== Stores ====
+==== 2.4.3 Stores ====
