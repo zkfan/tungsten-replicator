@@ -424,23 +424,57 @@ $TUNGSTEN_TOOLS/configure-service \
 
 The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.
 
-=== 1.11 Add one slave to an existing master ===
+=== 1.11 Modify one or more properties with the installer ===
 
-=== 1.12 Start a master with a given binlog and position ===
+Tungsten Replicator gets its configuration from a file called static-SERVICE_NAME.properties, located $TUNGSTEN_HOME/tungsten/tungsten-replicator/conf/.
+This file can be edited with a regular text editor. If you know what you are doing, you can fine tune the replicator to your will.
+The procedure is not painless. You need to install the replicator first, then edit the file, then eventually restart the replicator.
 
+This procedure is difficult to script, and it is especially inconvenient when the changed property needs to be there right when the replicator starts.
+
+To your help, there is an option of {{{tungsten-installer}}}, which allows you to change any property in the properties file.
+
+For example, let's suppose that you don;t want the replicator to go ONLINE automatically when it starts. This behavior is controlled by a property called {{{replicator.auto_enable}}}, which is true by default. Of course, if you install the replicator with the --start option, you won't get a chance of modifying the property, because the replicator will be already online.
+
+To achieve your purpose, you will add this option to the installation command:
+{{{
+    --property=replicator.auto_enable=false
+}}}
+
+=== 1.12 Add one slave to an existing master ===
+
+The procedure is almost the same used to create a master-slave cluster. You use a similar command, with {{{--master-slave}}} and {{{--master-host}}} as in the full cluster installation command. The difference is that the {{{--cluster-hosts}}} list will only contain the slave host. Tungsten will do the right thing.
+
+=== 1.13 Start a master service with a given binlog and position ===
+
+The easiest way of starting the master service at a given binlog file and position is by using 
+
+{{{ --master-log-file=mysql-bin.000045 --master-log-pos=10292 }}}
+
+(Note: there is a problem with this procedure as documented in  [http://code.google.com/p/tungsten-replicator/issues/detail?id=216 Issue#216].
+
+If the replicator has already been installed and we want to start replicating from a given binlog file and position, we can do this:
+
+{{{
+    trepctl -host host_name -service service_name offline 
+    trepctl -host host_name -service service_name online -from-event 000045:10292
+}}}
+Notice that we don't give the complete binlog file name, but only the extension. The number after the colon is the position.
 
 == 2. Administration ==
 
 === 2.1 Check replication status ===
 
-=== 2.2 Suspend and resume replication ===
+=== 2.2 Check replication status ===
 
-=== 2.3 Inspect Transaction History Logs ===
+=== 2.3 Suspend and resume replication ===
 
-=== 2.4 Check parallel replication status ===
+=== 2.4 Inspect Transaction History Logs ===
 
-==== 2.4.1 Shards ====
+=== 2.5 Check parallel replication status ===
 
-==== 2.4.2 Tasks ====
+==== 2.5.1 Shards ====
 
-==== 2.4.3 Stores ====
+==== 2.5.2 Tasks ====
+
+==== 2.5.3 Stores ====
