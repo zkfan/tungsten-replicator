@@ -1,0 +1,42 @@
+#summary Tungsten Replicator cookbook
+#labels Featured,Phase-Deploy
+#sidebar TableOfContents
+
+= Tungesten Replicator Cookbook =
+
+This is a collection of practical recipes to deal with Tungsten Replicator.
+
+== Installation ==
+
+=== Install a master / slave cluster ===
+
+=== Install a direct slave with parallel replication ===
+
+=== Install bi-directional replication ===
+
+=== Install bi-directional replication with additional slave ===
+
+=== Install a three masters replication ===
+
+=== Install a four masters replication ===
+
+=== Add one slave to an existing master ===
+
+=== Start a master with a given binlog/position ===
+
+
+== Administration ==
+
+=== Check replication status ===
+
+=== Suspend and resume replication ===
+
+=== Inspect Transaction History Logs ===
+
+=== Check parallel replication status ===
+
+==== Shards ====
+
+==== Tasks ====
+
+==== Stores ====
