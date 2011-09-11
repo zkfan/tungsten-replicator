@@ -1,6 +1,7 @@
 #summary Tungsten Replicator cookbook
 #labels Featured,Phase-Deploy
-
+#sidebar TableOfContents
+<wiki:toc max_depth="4" />
 = Tungsten Replicator Cookbook =
 
 This is a collection of practical recipes to deal with Tungsten Replicator.
