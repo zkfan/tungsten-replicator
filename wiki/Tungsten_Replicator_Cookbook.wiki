@@ -555,3 +555,6 @@ $TUNGSTEN_BIN/trepctl -service service_name status -name tasks
 {{{
 $TUNGSTEN_BIN/trepctl -service service_name status -name stores
 }}}
+
+
+Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_recipes]
