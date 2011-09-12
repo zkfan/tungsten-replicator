@@ -1,7 +1,7 @@
 #summary Tungsten Replicator cookbook
 #labels Featured,Phase-Deploy
 <wiki:toc max_depth="4" />
-<g:plusone size="medium"></g:plusone>
+
 = Tungsten Replicator Cookbook =
 
 This is a collection of practical recipes to deal with Tungsten Replicator.
@@ -22,6 +22,8 @@ All the recipes about installation require that you get Tungsten Replicator bina
  # Now you can follow the directions from another recipe.
 
 === 1.2 Install a master / slave cluster ===
+
+[https://lh5.googleusercontent.com/-jgCZbwwB4WE/TfC6Ksv2LiI/AAAAAAAABIQ/Ygpazw8EvEQ/s640/master_slave.png]
 
  # make sure that all the hosts meet the [https://s3.amazonaws.com/releases.continuent.com/doc/replicator-2.0.4/html/Tungsten-Installation-Guide-mysql/content/ch05.html requirements]
  # create a directory where you want to install the replicator. We refer to this directory as the * Tungsten home directory*;
@@ -81,6 +83,8 @@ For example:
 
 === 1.5 Install a direct slave with parallel replication ===
 
+[https://lh5.googleusercontent.com/-dhH-sPprwrw/TfC6L_F5RDI/AAAAAAAABIY/UwtVngp962Y/s720/slave_direct.png]
+
 Direct slave replication is a quick method to set replication in a slave, without installing a master replicator.
 It works by establishing a connection with the master, fetching the binary logs locally, and creating a THL stream with that.
 The additional effort of creating relay logs is then compensated by using parallel replication.
@@ -131,6 +135,7 @@ When the replicator goes offline, it will send a "CHANGE MASTER TO" command to t
 
 === 1.7 Install bi-directional replication ===
 
+[https://lh5.googleusercontent.com/_gVfZHGgf5LA/TXO2MfOUagI/AAAAAAAABEc/jvt9lZC8uvY/Tungsten_bi_directional_replication.png]
 To install multiple replication services on two nodes, you need first to install the master service. This is similar to master-slave installation, with the difference that we are not installing any slaves. Only masters.
 
 {{{
@@ -217,6 +222,7 @@ This recipe is left as an exercise for readers who have successfully managed rec
 
 === 1.10 Install a four masters replication ===
 
+[https://lh4.googleusercontent.com/-gAnEaWOQK40/Tm2NpEWCT0I/AAAAAAAABMc/M3zIn7PdIQg/s720/Tungsten_four_masters_replication.png]
 You want to install four nodes, in such a way that each node is a master, and each one receives changes from all other nodes.
 
 As in bi-directional replication, you install the master services first.
