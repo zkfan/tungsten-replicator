@@ -556,5 +556,10 @@ $TUNGSTEN_BIN/trepctl -service service_name status -name tasks
 $TUNGSTEN_BIN/trepctl -service service_name status -name stores
 }}}
 
+=== 2.6 Skipping a transaction ===
+
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
+}}}
 
 Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_recipes]
