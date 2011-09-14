@@ -504,10 +504,16 @@ Notice that this operation will not affect other services, if your replicator is
 To put it back online, you change the keyword.
 
 {{{
-$TUNGSTEN_BIN/trepctl -service service_name offline
+$TUNGSTEN_BIN/trepctl -service service_name online
 }}}
 
 You may go online with several options, such as skipping one or more transactions, or replicating from a different file/position.
+
+==== 2.3.1 Resuming replication and skipping a transaction ====
+
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
+}}}
 
 === 2.4 Inspect Transaction History Logs ===
 
@@ -554,12 +560,6 @@ $TUNGSTEN_BIN/trepctl -service service_name status -name tasks
 
 {{{
 $TUNGSTEN_BIN/trepctl -service service_name status -name stores
-}}}
-
-=== 2.6 Skipping a transaction ===
-
-{{{
-$TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
 }}}
 
 Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_recipes]
