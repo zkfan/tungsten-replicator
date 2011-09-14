@@ -562,4 +562,30 @@ $TUNGSTEN_BIN/trepctl -service service_name status -name tasks
 $TUNGSTEN_BIN/trepctl -service service_name status -name stores
 }}}
 
+=== 2.6 Resetting the Transaction History Logs ===
+
+The THL can be cleared in order to reset the replication service and start from a clean slate.
+
+ * Suspend replication
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name offline
+}}}
+ * Remove all existing THL files
+{{{
+rm $TUNGSTEN_HOME/thl/service_name/*
+}}}
+ * Remove all existing relay files
+{{{
+rm $TUNGSTEN_HOME/relay/service_name/*
+}}}
+ * Reset the replication service schema
+{{{
+TRUNCATE tungsten_service_name.trep_commit_seqno;
+TRUNCATE tungsten_service_name.heartbeat;
+}}}
+ * Resume replication
+{{{
+$TUNGSTEN_BIN/trepctl -service service_name online
+}}}
+
 Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_recipes]
