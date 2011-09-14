@@ -96,5 +96,8 @@ SEQ# = 3 / FRAG# = 0 (last frag)
 ./tungsten-replicator/bin/trepctl -service alpha online
 }}}
 
+=== Failing statement : INSERT INTO test.people (  ,  ,  ,  ,  ,  ,  )  VALUES (  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ) ===
+
+This error occurs when using row replication and the table is not present on the slave.  Verify that the table exists and put the replication service online.  If the problem persists, check {{{tungsten-replicator/log/trepsvc.log}}} for problems accessing the database system.
 
 Short link to this page: [http://bit.ly/trtshoot http://bit.ly/trtshoot]
