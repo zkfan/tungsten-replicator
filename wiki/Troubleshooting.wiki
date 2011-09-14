@@ -1,12 +1,12 @@
 #summary Tungsten Replicator troubleshooting
 #labels Featured,Phase-Support,Phase-Requirements
+<wiki:toc max_depth="4" />
 
 = Trouble shooting =
 
 Tungsten is a complex piece of software. Although we are striving to make the installation process as easy as possible, there are many places where something can go wrong. This page lists the most frequent cases.
 
-
-== Requirement problems ==
+== Requirements ==
 
 === Operating system ===
 
@@ -41,11 +41,11 @@ Java must be installed for Tungsten to run. It requires Java 1.6, regardless of 
 Ruby 1.8.5 is required. Installing it is straightforward. Depending on the flavor of your OS, either {{{apt-get ruby}}} or {{{yum ruby}}} will get the job done. If you see errors complaining about missing libraries, probably you need to install a package called {{{ruby-libs}}}.
 If you decide to install Ruby on your own, by compiling from source, be aware that one of the libraries ({{{openssl.rb}}}) is compiled only if you have installed a package called {{{openssl-devel}}}. If that package is missing, Ruby compiles without errors, but then the Tungsten installer will complain that Ruby can't find a given library.
 
-== Problems with ./configure ==
-
+== Installation ==
+=== Problems with ./configure ===
 If you are having problems with the _./configure_, then you are using an outdated version of Tungsten Replicator. As of version 2.0.4, _./configure_ and _./configure-service_ are deprecated. Instead, you should use *./tools/tungsten-installer* and *./tools/configure-service*. The documentation covers their usage in detail.
 
-== Problems with a *second* installation ==
+=== Problems with a *second* installation ===
 If you have installed Tungsten, and then you want to reinstall with the same servers, either because there was an error, or you have realized that you would like to install with different parameters, you must make sure that the previous installation is removed.
 Therefore, before installing Tungsten again, do the following in all the servers where Tungsten was installed:
 
@@ -54,5 +54,40 @@ Therefore, before installing Tungsten again, do the following in all the servers
  * remove all the THL files (usually in $tungsten_home/thl/svc_name) 
  * drop the tungsten_svc_name schema from MySQL
  * Either run 'reset master', or use the appropriate options when installing ({{{--master-log-file}}} and {{{--master-log-port}}}).
+
+== Operation ==
+=== Event application failed: seqno=3 fragno=0 message=java.sql.SQLException: Statement failed on slave but succeeded on master ===
+The key to resolving this issue is to examine the failed event and then take action to resolve the issue and then restart replication.
+
+_This example will assume that the service name is alpha_
+
+ * Search for {{{com.continuent.tungsten.replicator.applier.ApplierException}}} in the {{{tungsten-replicator/log/trepsvc.log}}} file.  The stacktrace displayed in the log should give you some information about the error encountered while applying the event.
+ * If you need additional information about the event, use the thl utility to extract the event data.  An event can include multiple fragments, make sure that you look at the fragment where the error occurred.
+{{{
+./tungsten-replicator/bin/thl -service alpha list -seqno 3
+}}}
+{{{
+SEQ# = 3 / FRAG# = 0 (last frag)
+- TIME = 2011-09-14 09:06:42.0
+- EPOCH# = 0
+- EVENTID = mysql-bin.000002:0000000000000592;11
+- SOURCEID = db1
+- METADATA = [mysql_server_id=101;service=alpha;shard=test]
+- TYPE = com.continuent.tungsten.replicator.event.ReplDBMSEvent
+- SQL(0) = SET INSERT_ID = 2
+- OPTIONS = [##charset = ISO8859_1, autocommit = 1, sql_auto_is_null = 1, foreign_key_checks = 1, unique_checks = 1, sql_mode = '', character_set_client = 8, collation_connection = 8, collation_server = 8]
+- SCHEMA = 
+- SQL(1) = insert into test.names (name) values ('Robert')
+}}}
+ * Take action to resolve the error.  Sometimes the proper resolution is to manually run the statements in the event.  If you take this course of action, make sure to run all of the fragments in the event.  You will be able to skip the whole event when taking the replication service online.
+ * If you resolved the issue by manually executing the event, put the service online skipping the event that had an error.
+{{{
+./tungsten-replicator/bin/trepctl -service alpha online -skip-seqno 3
+}}}
+ * Otherwise, put the service online and replication will continue.
+{{{
+./tungsten-replicator/bin/trepctl -service alpha online
+}}}
+
 
 Short link to this page: [http://bit.ly/trtshoot http://bit.ly/trtshoot]
