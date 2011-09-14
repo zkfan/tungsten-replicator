@@ -56,6 +56,13 @@ Therefore, before installing Tungsten again, do the following in all the servers
  * Either run 'reset master', or use the appropriate options when installing ({{{--master-log-file}}} and {{{--master-log-port}}}).
 
 == Operation ==
+=== Changes are not appearing on the slave ===
+ * Run {{{tungsten-replicator/bin/trepctl services}}} to make sure all replication services are {{{ONLINE}}}
+ * If a service is not {{{ONLINE}}}, run {{{tungsten-replicator/bin/trepctl -service service_name status}}} to get more details
+ * Review the {{{tungsten-replicator/log/user.log}}} and {{{tungsten-replicator/log/trepsvc.log}}} for additional information about the error
+ * Once you have resolved the error, restart replication by running {{{tungsten-replicator/bin/trepctl -service service_name online}}}
+ * Use the trepctl command to monitor replication status and resolve any other issues
+
 === Event application failed: seqno=3 fragno=0 message=java.sql.SQLException: Statement failed on slave but succeeded on master ===
 The key to resolving this issue is to examine the failed event and then take action to resolve the issue and then restart replication.
 
