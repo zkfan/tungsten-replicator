@@ -468,9 +468,9 @@ If the replicator has already been installed and we want to start replicating fr
 }}}
 Notice that we don't give the complete binlog file name, but only the extension. The number after the colon is the position.
 
-== 2. Administration ==
+== Administration ==
 
-=== 2.1 Check replication services ===
+=== Check replication services ===
 
 The tool that helps you look inside the replicator is called {{{trepctl}}}, and it's located under $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin.
 
@@ -483,7 +483,7 @@ $TUNGSTEN_BIN/trepctl services
 }}}
 
 
-=== 2.2 Check replication status ===
+=== Check replication status ===
 
 The 'status' option of trepctl will give you detailed information about the health of the replicator.
 {{{
@@ -515,7 +515,7 @@ You may go online with several options, such as skipping one or more transaction
 $TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
 }}}
 
-=== 2.4 Inspect Transaction History Logs ===
+=== Inspect Transaction History Logs ===
 
 The THL (Transaction History Logs) is the data that Tungsten has taken from the master's binary logs and transported to its servers, with the addition of some metadata.
 
@@ -542,21 +542,21 @@ $TUNGSTEN_BIN/thl -service service_name list -seqno 34902
 }}}
 The first command lists transactions in a given range, while the second lists only one specific transaction.
 
-=== 2.5 Check parallel replication status ===
+=== Check parallel replication status ===
 
-==== 2.5.1 Shards ====
+==== Shards ====
 
 {{{
 $TUNGSTEN_BIN/trepctl -service service_name status -name shards
 }}}
 
-==== 2.5.2 Tasks ====
+==== Tasks ====
 
 {{{
 $TUNGSTEN_BIN/trepctl -service service_name status -name tasks
 }}}
 
-==== 2.5.3 Stores ====
+==== Stores ====
 
 {{{
 $TUNGSTEN_BIN/trepctl -service service_name status -name stores
