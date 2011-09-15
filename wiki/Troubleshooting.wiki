@@ -85,7 +85,7 @@ SEQ# = 3 / FRAG# = 0 (last frag)
 - SQL(1) = insert into test.names (name) values ('Robert')
 }}}
  * Take action to resolve the error.  Sometimes the proper resolution is to manually run the statements in the transaction.  If you take this course of action, make sure to run all of the fragments in the transaction.  You will be able to skip the whole transaction when taking the replication service online.
- * Resume replication of the database.  If you manually ran the statements in the transaction, skip it while resuming replication.  [Tungsten_Replicator_Cookbook#Suspend_and_resume_replication Resuming replication] [Tungsten_Replicator_Cookbook}
+ * Resume replication of the database.  If you manually ran the statements in the transaction, skip it while resuming replication.  [TungstenReplicatorCookbook#Suspend_and_resume_replication]
 
 === Failing statement : INSERT INTO test.people (  ,  ,  ,  ,  ,  ,  )  VALUES (  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ) ===
 
