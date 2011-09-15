@@ -580,8 +580,8 @@ rm $TUNGSTEN_HOME/relay/service_name/*
 }}}
  * Reset the replication service schema
 {{{
-TRUNCATE tungsten_service_name.trep_commit_seqno;
-TRUNCATE tungsten_service_name.heartbeat;
+TRUNCATE TABLE tungsten_service_name.trep_commit_seqno;
+TRUNCATE TABLE tungsten_service_name.heartbeat;
 }}}
  * Resume replication
 {{{
