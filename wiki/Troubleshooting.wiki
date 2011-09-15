@@ -68,6 +68,7 @@ The key to resolving this issue is to examine the failed transaction and then ta
 
  * Search for {{{com.continuent.tungsten.replicator.applier.ApplierException}}} in the {{{tungsten-replicator/log/trepsvc.log}}} file.  The stacktrace displayed in the log should give you some information about the error encountered while applying the transaction.
  * If you need additional information about the transaction, use the thl utility to extract the event data.  A transaction can include multiple fragments, make sure that you look at the fragment where the error occurred.
+[TungstenReplicatorCookbook#Inspect_Transaction_History_Logs]
 {{{
 ./tungsten-replicator/bin/thl -service service_name list -seqno 3
 }}}
