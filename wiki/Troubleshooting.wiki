@@ -95,4 +95,12 @@ If the replicator fails while applying a statement like this, you should check t
 
 This error occurs when using row replication and the table is not present on the slave.  Verify that the table exists and put the replication service online.  If the problem persists, check {{{tungsten-replicator/log/trepsvc.log}}} for problems accessing the database system.
 
+=== There was an error parsing the config file: expected next name, value pair in object at '},"datasources": {"d'! (RuntimeError) ===
+
+There is a problem with the {{{configs/tungsten.cfg}}} file.  If you manually modified it, check for any trailing commas or JSON parsing errors.  Try running {{{tools/configure --output-config}}} after making modifications to see if the config file can be properly parsed.
+
+=== Unable to determine the current config for tungsten@db1:/opt/continuent/tungsten ===
+
+There is a problem accessing the host or reading the {{{configs/tungsten.cfg}}} file.  If you are able to successfully SSH to the machine, or if it is the localhost, check the validity of the config file. [#There_was_an_error_parsing_the_config_file:_expected_next_name,]
+
 Short link to this page: [http://bit.ly/trtshoot http://bit.ly/trtshoot]
