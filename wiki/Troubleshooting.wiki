@@ -63,7 +63,7 @@ Therefore, before installing Tungsten again, do the following in all the servers
  * Once you have resolved the error, restart replication by running {{{tungsten-replicator/bin/trepctl -service service_name online}}}
  * Use the trepctl command to monitor replication status and resolve any other issues
 
-=== Event application failed: seqno=3 fragno=0 message=java.sql.SQLException: Statement failed on slave but succeeded on master ===
+=== {{{Event application failed: seqno=3 fragno=0 message=java.sql.SQLException: Statement failed on slave but succeeded on master}}} ===
 The key to resolving this issue is to examine the failed transaction and then take action to resolve the issue and then restart replication.
 
  * Search for {{{com.continuent.tungsten.replicator.applier.ApplierException}}} in the {{{tungsten-replicator/log/trepsvc.log}}} file.  The stacktrace displayed in the log should give you some information about the error encountered while applying the transaction.
@@ -91,15 +91,15 @@ SEQ# = 3 / FRAG# = 0 (last frag)
 
 If the replicator fails while applying a statement like this, you should check that the service name is the same on the master and the slave.  If they differ, you should remove the replicator on the slave and reinstall using the service name from the master.
 
-=== Failing statement : INSERT INTO test.people (  ,  ,  ,  ,  ,  ,  )  VALUES (  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ) ===
+=== {{{Failing statement : INSERT INTO test.people (  ,  ,  ,  ,  ,  ,  )  VALUES (  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  ,  ?  )}}} ===
 
 This error occurs when using row replication and the table is not present on the slave.  Verify that the table exists and put the replication service online.  If the problem persists, check {{{tungsten-replicator/log/trepsvc.log}}} for problems accessing the database system.
 
-=== There was an error parsing the config file: expected next name, value pair in object at '},"datasources": {"d'! (RuntimeError) ===
+=== {{{There was an error parsing the config file: expected next name, value pair in object at '},"datasources": {"d'! (RuntimeError)}}} ===
 
 There is a problem with the {{{configs/tungsten.cfg}}} file.  If you manually modified it, check for any trailing commas or JSON parsing errors.  Try running {{{tools/configure --output-config}}} after making modifications to see if the config file can be properly parsed.
 
-=== Unable to determine the current config for tungsten@db1:/opt/continuent/tungsten ===
+=== {{{Unable to determine the current config for tungsten@db1:/opt/continuent/tungsten}}} ===
 
 There is a problem accessing the host or reading the {{{configs/tungsten.cfg}}} file.  If you are able to successfully SSH to the machine, or if it is the localhost, check the validity of the config file. [#There_was_an_error_parsing_the_config_file:_expected_next_name,]
 
