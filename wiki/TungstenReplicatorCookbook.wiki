@@ -468,6 +468,28 @@ If the replicator has already been installed and we want to start replicating fr
 }}}
 Notice that we don't give the complete binlog file name, but only the extension. The number after the colon is the position.
 
+=== Modify the configuration template file prior to configuration ===
+
+There are advanced scenarios where you would like to modify the source template files or even add additional templates to the code.  One of the simplest is when you need to add a new filter definition.  We recommend that you use diff/patch to modify the release package prior to configuration.
+
+ * {{{cp tungsten-replicator-2.0.5 tungsten-replicator-2.0.5-diff}}}
+ * Make changes in tungsten-replicator-2.0.5-diff
+ * {{{diff -ruN tungsten-replicator-2.0.5 tungsten-replicator-2.0.5-diff > t-r-2.0.5.diff}}}
+ * Apply the patch to the release package
+  * {{{patch -p1 -dtungsten-replicator-2.0.5 < t-r-2.0.5.diff}}}
+  * {{{cat t-r-2.0.5.diff | patch -p1 -dtungsten-replicator-2.0.5}}}
+  * 
+{{{
+echo "diff -Nru tungsten-replicator-2.0.5/tungsten-replicator/samples/conf/filters/default/sample.tpl tungsten-replicator-2.0.5-diff/tungsten-replicator/samples/conf/filters/default/sample.tpl
+--- tungsten-replicator-2.0.5/tungsten-replicator/samples/conf/filters/default/sample.tpl    1969-12-31 19:00:00.000000000 -0500
++++ tungsten-replicator-2.0.5-diff/tungsten-replicator/samples/conf/filters/default/sample.tpl 2011-09-16 12:13:01.000000000 -0400
+@@ -0,0 +1,2 @@
++# Sample filter
++replicator.filter.sample=com.continuent.tungsten.replicator.filter.SampleFilter
+\ No newline at end of file" | patch -p1 -dtungsten-replicator-2.0.5
+}}}
+ * {{{tungsten-replicator-2.0.5/tools/tungsten-installer ...}}}
+
 == Administration ==
 
 === Check replication services ===
