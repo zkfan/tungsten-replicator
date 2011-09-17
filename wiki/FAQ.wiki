@@ -1,6 +1,6 @@
 #summary F.A.Q.
 #labels Featured
-
+<wiki:toc max_depth="4" />
 = Frequently Asked Questions =
 
 This page answers frequently asked questions about Tungsten.  
@@ -50,5 +50,13 @@ Look for {{{tungsten-installer}}} in the [http://www.continuent.com/downloads/do
 == How do I add a slave to an existing cluster? ==
 
 The procedure is almost the same used to create a master-slave cluster. You use a similar command, with {{{--master-slave}}} and {{{--master-host}}} as in the full cluster installation command. The difference is that the {{{--cluster-hosts}}} list will only contain the slave host. Tungsten will do the right thing.
+
+
+== How do I handle conflicts in multiple master scenarios? ==
+
+There is no built-in conflict resolution in Tungsten.
+On the plus side, you can do multiple masters replication, which is more than what you can do with MySQL native replication.
+On the down side, you need to deal with conflicts on your own. Replication is asynchronous, and thus it can't solve conflicts when it applies the data.
+The best possible strategy is *self discipline*, i.e. organize your data entry in such a way that every entry database is modified only in one entry point. If you do that, Tungsten can help you enforcing this rule using the [http://scale-out-blog.blogspot.com/2011/08/system-of-record-approach-to-multi.html shards API].
 
 Short link to this page: [http://bit.ly/tr20_faq http://bit.ly/tr20_faq]
