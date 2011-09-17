@@ -33,7 +33,7 @@ All the recipes about installation require that you get Tungsten Replicator bina
 {{{
   TUNGSTEN_HOME=$HOME/replication
   MASTER=m1.mynetwork.com
-  SLAVE1=m3.mynetwork.com
+  SLAVE1=m2.mynetwork.com
   SLAVE2=m3.mynetwork.com
   ./tools/tungsten-installer \
     --master-slave \
@@ -230,7 +230,7 @@ As in bi-directional replication, you install the master services first.
 {{{
 TUNGSTEN_HOME=$HOME/replication
 MASTER1=m1.mynetwork.com
-MASTER1=m2.mynetwork.com
+MASTER2=m2.mynetwork.com
 MASTER3=m3.mynetwork.com
 MASTER4=m4.mynetwork.com
 
