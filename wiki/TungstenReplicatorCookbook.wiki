@@ -70,15 +70,35 @@ You may install more than one Tungsten Replicator in the same host.
 One good reason for doing it may be because you want to test several servers at once, or because you have more MySQL servers in the same host and they need to replicate from different masters.
 In the first case, you may want to have a look at [http://code.google.com/p/tungsten-toolbox/ Tungsten sandbox]. But if you want to do that on your own, you need to make sure that there is no overlapping of three base elements in the replicator: 
 
- * the *THL directory*, which is the place where the Transaction history logs are stored. This directory contains one directory for every service. It is important that you don't use two replicators with the same service name pointing at this directory.
+ * the *THL directory* (or the whole --home-directory), which is the place where the Transaction history logs are stored. This directory contains one directory for every service. It is important that you don't use two replicators with the same service name pointing at this directory.
  * The *THL port*. This is the port used by the replicator to send the transaction records.
  * The *RMI port*. This port is used to send JMX messages that the replicator uses for its own functioning.
 
-For example:
+For example, after installing Tungsten master/slave, I want to use an additional database with port 7102 and data directory somewhere else.
+
+With the following command, I install a second replicator, using a different directory for the replicator, and pointing to the existing replicator
+
 {{{
-  --thl-directory=/path/to/THL/files \
-  --thl-port=22000 \
-  --rmi-port=10500 \
+./tools/tungsten-installer \
+  --master-slave \
+  --cluster-hosts=127.0.0.1 \
+  --master-host=HOST_NAME_OF_THE_MASTER \
+  --master-thl-port=2112 \
+  --datasource-port=7102 \
+  --datasource-user=msandbox \
+  --datasource-password=msandbox \
+  --service-name=SAME_NAME_OF_THE_MASTER_SLAVE_SERVICE  \
+  --home-directory=/tmp/some_place \
+  --thl-port=12000 \
+  --rmi-port=4112 \
+  --start-and-report
+}}}
+
+Your replicator will end up in /tmp/some_place
+To check the status you may run
+
+{{{
+/tmp/some_place/tungsten/tungsten-replicator/bin/trepctl -port 12000 services
 }}}
 
 === Install a direct slave with parallel replication ===
