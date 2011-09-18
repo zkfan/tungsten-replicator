@@ -153,6 +153,43 @@ With this command, Tungsten stops the MySQL slave, gets the binlog file and posi
 
 When the replicator goes offline, it will send a "CHANGE MASTER TO" command to the slave to update log file and position, so that you can continue moving data either with Tungsten or with native replication.
 
+=== Install Tungsten master/slave replication in a sandbox ===
+
+[http://code.google.com/p/tungsten-toolbox/wiki/TungstenSandbox Tungsten Sandbox] is a dedicated script that allows you to install 
+multiple dataabse servers and multiple Tungsten Replicator services in a single host.
+
+[https://lh4.googleusercontent.com/-rHIfADez_jI/TfC6JQSSP8I/AAAAAAAABIM/7TtIX9XNAWw/s800/master_slave_sandbox.png]
+
+Please refer to [http://code.google.com/p/tungsten-toolbox/wiki/TungstenSandbox Tungsten-Sandbox instructions] for more info.
+
+=== Chain two replication clusters ===
+
+Let's say that you have two replication clusters, one installed using [http://code.google.com/p/tungsten-replicator/w/edit.do#Install_a_master_/_slave_cluster the master slave recipe] and one using [http://code.google.com/p/tungsten-toolbox/ Tungsten sandbox].
+You want the master of the Tungsten sandbox in your local host to become a slave of the master at m1.mynetwork.com.
+
+[https://lh3.googleusercontent.com/-id11YtdENpY/TnZrvWcDHhI/AAAAAAAABMs/j4EFFqsKwTE/chaining_tungsten_clusters.png]
+
+Go to the home directory of the tungsten sandbox master, and run this command:
+{{{
+cd $HOME/tdb2/db1
+./tungsten/tools/configure-service -C \
+  --local-service-name=tsandbox \
+  --thl-port=12111 \
+  --role=slave \
+  --service-type=remote \
+  --master-thl-host=m1.mynetwork.com \
+  --master-thl-port=2112 \
+  --datasource=127_0_0_1 \
+  --svc-start \
+  dragon
+}}}
+
+Notes:
+ * The thl-port is the one defined by default for Tungsten Sandbox. If your cluster master uses a different THL, it myst be provided here;
+ * local-service-name is the name of the service used by the Tungsten Sandbox master.
+
+After this command, the two clusters are chained. Whatever is inserted into m1.mynetwork.com will also be inserted into the Tungsten sandbox master, and from there it will go to its slaves.
+
 === Install bi-directional replication ===
 
 [https://lh5.googleusercontent.com/_gVfZHGgf5LA/TXO2MfOUagI/AAAAAAAABEc/jvt9lZC8uvY/Tungsten_bi_directional_replication.png]
@@ -215,7 +252,7 @@ $TUNGSTEN_TOOLS/configure-service
 
 The datasource name is the name of the local hostname, with dots replaced by underscores. (Note to self: this needs to become a bit easier to deal with).
 
-=== Install bi-directional replication with additional slave ===
+=== Install bi-directional replication with an additional slave ===
 
 The recipe is similar to [TungstenReplicatorCookbook#Install_bi-directional_replication].
 Assuming that we have a candidate slave m3.mynetwork.com, which we want to be slave of m2, what we will do is simply add this information to the second installation command:
