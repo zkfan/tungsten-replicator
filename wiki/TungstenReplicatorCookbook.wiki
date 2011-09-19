@@ -549,6 +549,14 @@ echo "diff -Nru tungsten-replicator-2.0.5/tungsten-replicator/samples/conf/filte
 }}}
  * {{{tungsten-replicator-2.0.5/tools/tungsten-installer ...}}}
 
+=== Monitor JVM memory usage ===
+
+It is possible to use JConsole to monitor the memory usage of the Tungsten Replicator process.  If you see that the allocated memory is filling up, you may increase it using the {{--java-mem-size}} argument.
+
+JConsole requires that jmxremote is enabled in {{{tungsten-replicator/conf/wrapper.conf}}}.  It is enabled by default but make sure that {{{wrapper.java.additional.3=-Dcom.sun.management.jmxremote}}} is not commented out in the file.
+
+You can get information on JConsole at [http://java.sun.com/developer/technicalArticles/J2SE/jconsole.html].
+
 == Administration ==
 
 === Check replication services ===
