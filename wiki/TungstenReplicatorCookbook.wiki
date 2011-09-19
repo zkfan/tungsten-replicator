@@ -141,6 +141,8 @@ Notice that you need to pass connection credentials for both the master and the 
   --master-log-pattern    [mysql-bin]
 }}}
 
+For more information, see [http://scale-out-blog.blogspot.com/2011/08/adding-parallel-replication-to-mysql-in.html Adding parallel replication in a hurry].
+
 === Taking over replication from a MySQL slave in direct mode ===
 
 In the previous recipe, we have shown how to start replication from a MySQL master, without a replicator on the master side. 
