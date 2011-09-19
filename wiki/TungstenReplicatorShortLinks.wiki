@@ -1,0 +1,12 @@
+#summary list of short links for Tungsten Replicator
+= Tungsten Replicator short links =
+
+
+ * [http://bit.ly/tr20_cookbook bit.ly/tr20_cookbook ] Tungsten Replicator Cookbook
+ *[http://bit.ly/tr20_faq bit.ly/tr20_home] Tungsten Replicator home
+ *[http://bit.ly/tr20_faq bit.ly/tr20_cheat] Cheat sheet
+ *[http://bit.ly/tr20_faq bit.ly/tr20_builds] Recent builds
+ *[http://bit.ly/tr20_faq bit.ly/tr20_relnotes] Release notes
+ *[http://bit.ly/tr20_faq bit.ly/tr20_tshoot] Troubleshooting
+
+
