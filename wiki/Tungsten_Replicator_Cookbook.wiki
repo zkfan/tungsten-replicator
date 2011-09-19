@@ -1,0 +1,3 @@
+#summary placeholder to keep the bit.ly short url working
+
+This page has moved to [http://code.google.com/p/tungsten-replicator/wiki/TungstenReplicatorCookbook Tungsten Replicator Cookbook]
