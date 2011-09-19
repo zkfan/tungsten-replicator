@@ -669,4 +669,4 @@ TRUNCATE TABLE tungsten_service_name.heartbeat;
 $TUNGSTEN_BIN/trepctl -service service_name online
 }}}
 
-Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_recipes]
+Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_cookbook]
