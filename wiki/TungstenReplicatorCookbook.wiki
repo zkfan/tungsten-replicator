@@ -89,8 +89,8 @@ With the following command, I install a second replicator, using a different dir
   --datasource-password=msandbox \
   --service-name=SAME_NAME_OF_THE_MASTER_SLAVE_SERVICE  \
   --home-directory=/tmp/some_place \
-  --thl-port=12000 \
-  --rmi-port=4112 \
+  --thl-port=4112 \
+  --rmi-port=12000 \
   --start-and-report
 }}}
 
