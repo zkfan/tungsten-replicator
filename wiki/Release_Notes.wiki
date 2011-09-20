@@ -15,7 +15,8 @@ This release requires careful attention to upgrade due to the following changes:
 
  # *Installation procedures* have changed substantially.  The old tungsten.cfg is not compatible with the new tungsten.cfg file format, which is JSON-based. The new installation uses *./tools/tungsten-installer*, which is also a validation tool.
  # Installing a direct slave (useful for parallel replication) is simpler and straightforward. Taking over from MySQL native replication and handing back over to the old slave is also easy. 
- # The *trep_commit_seqno* table includes additional columns.  
+ # The *trep_commit_seqno* table includes additional columns.  The table can be upgraded by running {{{ALTER TABLE `trep_commit_seqno` ADD COLUMN `shard_id` VARCHAR(128) NULL DEFAULT NULL; ALTER TABLE `trep_commit_seqno` ADD COLUMN `extract_timestamp` TIMESTAMP NULL DEFAULT NULL;}}}
+ # There is a new *trep_shard* table that can be created by running {{{CREATE TABLE `trep_shard` ( `name` varchar(128) NOT NULL DEFAULT '', `master` varchar(128) DEFAULT NULL, `critical` tinyint(4) DEFAULT NULL, PRIMARY KEY (`name`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8}}}
  # The replicator logs are now integrated by a *user.log*, a more concise and user friendly log.
  # The installation tools can handle all values in the properties file. In addition to being a single-command installation, the procedure can also customize the replicator properties from the start.
 
