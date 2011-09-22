@@ -677,4 +677,30 @@ TRUNCATE TABLE tungsten_service_name.heartbeat;
 $TUNGSTEN_BIN/trepctl -service service_name online
 }}}
 
+=== Upgrading from Tungsten Replicator 2.0.4 to 2.0.5 ===
+
+Tungsten Replicator is released quite frequently. We add planned features and fix bugs continuously. Therefore, getting [http://s3.amazonaws.com/files.continuent.com/builds/nightly/tungsten-2.0-snapshots/index.html the latest release] is very important.
+
+If you have installed Tungsten Replicator 2.0.4 or later, and you want to upgrade to the latest version, here's what to do.
+
+After you [http://code.google.com/p/tungsten-replicator/w/edit.do#Get_the_replicator get the replicator], run these commands for each host:
+
+{{{
+ssh host_name $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator stop
+./tools/update --host=host_name \
+   --user=$USER \
+   --release-directory=$TUNGSTEN_HOME/tungsten
+ 
+$TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/trepctl -host host_name services
+}}}
+
+For example, if you have installed a regular master slave cluster using [http://code.google.com/p/tungsten-replicator/w/edit.do#Install_a_master_/_slave_cluster this recipe], the release directory will be $HOME/replication/tungsten.
+
+If the replicator is offline after the update command (that depends on your settings), you can simply put it online using trepctl.
+
+
+*Notice:* Upgrading from previous version of Tungsten Replicator requires a manual re-installation, because of the new installer format.
+Upgrading to the next version of Tungsten should be handled in the same way described in this section.
+
+
 Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_cookbook]
