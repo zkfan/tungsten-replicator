@@ -705,4 +705,4 @@ Upgrading to the next version of Tungsten should be handled in the same way desc
   * The host used in the above commands must be the same used when the server was defined. If a host can be addressed by two names (e.g _m1.mynetwork.com_ and _m1_) the same name that was used during installation must also be used for the upgrade.
 
 
-Short link to this page: [http://bit.ly/tr20_recipes http://bit.ly/tr20_cookbook]
+Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
