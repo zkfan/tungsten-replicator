@@ -704,5 +704,14 @@ If the replicator is offline after the update command (that depends on your sett
 Upgrading to the next version of Tungsten should be handled in the same way described in this section.
   * The host used in the above commands must be the same used when the server was defined. If a host can be addressed by two names (e.g _m1.mynetwork.com_ and _m1_) the same name that was used during installation must also be used for the upgrade.
 
+=== Increasing the JVM memory size ===
+
+The {{{--java-mem-size}}} option sets the amount of memory allocated to the JVM.  You can update the allocation on an existing replicator using the {{{tools/update}}} script.
+
+{{{
+$TUNGSTEN_HOME/tungsten/tools/update -a --java-mem-size=1024
+$TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator restart
+$TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/trepctl services
+}}}
 
 Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
