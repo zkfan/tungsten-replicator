@@ -689,12 +689,12 @@ After you [http://code.google.com/p/tungsten-replicator/w/edit.do#Get_the_replic
 ssh host_name $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator stop
 ./tools/update --host=host_name \
    --user=$USER \
-   --release-directory=$TUNGSTEN_HOME/tungsten
+   --release-directory=$TUNGSTEN_HOME
  
 $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/trepctl -host host_name services
 }}}
 
-For example, if you have installed a regular master slave cluster using [http://code.google.com/p/tungsten-replicator/w/edit.do#Install_a_master_/_slave_cluster this recipe], the release directory will be $HOME/replication/tungsten.
+For example, if you have installed a regular master slave cluster using [http://code.google.com/p/tungsten-replicator/w/edit.do#Install_a_master_/_slave_cluster this recipe], the release directory will be $HOME/replication.
 
 If the replicator is offline after the update command (that depends on your settings), you can simply put it online using trepctl.
 
