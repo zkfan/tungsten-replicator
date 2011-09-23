@@ -714,4 +714,56 @@ $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator restart
 $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/trepctl services
 }}}
 
+=== Managing replicator log space ===
+
+There are 3 kinds of logs used in Tungsten Replicator.
+ * Master Relay Logs
+ * Transaction History Logs
+ * Service Logs
+
+==== Master Relay Logs ===
+
+The Master Relay Logs (MRL) are used when the master is extracting events from a MySQL server.  The MRL files are stored in the {{{$TUNGSTEN_HOME/relay/service_name}}} directory.  Use a symlink if you would like to store these files on a different disk.
+
+The {{{replicator.extractor.dbms.relayLogRetention}}} value in {{{tungsten-replicator/conf/static-service_name.properties}}} defines how many MRL files are kept after the replicator service has extracted events from it.  You can configure this setting using the {{{--property}}} flag.
+
+{{{
+# New Installation
+./tools/tungsten-installer ... --property=replicator.extractor.dbms.relayLogRetention=4
+
+# Existing Installation
+$TUNGSTEN_HOME/tools/configure-service -U --property=replicator.extractor.dbms.relayLogRetention=4 service_name
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name stop
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name start
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name status
+}}}
+
+==== Transaction History Logs ====
+
+The Transaction History Logs (THL) are used to store events after they are extracted, to transmit events between the master and slave and to store events prior to being applied.  The THL files are stored in the {{{$TUNGSTEN_HOME/thl/service_name}}} directory.  Use a symlink if you would like to store these files on a different disk.
+
+The {{{replicator.store.thl.log_file_retention}}} value in {{{tungsten-replicator/conf/static-service_name.properties}}} defines how long THL files are kept.  You can configure this setting using the {{{--property}}} flag.
+
+{{{
+# New Installation
+./tools/tungsten-installer ... --property=replicator.store.thl.log_file_retention=3d
+
+# Existing Installation
+$TUNGSTEN_HOME/tools/configure-service -U --property=replicator.store.thl.log_file_retention=3d service_name
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name stop
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name start
+$TUNGSTEN_HOME/tungsten-replicator/bin/trepctl -service service_name status
+}}}
+
+==== Service Logs ====
+
+The log files are stored in {{{tungsten-replicator/log}}}.  There are two service logs maintained by the replicator.
+
+ * {{{user.log}}} - Partial service log that includes state changes and basic error messages
+ * {{{trepsvc.log}}} - Complete service log including stack traces
+
+The settings for these log files are located in {{{tungsten-replicator/conf/log4j.properties}}}.  You can modify the {{{log4j.appender.file.MaxFileSize}}} and {{{log4j.appender.file.MaxBackupIndex}}} values for each log file to manage how much disk space is required to hold the log files.
+
+Check out the [TungstenReplicatorCookbook#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
+
 Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
