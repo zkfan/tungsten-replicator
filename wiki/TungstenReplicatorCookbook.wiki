@@ -504,7 +504,7 @@ Prepare the master PostgreSQL instance:
 --master-host=127.0.0.1 \
 --datasource-type=postgresql \
 --datasource-port=54321 \
---slony-dbname=pgbench \
+--postgresql-dbname=pgbench \
 --home-directory=/opt/pg2pg/tungsten/S \
 --datasource-user=postgres \
 --datasource-password=secret \
@@ -524,7 +524,7 @@ A slave is installed on a different PostgreSQL instance:
 --master-host=127.0.0.1 \
 --datasource-type=postgresql \
 --datasource-port=54323 \
---slony-dbname=pgbench \
+--postgresql-dbname=pgbench \
 --home-directory=/opt/pg2pg/tungsten/P \
 --datasource-user=postgres \
 --datasource-password=secret \
