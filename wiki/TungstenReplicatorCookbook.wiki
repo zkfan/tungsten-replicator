@@ -490,6 +490,74 @@ $TUNGSTEN_TOOLS/configure-service \
 
 The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.
 
+=== Install heterogeneous replication topology ===
+
+The following examples show how to install a PostgreSQL -> PostgreSQL & MySQL topology on a single host.
+
+== Install a prototype PostgreSQL logical replicator (master) ==
+
+Prepare the master PostgreSQL instance:
+
+{{{
+./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+--user=postgres \
+--master-host=127.0.0.1 \
+--datasource-type=postgresql \
+--datasource-port=54321 \
+--slony-dbname=pgbench \
+--home-directory=/opt/pg2pg/tungsten/S \
+--datasource-user=postgres \
+--datasource-password=secret \
+--service-name=fromslony \
+--rmi-port=12020 \
+--thl-port=12021 \
+--start-and-report
+}}}
+
+== Install a PostgreSQL applier replicator (slave) ==
+
+A slave is installed on a different PostgreSQL instance:
+
+{{{
+./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+--user=postgres \
+--master-host=127.0.0.1 \
+--datasource-type=postgresql \
+--datasource-port=54323 \
+--slony-dbname=pgbench \
+--home-directory=/opt/pg2pg/tungsten/P \
+--datasource-user=postgres \
+--datasource-password=secret \
+--service-name=fromslony \
+--rmi-port=12022 \
+--master-thl-port=12021 \
+--thl-port=12023 \
+--start-and-report
+}}}
+
+== Install a MySQL applier replicator (slave) ==
+
+Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin events:
+
+{{{
+./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+--user=tungsten \
+--master-host=127.0.0.1 \
+--datasource-type=mysql \
+--datasource-port=12002 \
+--mysql-enable-ansiquotes=true \
+--mysql-enable-noonlykeywords=true \
+--home-directory=/opt/pg2mysql/M \
+--datasource-user=tungsten \
+--datasource-password=secret \
+--service-name=fromslony \
+--rmi-port=12024 \
+--master-thl-port=12021 \
+--thl-port=12025 \
+--start-and-report \
+--no-validation
+}}}
+
 === Modify one or more properties with the installer ===
 
 Tungsten Replicator gets its configuration from a file called static-SERVICE_NAME.properties, located $TUNGSTEN_HOME/tungsten/tungsten-replicator/conf/.
