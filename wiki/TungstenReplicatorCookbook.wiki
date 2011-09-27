@@ -494,7 +494,7 @@ The procedure is longish, but once you get the gist of it you will be able to ma
 
 The following examples show how to install a PostgreSQL -> PostgreSQL & MySQL topology on a single host.
 
-== Install a prototype PostgreSQL logical replicator (master) ==
+==== Install a prototype PostgreSQL logical replicator (master) ====
 
 Prepare the master PostgreSQL instance:
 
@@ -514,7 +514,7 @@ Prepare the master PostgreSQL instance:
 --start-and-report
 }}}
 
-== Install a PostgreSQL applier replicator (slave) ==
+==== Install a PostgreSQL applier replicator (slave) ====
 
 A slave is installed on a different PostgreSQL instance:
 
@@ -535,7 +535,7 @@ A slave is installed on a different PostgreSQL instance:
 --start-and-report
 }}}
 
-== Install a MySQL applier replicator (slave) ==
+==== Install a MySQL applier replicator (slave) ====
 
 Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin events:
 
