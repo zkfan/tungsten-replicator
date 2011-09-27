@@ -498,6 +498,11 @@ The following examples show how to install a PostgreSQL -> PostgreSQL & MySQL to
 
 Prepare the master PostgreSQL instance:
 
+  # Download [http://slony.info/downloads/ Slony], extract it and build it. After doing that, there will be a slonik executable available, which will you need to specify via "--postgresql-slonik" property (as shown below).
+  # Specify tables to replicate in "--postgresql-tables".
+
+Here's a full example:
+
 {{{
 ./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
 --user=postgres \
@@ -511,8 +516,12 @@ Prepare the master PostgreSQL instance:
 --service-name=fromslony \
 --rmi-port=12020 \
 --thl-port=12021 \
+--postgresql-slonik=/opt/pg2pg/slony1-2.0.6/src/slonik/slonik \
+--postgresql-tables=public.tt1,public.t \
 --start-and-report
 }}}
+
+Note: the latter command will drop any existing Slony triggers and objects and then recreate them.
 
 ==== Install a PostgreSQL applier replicator (slave) ====
 
@@ -534,6 +543,8 @@ A slave is installed on a different PostgreSQL instance:
 --thl-port=12023 \
 --start-and-report
 }}}
+
+If replicating from a PostgreSQLSlonyExtractor enabled master, slave needs to have tables already created, as DDL is not replicated with this method.
 
 ==== Install a MySQL applier replicator (slave) ====
 
