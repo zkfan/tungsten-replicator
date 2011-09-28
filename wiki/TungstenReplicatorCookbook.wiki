@@ -628,8 +628,7 @@ Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin
 --rmi-port=12024 \
 --master-thl-port=12021 \
 --thl-port=12025 \
---start-and-report \
---no-validation
+--start-and-report
 }}}
 
 === MySQL to PostgreSQL Replication ===
@@ -654,8 +653,7 @@ If you have ENUM types in the database, make sure you enable "--mysql-enable-enu
 --mysql-enable-enumtostring=true \
 --mysql-use-bytes-for-string=false \
 --skip-validation-check=MySQLNoMySQLReplicationCheck \
---start-and-report \
---no-validation
+--start-and-report
 }}}
 
 Note: "--mysql-use-bytes-for-string=false" option ensures that character fields are transferred in a way that other DBMS types understand.
