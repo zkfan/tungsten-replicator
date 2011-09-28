@@ -553,7 +553,7 @@ The procedure is longish, but once you get the gist of it you will be able to ma
 
 == Heterogeneous Replication ==
 
-=== MySQL to PostgreSQL Replication ===
+=== PostgreSQL to PostgreSQL and MySQL Replication ===
 
 The following examples show how to install a PostgreSQL -> PostgreSQL & MySQL topology on a single host.
 
@@ -632,6 +632,46 @@ Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin
 --no-validation
 }}}
 
+=== MySQL to MongoDB Replication ===
+
+The following examples show how to install MySQL to MongoDB replication. 
+
+==== Install a MySQL Master ====
+
+Install a MySQL master replicator.  MySQL must use ROW replication, so you must set binlog_format=row before enabling replication.  You must enable the colnames and pkey filter so that the MongoDB can generate column names and also generate MongoDB indexes on primary key values. 
+
+{{{
+tools/tungsten-installer --master-slave -a \
+  --datasource-type=mysql \
+  --master-host=logos1  \
+  --datasource-user=tungsten  \
+  --datasource-password=secret  \
+  --service-name=mongodb \
+  --home-directory=/opt/continuent \
+  --cluster-hosts=logos1 \
+  --mysql-use-bytes-for-string=false \
+  --svc-extractor-filters=colnames,pkey \
+  --svc-parallelization-type=disk --start-and-report
+}}}
+
+==== Install a MongoDB Slave ====
+
+Install MongoDB 1.8.3 and then install a MongoDB slave.  Other MongoDB versions may work as well. 
+
+{{{
+tools/tungsten-installer --master-slave -a \
+  --datasource-type=mongodb \
+  --master-host=logos1  \
+  --datasource-user=tungsten  \
+  --datasource-password=secret  \
+  --service-name=mongodb \
+  --home-directory=/opt/continuent \
+  --cluster-hosts=logos2 \
+  --skip-validation-check=InstallerMasterSlaveCheck \
+  --svc-parallelization-type=disk --start-and-report
+}}}
+
+MySQL tables will be materialized as collections in MongoDB.  Columns convert to BSON properties.  SQL primary keys will be converted to (composite) indexes on collections. 
 
 == Administration ==
 
