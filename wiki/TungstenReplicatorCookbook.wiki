@@ -632,6 +632,56 @@ Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin
 --no-validation
 }}}
 
+=== MySQL to PostgreSQL Replication ===
+
+It is recommended to use ROW replication on the MySQL master, because pure SQL statements can have different dialect and fail on other type DBMS.
+
+==== Install a MySQL Master ====
+
+If you have ENUM types in the database, make sure you enable "--mysql-enable-enumtostring" option:
+
+{{{
+.tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+--master-host=127.0.0.1 \
+--user=tungsten \
+--home-directory=/opt/mysql2others/M \
+--datasource-port=12001 \
+--datasource-user=tungsten \
+--datasource-password=secret \
+--service-name=frommysql \
+--rmi-port=20000 \
+--thl-port=12112 \
+--mysql-enable-enumtostring=true \
+--mysql-use-bytes-for-string=false \
+--skip-validation-check=MySQLNoMySQLReplicationCheck \
+--start-and-report \
+--no-validation
+}}}
+
+Note: "--mysql-use-bytes-for-string=false" option ensures that character fields are transferred in a way that other DBMS types understand.
+
+==== Install a PostgreSQL Slave ====
+
+If you're planning to replicate some known DDL statements, you can enable pgddl.js filter with option "--postgresql-enable-mysql2pgddl" and extend it to include the statements you need to support:
+
+{{{
+.tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+--user=postgres \
+--master-host=127.0.0.1 \
+--datasource-type=postgresql \
+--datasource-port=54324 \
+--postgresql-dbname=postgres \
+--home-directory=/opt/mysql2pg/P \
+--datasource-user=postgres \
+--datasource-password=secret \
+--service-name=frommysql \
+--rmi-port=10012 \
+--master-thl-port=12112 \
+--thl-port=12111 \
+--postgresql-enable-mysql2pgddl=true \
+--start-and-report
+}}}
+
 === MySQL to MongoDB Replication ===
 
 The following examples show how to install MySQL to MongoDB replication. 
