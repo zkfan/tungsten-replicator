@@ -4,7 +4,7 @@ Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
 
 = Basic Installation =
 
-=== Get the replicator ===
+== Get the replicator ==
 
 All the recipes about installation require that you get Tungsten Replicator binaries. This recipe explains how to do it once for ever.
 
