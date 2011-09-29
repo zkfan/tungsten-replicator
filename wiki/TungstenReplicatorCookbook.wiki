@@ -604,6 +604,7 @@ A slave is installed on a different PostgreSQL instance:
 --rmi-port=12022 \
 --master-thl-port=12021 \
 --thl-port=12023 \
+--postgresql-enable-mysql2pgddl=false \
 --start-and-report
 }}}
 
@@ -640,7 +641,7 @@ It is recommended to use ROW replication on the MySQL master, because pure SQL s
 If you have ENUM types in the database, make sure you enable "--mysql-enable-enumtostring" option:
 
 {{{
-.tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
 --master-host=127.0.0.1 \
 --user=tungsten \
 --home-directory=/opt/mysql2others/M \
