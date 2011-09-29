@@ -604,7 +604,6 @@ A slave is installed on a different PostgreSQL instance:
 --rmi-port=12022 \
 --master-thl-port=12021 \
 --thl-port=12023 \
---postgresql-enable-mysql2pgddl=false \
 --start-and-report
 }}}
 
@@ -664,7 +663,7 @@ Note: "--mysql-use-bytes-for-string=false" option ensures that character fields 
 If you're planning to replicate some known DDL statements, you can enable pgddl.js filter with option "--postgresql-enable-mysql2pgddl" and extend it to include the statements you need to support:
 
 {{{
-.tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
+./tools/tungsten-installer --master-slave -a --cluster-hosts=127.0.0.1 \
 --user=postgres \
 --master-host=127.0.0.1 \
 --datasource-type=postgresql \
