@@ -1,4 +1,4 @@
-#summary Tungsten Replicator Cookbook - basic installation
+#summary Tungsten Replicator Cookbook - Multi Master installation
 <wiki:toc max_depth="4" />
 Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
 
