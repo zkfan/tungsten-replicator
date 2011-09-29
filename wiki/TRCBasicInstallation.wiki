@@ -4,6 +4,19 @@ Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
 
 = Basic Installation =
 
+=== Get the replicator ===
+
+All the recipes about installation require that you get Tungsten Replicator binaries. This recipe explains how to do it once for ever.
+
+ # Determine which is the latest version. The latest stable version is the one featured on [http://code.google.com/p/tungsten-replicator/ Tungsten Replicator project page]
+ # If you want the latest release, which probably has more features, more bug fixes, and possibly more unknown bugs, you may get the very latest binaries [http://s3.amazonaws.com/files.continuent.com/builds/nightly/tungsten-2.0-snapshots/index.html from the build server].
+ # Download the replicator
+ # Create a temporary directory. This is *not* the directory where you want to install Tungsten. You will use it only to launch the installation command. 
+ # Expand the tarball
+ # Get inside the newly created directory
+ # We refer to this directory as the *release directory*
+ # Now you can follow the directions from another recipe.
+
 == Install a master / slave cluster ==
 
 [https://lh5.googleusercontent.com/-jgCZbwwB4WE/TfC6Ksv2LiI/AAAAAAAABIQ/Ygpazw8EvEQ/s640/master_slave.png]
