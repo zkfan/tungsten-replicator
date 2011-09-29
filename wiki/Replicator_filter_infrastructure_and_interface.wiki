@@ -65,7 +65,7 @@ Probably dreaming, but here's a wish list:
       -from schema=schema_name \
       -to schema=new_schema_name
 
-## renames columns
+## renames tables
 
    trepctl [-service svc_name] filter -add filter_name \
       -stage stage_name 
@@ -84,5 +84,16 @@ Probably dreaming, but here's a wish list:
       -from column=schema_name.table_name.column_name \
       -content regex=/Parmesan/Camembert/
 
-}}}
 
+
+# or, perhaps better:
+
+   trepctl [-service svc_name] filter -add filter_name \
+      -stage stage_name \
+      -rename schema=old_schema_name/new_schema_name \
+      -rename schema=another_schema_name/another_new_schema_name
+      -rename table=old_table_name/new_table_name
+
+
+
+}}}
