@@ -225,6 +225,8 @@ If the replicator has already been installed and we want to start replicating fr
 }}}
 Notice that we don't give the complete binlog file name, but only the extension. The number after the colon is the position.
 
+If you are installing a new copy of the replicator, run {{{tungsten-installer}}} with {{{--auto-enable=false}}} to keep the replicator from going online the first time.  After you have put the replication service online, turn on auto-enable by running {{{tools/configure-service -a -U --auto-enable=true service_name}}}.
+
 == Modify the configuration template file prior to configuration ==
 
 There are advanced scenarios where you would like to modify the source template files or even add additional templates to the code.  One of the simplest is when you need to add a new filter definition.  We recommend that you use diff/patch to modify the release package prior to configuration.
