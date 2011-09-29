@@ -631,7 +631,7 @@ Note the filters we enable for MySQL slave to be able to apply PostgreSQL origin
 --start-and-report
 }}}
 
-=== MySQL to PostgreSQL Replication ===
+=== MySQL to PostgreSQL and Oracle Replication ===
 
 It is recommended to use ROW replication on the MySQL master, because pure SQL statements can have different dialect and fail on other type DBMS.
 
@@ -677,6 +677,28 @@ If you're planning to replicate some known DDL statements, you can enable pgddl.
 --master-thl-port=12112 \
 --thl-port=12111 \
 --postgresql-enable-mysql2pgddl=true \
+--start-and-report
+}}}
+
+==== Install an Oracle Slave ====
+
+Before installing Oracle slave, prepare a tungsten_frommysql user in Oracle identified by the same password, you are providing via "--datasource-password" property. Internal Tungsten tables are created in this user, as well as all transactions arrive here.
+
+Below is an example of a simple (i.e. no special filtering) Oracle slave installation:
+
+{{{
+./tools/tungsten-installer --master-slave -a --cluster-hosts=localhost \
+--user=oracle \
+--master-host=localhost \
+--home-directory=/opt/mysql2oracle/O \
+--datasource-type=oracle \
+--datasource-oracle-service=ORCL \
+--datasource-user=tungsten \
+--datasource-password=secret \
+--service-name=frommysql \
+--rmi-port=10000 \
+--master-thl-port=12112 \
+--thl-port=12110 \
 --start-and-report
 }}}
 
