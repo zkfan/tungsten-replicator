@@ -210,9 +210,7 @@ The log files are stored in {{{tungsten-replicator/log}}}.  There are two servic
 
 The settings for these log files are located in {{{tungsten-replicator/conf/log4j.properties}}}.  You can modify the {{{log4j.appender.file.MaxFileSize}}} and {{{log4j.appender.file.MaxBackupIndex}}} values for each log file to manage how much disk space is required to hold the log files.
 
-Check out the [TRCAdministration#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
-
-Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
+Check out the [TRCBasicInstallation#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
 
 = Monitoring and Troubleshooting =
 
