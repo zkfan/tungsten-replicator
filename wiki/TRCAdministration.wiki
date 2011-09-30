@@ -140,7 +140,7 @@ ssh host_name $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator stop
 $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/trepctl -host host_name services
 }}}
 
-For example, if you have installed a regular master slave cluster using [http://code.google.com/p/tungsten-replicator/w/edit.do#Install_a_master_/_slave_cluster this recipe], the release directory will be $HOME/replication.
+For example, if you have installed a regular master slave cluster using [TRCBasicInstallation#Install_a_master_/_slave_cluster this recipe], the release directory will be $HOME/replication.
 
 If the replicator is offline after the update command (that depends on your settings), you can simply put it online using trepctl.
 
