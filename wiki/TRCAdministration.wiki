@@ -129,7 +129,7 @@ Tungsten Replicator is released quite frequently. We add planned features and fi
 
 If you have installed Tungsten Replicator 2.0.4 or later, and you want to upgrade to the latest version, here's what to do.
 
-After you [http://code.google.com/p/tungsten-replicator/w/edit.do#Get_the_replicator get the replicator], run these commands for each host:
+After you [TRCBasicInstallation#Get_the_replicator get the replicator], run these commands for each host:
 
 {{{
 ssh host_name $TUNGSTEN_HOME/tungsten/tungsten-replicator/bin/replicator stop
@@ -210,7 +210,7 @@ The log files are stored in {{{tungsten-replicator/log}}}.  There are two servic
 
 The settings for these log files are located in {{{tungsten-replicator/conf/log4j.properties}}}.  You can modify the {{{log4j.appender.file.MaxFileSize}}} and {{{log4j.appender.file.MaxBackupIndex}}} values for each log file to manage how much disk space is required to hold the log files.
 
-Check out the [TungstenReplicatorCookbook#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
+Check out the [TRCAdministration#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
 
 Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
 
