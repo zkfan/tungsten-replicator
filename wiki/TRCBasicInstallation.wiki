@@ -23,7 +23,7 @@ All the recipes about installation require that you get Tungsten Replicator bina
 
  # make sure that all the hosts meet the [https://s3.amazonaws.com/releases.continuent.com/doc/replicator-2.0.4/html/Tungsten-Installation-Guide-mysql/content/ch05.html requirements]
  # create a directory where you want to install the replicator. We refer to this directory as the * Tungsten home directory*;
- # Get the replicator binaries using [TungstenReplicatorCookbook#Get_the_replicator]
+ # Get the replicator binaries using [TRCBasicInstallation#Get_the_replicator]
  # Run the following command, after changing the directory and host names to match your environment.
 
 {{{
@@ -44,12 +44,12 @@ All the recipes about installation require that you get Tungsten Replicator bina
 
 This command takes several defaults into account.
 It assumes that MySQL is installed in {{{/var/lib/mysql/}}}, that the server uses port {{{3306}}}, and that the binary logs are in the data directory. We use these values because they are the ones used by RPM installers.
-If you use different values, please see [TungstenReplicatorCookbook#Install_a_master_slave_directory_with_customized_parameters].
+If you use different values, please see [TRCBasicInstallation#Install_a_master_slave_directory_with_customized_parameters].
 
 
 == Install a master slave directory with customized parameters ==
 
-If the defaults used in [TungstenReplicatorCookbook#Install_a_master_/_slave_cluster] are not convenient, you can instruct the replicator to use paths and ports that describe your server.
+If the defaults used in [TRCBasicInstallation#Install_a_master_/_slave_cluster] are not convenient, you can instruct the replicator to use paths and ports that describe your server.
 
 You should add these options to the installation command.
 
@@ -105,7 +105,7 @@ Direct slave replication is a quick method to set replication in a slave, withou
 It works by establishing a connection with the master, fetching the binary logs locally, and creating a THL stream with that.
 The additional effort of creating relay logs is then compensated by using parallel replication.
 
-This installation assumes that the slave is not running native MySQL replication. For that case, see [TungstenReplicatorCookbook#Taking_over_replication_from_a_MySQL_slave_in_direct_mode].
+This installation assumes that the slave is not running native MySQL replication. For that case, see [TRCBasicInstallation#Taking_over_replication_from_a_MySQL_slave_in_direct_mode].
 
 {{{
   TUNGSTEN_HOME=$HOME/replication
