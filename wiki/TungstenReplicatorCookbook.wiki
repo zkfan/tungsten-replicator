@@ -51,3 +51,6 @@ This is a collection of practical recipes to deal with Tungsten Replicator.
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Managing_replicator_log_space Managing replicator log space]
   * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Monitoring_and_Troubleshooting Monitoring and Troubleshooting]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Monitor_JVM_memory_usage Monitor JVM memory usage]
+
+
+Short link to this page: [http://bit.ly/tr20_cookbook http://bit.ly/tr20_cookbook]
