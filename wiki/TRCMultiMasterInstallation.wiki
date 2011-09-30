@@ -68,7 +68,7 @@ The datasource name is the name of the local hostname, with dots replaced by und
 
 == Install bi-directional replication with an additional slave ==
 
-The recipe is similar to [TungstenReplicatorCookbook#Install_bi-directional_replication].
+The recipe is similar to [TRCMultiMasterInstallation#Install_bi-directional_replication].
 Assuming that we have a candidate slave m3.mynetwork.com, which we want to be slave of m2, what we will do is simply add this information to the second installation command:
 
 {{{
@@ -89,7 +89,7 @@ The only difference is SLAVE1 in the --cluster-hosts list, and Tungsten will tak
 
 == Install a three masters replication ==
 
-This recipe is left as an exercise for readers who have successfully managed [TungstenReplicatorCookbook#Install_a_four_masters_replication].
+This recipe is left as an exercise for readers who have successfully managed [TRCMultiMasterInstallation#Install_a_four_masters_replication].
 
 == Install a four masters replication ==
 
