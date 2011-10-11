@@ -22,7 +22,7 @@ Lee Margulin, Database Administrator at Zappos.com, speaks about how Zappos uses
 
 = Breaking the Cross-Site Data Barrier: Tungsten Multi-Master Replication for MySQL =
 
-Multi-master replication between sites is the holy grail of applications ranging from credit card processing to large-scale software-as-a-service (SaaS) operations. Tungsten Replicator (http://code.google.com/p/tungsten-replicator) is award-winning open source software that helps you solve a wide range of multi-master problems that you can only dream of tackling with MySQL native replication.
+Multi-master replication between sites is the holy grail of applications ranging from credit card processing to large-scale software-as-a-service (SaaS) operations. Tungsten Replicator is award-winning open source software that helps you solve a wide range of multi-master problems that you can only dream of tackling with MySQL native replication.
 
 Learn the nuts and bolts of multi-master replication using Tungsten.  We explain the architecture and demonstrate setup of solutions to common multi-master problems such as:
 
