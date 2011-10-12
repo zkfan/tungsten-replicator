@@ -2,14 +2,16 @@
 
 <wiki:toc max_depth="1" />
 
-= Real-time Replication Between MySQL and Oracle (short version)=
+= Webinars on demand =
+
+== Real-time Replication Between MySQL and Oracle (short version)==
 
 Lee Margulin, Database Administrator at Zappos.com, speaks about how Zappos uses Tungsten to replicate data between Oracle and MySQL. Established in 1999, Zappos.com has quickly become a leader in online apparel and footwear sales by striving to provide shoppers with the best possible service and selection, with gross merchandise sales exceeding $1 billion annually.
 
 <wiki:video width="420" height="315" url="http://www.youtube.com/watch?v=JnqnLTyi23A" />
 
 
-= Real-time Replication Between MySQL and Oracle (long version)=
+== Real-time Replication Between MySQL and Oracle (long version)==
 
 MySQL is great for front-end web facing applications. Oracle has proven itself in the demanding back-end data warehouse and reporting solutions. But how to bridge MySQL and Oracle together without paying an arm and a leg for Oracle's GoldenGate replication solution?
 
@@ -20,7 +22,7 @@ Lee Margulin, Database Administrator at Zappos.com, speaks about how Zappos uses
 <wiki:video width="420" height="315" url="http://www.youtube.com/watch?v=l9xjNxQwVPM" />
 
 
-= Breaking the Cross-Site Data Barrier: Tungsten Multi-Master Replication for MySQL =
+== Breaking the Cross-Site Data Barrier: Tungsten Multi-Master Replication for MySQL ==
 
 Multi-master replication between sites is the holy grail of applications ranging from credit card processing to large-scale software-as-a-service (SaaS) operations. Tungsten Replicator is award-winning open source software that helps you solve a wide range of multi-master problems that you can only dream of tackling with MySQL native replication.
 
