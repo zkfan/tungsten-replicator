@@ -2,9 +2,9 @@
 
 = Introduction =
 
-Tungsten Replicator by default applies SQL changes to slaves by construction SQL statements and executing in the exact order that transactions are recorded in the Tungsten History Log (THL).  This works fine for OLTP databases like MySQL, PostgreSQL, Oracle, and MongoDB.  
+Tungsten Replicator normally applies SQL changes to slaves by constructing SQL statements and executing in the exact order that transactions appear in the Tungsten History Log (THL).  This works well for OLTP databases like MySQL, PostgreSQL, Oracle, and MongoDB.  However, it is a poor approach for data warehouses. 
 
-This approach does not work well for data warehouse products like Vertica or GreenPlum, which load very slowly through JDBC interfaces (50x or more compared to MySQL).  Instead, we would really like to use a batch loader.  It turns out that both Vertica and Greenplum support the PostgreSQL COPY command, which allows data to be loaded quickly from CSV.  
+Data warehouse products like Vertica or GreenPlum load very slowly through JDBC interfaces (50 times slower or even more compared to MySQL).  Instead, we would really like to use a batch loader.  It turns out that both Vertica and Greenplum support the PostgreSQL COPY command, which allows data to be loaded quickly from CSV.  
 
 Batch loading is good for OLTP databases, too.  MySQL's LOAD DATA INFILE can operate 20x faster than SQL inserts in some cases.  This makes it desirable for loading row updates quickly.  
 
