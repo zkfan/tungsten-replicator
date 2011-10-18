@@ -28,7 +28,12 @@ So much for the algorithm.  If there are no delete operations this approach is e
 
 = Batch Applier Setup =
 
-Here is how to set up on MySQL.  First enable row replication on the MySQL.  Next, create a normal master/slave pair.  Here's a typical installation command.  The options for validation checks are necessary due a problem in the tungsten-installer.  
+Here is how to set up on MySQL.  This will be made easier in future 
+when the batch loader is added to the installations. 
+
+1. Enable row replication on the MySQL master using {{{set global binlog_format=row}}} or by updating my.cnf.  
+
+2. Create a normal master/slave pair.  Here's a typical installation command.  The options for validation checks are necessary due a problem in the tungsten-installer.  
 
 {{{
 tools/tungsten-installer --master-slave -a \
@@ -64,21 +69,33 @@ replicator.applier.dbms.user=${replicator.global.db.user}
 replicator.applier.dbms.password=${replicator.global.db.password}
 replicator.applier.dbms.template=LOAD DATA INFILE '%%FILE%%' REPLACE INTO TABLE %%TABLE%% FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 replicator.applier.dbms.stagingDirectory=/tmp/staging
-replicator.applier.dbms.supportsReplace=false
+replicator.applier.dbms.supportsReplace=true
 }}}
 
 Restart the slave replicator and batch loading is enabled.  From there on out you can start to test. 
 
-= Testing = 
+= Testing and Operation = 
 
-The batch applier should correctly apply any sequence of insert and update equivalently to the normal fully serialized operation with SQL statements.  Deletes may cause problems; see the limitations below.  
+You can test BatchApplier using the new croc utility from bristlecone.  Croc is documented in bristlecone/doc/CROC.TXT.  
 
-You can also test using the new croc utility from bristlecone.  Croc is documented in bristlecone/doc/CROC.TXT.  
+You can also test using any load within the capabilities described in the next section.  Remember to run DDL on both master and slave databases. 
 
+= Capabilities =
+
+The BatchApplier implementation has the following general capabilities.  
+
+  * The BatchApplier should correctly apply any sequence of insert and update equivalently to the normal fully serialized operation with SQL statements.  
+  * INSERT, UPDATE, and DELETE statements should be handled.  
+  * The following datatypes are supported:  INT, BIGINT, DATE, TIMESTAMP, VARCHAR, DOUBLE, and FLOAT. 
+  * Replicator management functions, for example the trepctl, should function exactly as with normal fully serialized replication.  
+  * Configuration parameters like the global buffer size (replicator.global.buffer.size) behave exactly as before.  In fact, this value should be increased to a very large value for the last stage so that the CSV files contain as many rows as possible at commit time.
+  * The replicator will clean up CSV files and temp tables after commit and whenever it goes offline. 
+  
 = Limitations =
 
 There are a number of limitations to the work done so far. 
 
   * The applier currently only works on MySQL but is being extended for PostgreSQL-style databases.  
   * Deletes can cause problems.  For instance, issuing an INSERT followed by a DELETE on the same key value will be inverted if they execute in the same commit block.  BatchApplier will apply the DELETE first without effect, then INSERT the row.  
-  * We have not tested all datatypes. 
+  * Not all datatypes are supported or even tested. 
+  * Parallel replication has not been tested. 
