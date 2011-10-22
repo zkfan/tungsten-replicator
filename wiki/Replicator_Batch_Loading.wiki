@@ -48,8 +48,7 @@ To make inserts on this table you must create an insert transfer table that has 
 CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
   `id` int(11) NOT NULL,
   `f_data` float DEFAULT NULL,
-  `row_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `row_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 }}}
 
