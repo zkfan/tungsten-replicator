@@ -12,7 +12,7 @@ The Tungsten [http://code.google.com/p/tungsten-replicator/source/browse/trunk/r
 
 = Theory of Operation =
 
-Java class BatchApplier loads data into the slave DBMS using CVS files and LOAD DATA INFILE.  The first implementation works on MySQL but is being extended to work on PostgreSQL-like databases.  Here is the basic algorithm.  
+Java class BatchApplier loads data into the slave DBMS using CVS files and LOAD DATA INFILE.  The first implementation works on MySQL and PostgreSQL databases.  Here is the basic algorithm.  
 
 While executing within a commit block, we write incoming transactions into open CSV files written by class CsvWriter.   There is a maximum of one insert CSV and one delete CSV file per database table. 
   * Inserts go into an insert CSV file for their table.   (The insert file contains the column values.) 
@@ -20,11 +20,51 @@ While executing within a commit block, we write incoming transactions into open 
   * Updates put keys into the delete file and the updated values into the insert file.  
   * Statements are ignored.   If you want DDL you need to put it in yourself. 
 
-When we commit the block, the load algorithm works as follows. 
+There are two ways to commit data.  The simplest way is to use 'direct' loading, which works as follows when we commit transactions.  
   # Close each delete CSV and load it into a temp table.  Delete any row in the corresponding real table that matches a key in the temp table. 
   # Close each insert CSV and load it into the real table. 
 
+For PostgreSQL databases direct loading does not work because PostgreSQL does not support REPLACE semantics in load files.  This means that an INSERT followed by an UPDATE will result in two INSERTs on the same key in the base table, hence a primary key violation.  Instead, we load both inserts as well as deletes into transfer tables and then use SQL to apply the transfer table contents to the base table. 
+
 So much for the algorithm.  If there are no delete operations this approach is equivalent to serial execution of the SQL operations but theoretically much faster because it avoids a lot of network round-trips and as well as overhead of the SQL itself.
+
+= Transfer Table Format =
+
+Transfer tables must follow a specific format that mimics the base table to which they apply.  There is a separate insert and delete table for each base table.  
+
+For example, suppose we have a base table created by the following CREATE TABLE command: 
+
+{{{
+CREATE TABLE `croc_insertfloat` (
+  `id` int(11) NOT NULL,
+  `f_data` float DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
+
+{{{
+CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
+  `id` int(11) NOT NULL,
+  `f_data` float DEFAULT NULL,
+  `row_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+To make deletes (or updates) on the table you must create a delete transfer table that contains only the primary key from the base table plus a row ID.  This looks like the following.  
+
+{{{
+CREATE TABLE `stage_xxx_delete_croc_insertfloat` (
+  `id` int(11) DEFAULT NULL,
+  `row_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+*Note*:  Transfer tables must be in the same schema as the table they update.  If the replicator cannot find a required transfer table, it will fail. 
+
+To use transfer tables, select 'staged' as the loading method when configuring the BatchApplier in the replication service properties file.  You can change the prefix for staging tables, the row ID column name, and the table keys as part of BatchApplier configuration. 
 
 = Batch Applier Setup =
 
@@ -62,15 +102,30 @@ replicator.stage.q-to-dbms.filters=pkey,colnames,bidiSlave
 2. Find the applier section and comment/out whatever is there.  Replace it with the following: 
 
 {{{
+# Batch applier basic configuration information. 
 replicator.applier.dbms=com.continuent.tungsten.replicator.applier.batch.BatchApplier
 replicator.applier.dbms.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/tungsten_${service.name}?createDB=true
 replicator.applier.dbms.driver=org.drizzle.jdbc.DrizzleDriver
 replicator.applier.dbms.user=${replicator.global.db.user}
 replicator.applier.dbms.password=${replicator.global.db.password}
-replicator.applier.dbms.template=LOAD DATA INFILE '%%FILE%%' REPLACE INTO TABLE %%TABLE%% FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
-replicator.applier.dbms.stagingDirectory=/tmp/staging
-replicator.applier.dbms.supportsReplace=true
+
+# Load method, COPY command template, and staging directory location. 
+replicator.applier.dbms.loadMethod=staged
+replicator.applier.dbms.loadBatchTemplate=LOAD DATA INFILE '%%FILE%%' REPLACE INTO TABLE %%TABLE%% FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+replicator.applier.dbms.stageDirectory=/tmp/staging
+replicator.applier.dbms.supportsReplace=false
+
+# Extra parameters for loading via stage tables. 
+replicator.applier.dbms.stageTablePrefix=stage_xxx
+replicator.applier.dbms.stageInsertFromTemplate=INSERT INTO %%BASE_TABLE%%(%%BASE_COLUMNS%%) SELECT %%BASE_COLUMNS%% FROM %%STAGE_TABLE%%
+replicator.applier.dbms.stageDeleteFromTemplate=DELETE FROM %%BASE_TABLE%% WHERE %%BASE_PKEY%% IN (SELECT %%STAGE_PKEY%% FROM %%STAGE_TABLE%%)
+replicator.applier.dbms.stagePkeyColumn=id
+replicator.applier.dbms.stageRowIdColumn=row_id
 }}}
+
+The properties that begin with "stage" are required only if you select staged as the load method.  There are no defaults for these values.  You must specify them fully or replication will fail.  
+
+As shown in the example, SQL templates can be parameterized by values that Tungsten Replicator fills in at runtime.  The example shows all the currently supported values.  
 
 Restart the slave replicator and batch loading is enabled.  From there on out you can start to test. 
 
@@ -95,7 +150,10 @@ The BatchApplier implementation has the following general capabilities.
 
 There are a number of limitations to the work done so far. 
 
-  * The applier currently only works on MySQL but is being extended for PostgreSQL-style databases.  
+  * The applier is still in active development.  Testing is limited to specific use cases. 
   * Deletes can cause problems.  For instance, issuing an INSERT followed by a DELETE on the same key value will be inverted if they execute in the same commit block.  BatchApplier will apply the DELETE first without effect, then INSERT the row.  
   * Not all datatypes are supported or even tested. 
   * Parallel replication has not been tested. 
+  * When using staged loading with transfer tables, note that all tables must have a single key, that key must have the same name, and its value must be an INT.  
+
+These limitations will be corrected in future builds. 
