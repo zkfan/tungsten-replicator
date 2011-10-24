@@ -42,7 +42,7 @@ CREATE TABLE `croc_insertfloat` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 }}}
 
-To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
+To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should not have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
 
 {{{
 CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
