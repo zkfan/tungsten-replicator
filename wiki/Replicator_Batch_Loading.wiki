@@ -17,53 +17,19 @@ Java class BatchApplier loads data into the slave DBMS using CVS files and LOAD 
 While executing within a commit block, we write incoming transactions into open CSV files written by class CsvWriter.   There is a maximum of one insert CSV and one delete CSV file per database table. 
   * Inserts go into an insert CSV file for their table.   (The insert file contains the column values.) 
   * Deletes go into a delete CSV file for their table.  (The delete file contains only keys.) 
-  * Updates put keys into the delete file and the updated values into the insert file.  
+  * Updates put keys into the delete file and the updated values (i.e., row after images) into the insert file.  
   * Statements are ignored.   If you want DDL you need to put it in yourself. 
 
-There are two ways to commit data.  The simplest way is to use 'direct' loading, which works as follows when we commit transactions.  
+There are two ways to commit data.  The *direct* load method works by loading data as follows when we commit transactions.  
   # Close each delete CSV and load it into a temp table.  Delete any row in the corresponding real table that matches a key in the temp table. 
   # Close each insert CSV and load it into the real table. 
+This method works for databases like MySQL that support REPLACE semantics in load files.  REPLACE means that if a row inserts into an existing row it replaces its contents.  
 
-For PostgreSQL databases direct loading does not work because PostgreSQL does not support REPLACE semantics in load files.  This means that an INSERT followed by an UPDATE will result in two INSERTs on the same key in the base table, hence a primary key violation.  Instead, we load both inserts as well as deletes into transfer tables and then use SQL to apply the transfer table contents to the base table. 
+The *staged* load method loads via specially named staging tables.  In this technique, both inserts and deletes are loaded into permanent staging tables for each base table.  The delete stage table just contains keys, which as with the temp table used in the direct method can join with base rows to remove them.  The insert stage table contains rows to be inserted.  These are merged in using a specially constructed SQL command that eliminates duplicate rows.  
+
+Staged loading is suitable for databases like PostgreSQL that do not support REPLACE semantics in load files.  This means that an INSERT followed by an UPDATE will result in two INSERTs on the same key in the base table, hence a primary key violation.  
 
 So much for the algorithm.  If there are no delete operations this approach is equivalent to serial execution of the SQL operations but theoretically much faster because it avoids a lot of network round-trips and as well as overhead of the SQL itself.
-
-= Transfer Table Format =
-
-Transfer tables must follow a specific format that mimics the base table to which they apply.  There is a separate insert and delete table for each base table.  
-
-For example, suppose we have a base table created by the following CREATE TABLE command: 
-
-{{{
-CREATE TABLE `croc_insertfloat` (
-  `id` int(11) NOT NULL,
-  `f_data` float DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-}}}
-
-To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should not have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
-
-{{{
-CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
-  `id` int(11) NOT NULL,
-  `f_data` float DEFAULT NULL,
-  `row_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-}}}
-
-To make deletes (or updates) on the table you must create a delete transfer table that contains only the primary key from the base table plus a row ID.  This looks like the following.  
-
-{{{
-CREATE TABLE `stage_xxx_delete_croc_insertfloat` (
-  `id` int(11) DEFAULT NULL,
-  `row_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-}}}
-
-*Note*:  Transfer tables must be in the same schema as the table they update.  If the replicator cannot find a required transfer table, it will fail. 
-
-To use transfer tables, select 'staged' as the loading method when configuring the BatchApplier in the replication service properties file.  You can change the prefix for staging tables, the row ID column name, and the table keys as part of BatchApplier configuration. 
 
 = Batch Applier Setup =
 
@@ -98,7 +64,7 @@ Once the slave is set up, go to that host and manually edit the replication serv
 replicator.stage.q-to-dbms.filters=pkey,colnames,bidiSlave
 }}}
 
-2. Find the applier section and comment/out whatever is there.  Replace it with the following: 
+2. Find the applier section and comment out or delete whatever is there.  Replace it with the following: 
 
 {{{
 # Batch applier basic configuration information. 
@@ -108,11 +74,15 @@ replicator.applier.dbms.driver=org.drizzle.jdbc.DrizzleDriver
 replicator.applier.dbms.user=${replicator.global.db.user}
 replicator.applier.dbms.password=${replicator.global.db.password}
 
+# Timezone and character set. 
+replicator.applier.dbms.timezone=GMT+0:00
+replicator.applier.dbms.charset=UTF-8
+
 # Load method, COPY command template, and staging directory location. 
-replicator.applier.dbms.loadMethod=staged
-replicator.applier.dbms.loadBatchTemplate=LOAD DATA INFILE '%%FILE%%' REPLACE INTO TABLE %%TABLE%% FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+replicator.applier.dbms.loadMethod=direct
+replicator.applier.dbms.loadBatchTemplate=LOAD DATA INFILE '%%FILE%%' REPLACE INTO TABLE %%TABLE%% CHARACTER SET utf8 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 replicator.applier.dbms.stageDirectory=/tmp/staging
-replicator.applier.dbms.supportsReplace=false
+replicator.applier.dbms.supportsReplace=true
 
 # Extra parameters for loading via stage tables. 
 replicator.applier.dbms.stageTablePrefix=stage_xxx
@@ -120,6 +90,7 @@ replicator.applier.dbms.stageInsertFromTemplate=INSERT INTO %%BASE_TABLE%%(%%BAS
 replicator.applier.dbms.stageDeleteFromTemplate=DELETE FROM %%BASE_TABLE%% WHERE %%BASE_PKEY%% IN (SELECT %%STAGE_PKEY%% FROM %%STAGE_TABLE%%)
 replicator.applier.dbms.stagePkeyColumn=id
 replicator.applier.dbms.stageRowIdColumn=row_id
+replicator.applier.dbms.cleanUpFiles=false
 }}}
 
 The properties that begin with "stage" are required only if you select staged as the load method.  There are no defaults for these values.  You must specify them fully or replication will fail.  
@@ -127,6 +98,51 @@ The properties that begin with "stage" are required only if you select staged as
 As shown in the example, SQL templates can be parameterized by values that Tungsten Replicator fills in at runtime.  The example shows all the currently supported values.  
 
 Restart the slave replicator and batch loading is enabled.  From there on out you can start to test. 
+
+= Transfer Table Format =
+
+Transfer tables must follow a specific format that mimics the base table to which they apply.  There is a separate insert and delete table for each base table.  
+
+For example, suppose we have a base table created by the following CREATE TABLE command: 
+
+{{{
+CREATE TABLE `croc_insertfloat` (
+  `id` int(11) NOT NULL,
+  `f_data` float DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should not have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
+
+{{{
+CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
+  `id` int(11) NOT NULL,
+  `f_data` float DEFAULT NULL,
+  `row_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+To make deletes (or updates) on the table you must create a delete transfer table that contains only the primary key from the base table plus a row ID.  This looks like the following.  
+
+{{{
+CREATE TABLE `stage_xxx_delete_croc_insertfloat` (
+  `id` int(11) DEFAULT NULL,
+  `row_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+}}}
+
+*Note*:  Transfer tables must generally be in the same schema as the table they update.  You can put them in a different schema using the stageSchemaPrefix property, which adds a prefix to the base schema name.  If the replicator cannot find a required transfer table, it will fail. 
+
+To use transfer tables, select 'staged' as the loading method when configuring the BatchApplier in the replication service properties file.  You can change the prefix for staging tables, the row ID column name, and the table keys as part of BatchApplier configuration. 
+
+= Character Sets =
+
+Character sets are a headache in batch loading because all updates are written and read from CSV files, which can result in invalid transactions along the replication path.  Such problems are very difficult to debug.  Here are some tips to improve chances of happy replicating. 
+
+  # Use UTF8 character sets consistently for all string and text data. 
+  # Force Tungsten to convert data to Unicode rather than transfering strings.  I.e., specify `tungsten-installer ... --mysql-use-bytes-for-string=false`.  
+  # When starting the replicator for MySQL replication, include the following command in the wrapper.conf file: `wrapper.java.additional.4=-Dfile.encoding=UTF8`. 
 
 = Testing and Operation = 
 
@@ -140,7 +156,7 @@ The BatchApplier implementation has the following general capabilities.
 
   * The BatchApplier should correctly apply any sequence of insert and update equivalently to the normal fully serialized operation with SQL statements.  
   * INSERT, UPDATE, and DELETE statements should be handled.  
-  * The following datatypes are supported:  INT, BIGINT, DATE, TIMESTAMP, VARCHAR, DOUBLE, and FLOAT. 
+  * The following datatypes are supported:  INT, BIGINT, DATE, TIMESTAMP, VARCHAR, DOUBLE, FLOAT, DECIMAL. 
   * Replicator management functions, for example the trepctl, should function exactly as with normal fully serialized replication.  
   * Configuration parameters like the global buffer size (replicator.global.buffer.size) behave exactly as before.  In fact, this value should be increased to a very large value for the last stage so that the CSV files contain as many rows as possible at commit time.
   * The replicator will clean up CSV files and temp tables after commit and whenever it goes offline. 
