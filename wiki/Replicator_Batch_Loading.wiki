@@ -110,17 +110,17 @@ CREATE TABLE `croc_insertfloat` (
   `id` int(11) NOT NULL,
   `f_data` float DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 }}}
 
-To make inserts on this table you must create an insert transfer table that has the same format with two differences.  First, the table should not have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
+To make inserts on this table you must create an insert transfer table that has the same format including column names, types, and order.  Beyond that there are two differences.  First, the table should not have a primary key or you will get primary key violations if there are multiple inserts on the same row.  Second, the last column must contain a row_id column, which is used to distinguish between multiple inserts.  Here is the corresponding table matching the preceding example: 
 
 {{{
 CREATE TABLE `stage_xxx_insert_croc_insertfloat` (
   `id` int(11) NOT NULL,
   `f_data` float DEFAULT NULL,
   `row_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 }}}
 
 To make deletes (or updates) on the table you must create a delete transfer table that contains only the primary key from the base table plus a row ID.  This looks like the following.  
@@ -129,10 +129,10 @@ To make deletes (or updates) on the table you must create a delete transfer tabl
 CREATE TABLE `stage_xxx_delete_croc_insertfloat` (
   `id` int(11) DEFAULT NULL,
   `row_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 }}}
 
-*Note*:  Transfer tables must generally be in the same schema as the table they update.  You can put them in a different schema using the stageSchemaPrefix property, which adds a prefix to the base schema name.  If the replicator cannot find a required transfer table, it will fail. 
+*Note*:  Transfer tables are by default in the same schema as the table they update.  You can put them in a different schema using the stageSchemaPrefix property, which adds a prefix to the base schema name.  If the replicator cannot find a required transfer table, it will fail. 
 
 To use transfer tables, select 'staged' as the loading method when configuring the BatchApplier in the replication service properties file.  You can change the prefix for staging tables, the row ID column name, and the table keys as part of BatchApplier configuration. 
 
