@@ -205,6 +205,34 @@ To achieve your purpose, you will add this option to the installation command:
     --property=replicator.auto_enable=false
 }}}
 
+== Restrict replication to specific schemas and tables ==
+
+To forward or ignore operations on entire schemas or specific tables, use the 'replicate' filter.  The filter works from two comma-separated lists of tables and/or schema names.  You can use * and ? as wildcards; these match strings and single characters specifically.  
+
+The 'do' filter list contains tables that should specifically be replicated.  The 'ignore' filter contains tables that should be ignored.  Here is an example of how to replicate only tables in schema test or tables named foo in any schema.  The --property option is quoted to prevent accidental shell wildcard expansion.  
+
+{{{
+./tools/tungsten-installer --master-slave -a \
+  ...
+  --svc-extractor-filters=replicate \
+  "--property=replicator.filter.replicate.do=test,*.foo" \
+  ...
+  --start-and-report
+}}}
+
+The following example drops tables foo and bar in schema tpc: 
+
+{{{
+./tools/tungsten-installer --master-slave -a \
+  ...
+  --svc-extractor-filters=replicate \
+  --property=replicator.filter.replicate.ignore=tpc.foo,tpc.bar \
+  ...
+  --start-and-report
+}}}
+
+Important note:  Due Issue 254 the replicate filter currently only works on statements if it is an extract filter.  It works in any stage for row updates.  
+
 == Add one slave to an existing master ==
 
 The procedure is almost the same used to create a master-slave cluster. You use a similar command, with {{{--master-slave}}} and {{{--master-host}}} as in the full cluster installation command. The difference is that the {{{--cluster-hosts}}} list will only contain the slave host. Tungsten will do the right thing.
