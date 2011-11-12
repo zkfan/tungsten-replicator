@@ -231,7 +231,7 @@ The following example drops tables foo and bar in schema tpc:
   --start-and-report
 }}}
 
-Important note:  Due Issue 254 the replicate filter currently only works on statements if it is an extract filter.  It works in any stage for row updates.  
+Important note:  Due Issue 258 the replicate filter currently only works on statements if it is an extract filter.  It works in any stage for row updates.  
 
 == Add one slave to an existing master ==
 
