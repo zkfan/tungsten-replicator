@@ -207,7 +207,7 @@ To achieve your purpose, you will add this option to the installation command:
 
 == Restrict replication to specific schemas and tables ==
 
-To forward or ignore operations on entire schemas or specific tables, use the 'replicate' filter.  The filter works from two comma-separated lists of tables and/or schema names.  You can use {{{*}}} and {{{?}}} as wildcards; these match strings and single characters specifically.  
+To forward or ignore operations on entire schemas or specific tables, use the 'replicate' filter.  The filter works from two comma-separated lists of tables and/or schema names.  You can use {{{*}}} and {{{?}}} as wildcards; these match strings and single characters respectively.  
 
 The 'do' filter list contains tables that should specifically be replicated.  The 'ignore' filter contains tables that should be ignored.  Here is an example of how to replicate only tables in schema test or tables named foo in any schema.  The --property option is quoted to prevent accidental shell wildcard expansion.  
 
