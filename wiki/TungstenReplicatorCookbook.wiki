@@ -15,6 +15,7 @@ This is a collection of practical recipes to deal with Tungsten Replicator.
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Install_Tungsten_master/slave_replication_in_a_sandbox Install Tungsten master/slave replication in a sandbox]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Chain_two_replication_clusters Chain two replication clusters]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Modify_one_or_more_properties_with_the_installer Modify one or more properties with the installer]
+    * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Restrict_replication_to_specific_schemas_and_tables Restrict replication to specific schemas and tables]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Add_one_slave_to_an_existing_master Add one slave to an existing master]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Start_a_master_service_with_a_given_binlog_and_position Start a master service with a given binlog and position]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Modify_the_configuration_template_file_prior_to_configuration Modify the configuration template file prior to configuration]
