@@ -1,0 +1,76 @@
+#summary Interface design for slave pre-fetching
+= Slave pre-fetch installation design =
+<wiki:toc max_depth="4" />
+== Overview ==
+Slave pre-fetching is a feature that reads ahead of the slave applier, and warms up the pages needed by the applier by converting THL updates into selects and executing them a few seconds before the slave applies the change. This way, the page is already in memory by the time the change is applied.
+
+== Implementation ==
+The pre-fetcher is a replicator service that can be installed in two ways: either as a service to an already existing replicator or as a separate replicator. This second one, while likely less efficient, is possibly more common, as it can be used to boost a Tungsten Enterprise slave or (eventually) to speed up a MySQL native replication slave by reading the relay logs and applying from them.
+Either way, the pre-fetching replicator service will not write anywhere in the database, will not have its own service database, and will borrow connecting credentials from another replication service.
+
+ * Connection parameters will be taken from the slave that needs to be boosted. It should be on the same host, for efficiency reasons;
+ * There should be a new role, *prefetch* that will set the defaults for this case.
+ *  The pipeline will be a simple *thl-to-q,q-to-dbms*.
+ * the THL directory must be the same as the slave being boosted;
+ * the  operational mode for the THL must be read-only
+ * There are three properties that tune the service, related to
+   * time to read ahead
+   * sleep time (purpose required)
+   * events to skip
+
+The snippet below is an example of the changes made to the static properties file.
+
+{{{
+#
+# Connection parameters are the ones of the slave being boosted.
+#
+replicator.global.db.host=127.0.0.1
+replicator.global.db.port=3306
+replicator.global.db.user=tungsten
+replicator.global.db.password=secret
+
+replicator.global.extract.db.host=127.0.0.1
+replicator.global.extract.db.port=3306
+replicator.global.extract.db.user=tungsten
+replicator.global.extract.db.password=secret
+
+
+replicator.role=prefetch
+
+replicator.pipeline.slave=thl-to-q,q-to-dbms
+
+replicator.stage.q-to-dbms.applier=prefetch
+
+# replicator.store.thl.log_dir=/same/as/the/boosted/slave
+replicator.store.thl.readOnly=true
+
+replicator.applier.prefetch=com.continuent.tungsten.replicator.applier.JdbcPrefetcher
+replicator.applier.prefetch.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/
+replicator.applier.prefetch.user=${replicator.global.db.user}
+replicator.applier.prefetch.password=${replicator.global.db.password}
+
+replicator.applier.prefetch.aheadMaxTime=5000
+replicator.applier.prefetch.sleepTime=200 
+replicator.applier.prefetch.warmUpEventCount=200
+}}}
+
+== User interface ==
+
+The new feature requires the ability of installing three different topologies of pre-fetcher
+
+ * stand-alone replicator reading from THL
+ * stand-alone replicator reading from relay logs
+ * additional service of existing replicator
+
+=== stand-alone replicator reading from THL ===
+
+{{{
+
+./tools/tungsten-installer \
+    --prefetch \
+    --
+}}}
+
+=== stand-alone replicator reading from relay logs ===
+
+=== additional service of existing replicator ===
