@@ -18,7 +18,7 @@ Either way, the pre-fetching replicator service will not write anywhere in the d
    * sleep time (purpose required)
    * events to skip
 
-The snippet below is an example of the changes made to the static properties file.
+The snippet below is an example of the changes made to the static properties file.  It shows how to define a prefetch pipeline, configure, the prefetch applier, and configure the supplemental prefetch filter, which controls the rate at which transactions are fed to the parallel queue in the second stage.  
 
 {{{
 #
@@ -34,25 +34,53 @@ replicator.global.extract.db.port=3306
 replicator.global.extract.db.user=tungsten
 replicator.global.extract.db.password=secret
 
-
+#
+# Define a prefetch pipeline as follows. 
+#
 replicator.role=prefetch
 
-replicator.pipeline.slave=thl-to-q,q-to-dbms
+replicator.pipelines=prefetch
+replicator.pipeline.prefetch=thl-to-q,q-to-dbms
+replicator.pipeline.slave.stores=thl,parallel-queue
 
+replicator.stage.thl-to-q=com.continuent.tungsten.replicator.pipeline.SingleThreadStageTask
+replicator.stage.thl-to-q.extractor=thl-extractor
+replicator.stage.thl-to-q.applier=parallel-q-applier
+replicator.stage.thl-to-q.blockCommitRowCount=${replicator.global.buffer.size}
+replicator.stage.thl-to-q.filters=prefetch
+
+replicator.stage.q-to-dbms=com.continuent.tungsten.replicator.pipeline.SingleThreadStageTask
+replicator.stage.q-to-dbms.extractor=parallel-q-extractor
 replicator.stage.q-to-dbms.applier=prefetch
+replicator.stage.q-to-dbms.filters=mysqlsessions,pkey,bidiSlave
+replicator.stage.q-to-dbms.taskCount=${replicator.global.apply.channels}
+replicator.stage.q-to-dbms.blockCommitRowCount=${replicator.global.buffer.size}
 
-# replicator.store.thl.log_dir=/same/as/the/boosted/slave
+# 
+# Define the THL location and set read-only flag as follows. 
+#
+replicator.store.thl.log_dir=/same/as/the/boosted/slave
 replicator.store.thl.readOnly=true
 
+#
+# Define the prefetch applier as follows. 
+#
 replicator.applier.prefetch=com.continuent.tungsten.replicator.applier.JdbcPrefetcher
 replicator.applier.prefetch.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/
 replicator.applier.prefetch.user=${replicator.global.db.user}
 replicator.applier.prefetch.password=${replicator.global.db.password}
 
-replicator.applier.prefetch.aheadMaxTime=5000
-replicator.applier.prefetch.sleepTime=200 
-replicator.applier.prefetch.warmUpEventCount=200
+# 
+# Define the prefetch filter as follows. 
+#
+replicator.filter.prefetch=com.continuent.tungsten.replicator.filter.PrefetchFilter
+replicator.filter.prefetch.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/
+replicator.filter.prefetch.aheadMaxTime=5000
+replicator.filter.prefetch.sleepTime=200
+replicator.filter.prefetch.warmUpEventCount=200
 }}}
+
+All other property file values remain the same. 
 
 == User interface ==
 
