@@ -214,7 +214,7 @@ Check out the [TRCBasicInstallation#Modify_the_configuration_template_file_prior
 
 == Avoiding or Fixing Corrupt Transaction History Logs ==
 
-THL corruption is thankfully very rare but does strike on occasion.  This section contains information on how to avoid corruption in the first place and how to handle it when it does occurs.  
+THL corruption is thankfully very rare but does strike on occasion.  This section contains information on how to avoid corruption in the first place and how to handle it when it does occur.  
 
 === Enabling THL Fsync ===
 
