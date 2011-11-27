@@ -212,6 +212,24 @@ The settings for these log files are located in {{{tungsten-replicator/conf/log4
 
 Check out the [TRCBasicInstallation#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
 
+== Avoiding/Fixing Corrupt Transaction History Logs ==
+
+THL corruption is thankfully very rare, but does strike on occasion.  This section contains information on how to avoid corruption in the first place and how to handle it when it does occurs.  
+
+=== Enabling THL Fsync ===
+
+Transaction history logs by default merely flush THL records to the OS page cache rather than doing a full fsync each time the thread responsible for writing the log issues a commit.  The reason is that fsync operations are very slow on many storage types, and the THL can typically be recreated even if it is truncated due to a host crash.  
+
+If you would prefer to avoid race conditions that arise from such behavior, you should enable fsync on log flush, using the -thl-log-fsync option on tungsten-installer.  Here is a partial example: 
+
+{{{
+tools/tungsten-installer ... \ 
+  --thl-log-fsync=true \
+  ...
+}}}
+
+When fsync is enabled, the THL flushIntervalMillis parameter takes effect.  By default it performs a flush every 500 milliseconds.  Fsync and delayed flushing can add considerable latency to replication, so you should only enable fsync if your system is lightly loaded or you have very fast storage. 
+
 = Monitoring and Troubleshooting =
 
 == Monitor JVM memory usage ==
