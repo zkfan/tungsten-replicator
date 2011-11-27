@@ -250,7 +250,7 @@ Here is the standard procedure.
 
   # Take the slave offline using 'trepctl offline'. 
   # Determine the last good seqno in the log, if there is one. 
-  # Use 'thl purge -low nnn' to truncate the log at any point before the end.  Or just remove the log directory entirely if the log is completely bad.   
+  # Use 'thl purge -low nnn' to truncate the log, where nnn is the first bad seqno.  Or just remove the log directory entirely if the log is completely bad.   
   # Bring the slave back online using 'trepctl online'.  
   # The slave will get the missing log records from the master, then begin applying transactions at the last point recorded in the trep_commit_seqno table. 
 
