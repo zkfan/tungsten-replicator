@@ -50,6 +50,7 @@ This is a collection of practical recipes to deal with Tungsten Replicator.
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Upgrading_from_Tungsten_Replicator_2.0.4_to_2.0.5 Upgrading from Tungsten Replicator 2.0.4 to 2.0.5]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Increasing_the_JVM_memory_size Increasing the JVM memory size]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Managing_replicator_log_space Managing replicator log space]
+    * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration?ts=1322371172&updated=TRCAdministration#Avoiding_or_Fixing_Corrupt_Transaction_History_Logs Avoiding or Fixing Corrupt Transaction History Logs]
   * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Monitoring_and_Troubleshooting Monitoring and Troubleshooting]
     * [http://code.google.com/p/tungsten-replicator/wiki/TRCAdministration#Monitor_JVM_memory_usage Monitor JVM memory usage]
 
