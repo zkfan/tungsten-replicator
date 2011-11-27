@@ -212,9 +212,9 @@ The settings for these log files are located in {{{tungsten-replicator/conf/log4
 
 Check out the [TRCBasicInstallation#Modify_the_configuration_template_file_prior_to_configuration] recipe for an idea of how you can update the {{{log4j.properties}}} file as part of installation.
 
-== Avoiding/Fixing Corrupt Transaction History Logs ==
+== Avoiding or Fixing Corrupt Transaction History Logs ==
 
-THL corruption is thankfully very rare, but does strike on occasion.  This section contains information on how to avoid corruption in the first place and how to handle it when it does occurs.  
+THL corruption is thankfully very rare but does strike on occasion.  This section contains information on how to avoid corruption in the first place and how to handle it when it does occurs.  
 
 === Enabling THL Fsync ===
 
@@ -229,6 +229,54 @@ tools/tungsten-installer ... \
 }}}
 
 When fsync is enabled, the THL flushIntervalMillis parameter takes effect.  By default it performs a flush every 500 milliseconds.  Fsync and delayed flushing can add considerable latency to replication, so you should only enable fsync if your system is lightly loaded or you have very fast storage. 
+
+=== Enabling THL Checksums ===
+
+The THL permits supports checksums on log records.  These detect corruption effectively but can add significant overhead for parallel replication in particular, as many threads may read and hence need to compute checksums on the same page.  The advantage of THL checksums is that they give you a clear error message when a bit accidentally "flips" in storage or the log gets corrupted, whereas without them the replicator behavior is unpredictable.  (It may just get confused and hang for instance.)  
+
+You can enable log checksums at installation time using the THL doChecksum property, as shown in the following partial example.  
+
+{{{
+tools/tungsten-installer ... \ 
+  --property=replicator.store.thl.doChecksum=true \
+  ...
+}}}
+
+=== Regenerating a Corrupted Slave THL ===
+
+If you suspect full or partial slave log corruption, you can cure it as follows.  Here is the standard procedure.  
+
+  # Take the slave offline using 'trepctl offline'. 
+  # Determine the last good seqno in the log, if there is one. 
+  # Use 'thl purge -low nnn' to truncate the log at any point before the end.  Or just remove the log directory entirely if the log is completely bad.   
+  # Bring the slave back online using 'trepctl online'.  
+  # The slave will get the missing log records from the master, then begin applying transactions at the last point recorded in the trep_commit_seqno table. 
+
+=== Regenerating a Partially Corrupted Master THL ===
+
+You can regenerate a partially corrupted master THL as follows.  
+
+  # Take the master offline using 'trepctl offline'.  Slaves will move from ONLINE to SYNCHRONIZING. 
+  # Determine the last good seqno in the log. 
+  # Use 'thl purge -low nnn' to truncate the log at the last good seqno.   
+  # Bring the master back online using 'trepctl online'.  
+  # The master will re-extract the missing log records from the master DBMS.  Slaves will move from SYNCHRONIZING to OFFLINE-ERROR as the master epoch numbers in the newly generated log will be different from what the slaves expect. 
+  # Bring any failed slaves back online using 'trepctl online -force'.  This skips the epoch number check and enables the slaves to reconnect.  
+
+The master case also applies if you are operating a direct pipeline.  
+
+=== Regenerating a Fully Corrupted Master THL ===
+
+You can regenerate a completely corrupted master THL as follows.  In this case you do not have a proper restart point for the log.  
+
+  # Take the master offline using 'trepctl offline'.  Slaves will move from ONLINE to SYNCHRONIZING. 
+  # Search the slave trep_commit_seqno tables for the slave with the smallest seqno value.  Record the values of seqno and event ID from the table.  
+  # Delete the master log directory.   
+  # Bring the master back online using 'trepctl online -from-event _slave event ID_ -base-seqno _slave seqno_' 
+  # The master will re-extract the missing log records from the master DBMS.  Slaves will move from SYNCHRONIZING to OFFLINE-ERROR as the master epoch numbers in the newly generated log will be different from what the slaves expect. 
+  # Bring any failed slaves back online using 'trepctl online -force'.  This skips the epoch number check and enables the slaves to reconnect.  
+
+This case also applies if you are operating a direct pipeline and lose the master log completely. 
 
 = Monitoring and Troubleshooting =
 
