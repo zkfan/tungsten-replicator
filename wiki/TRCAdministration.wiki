@@ -244,7 +244,9 @@ tools/tungsten-installer ... \
 
 === Regenerating a Corrupted Slave THL ===
 
-If you suspect full or partial slave log corruption, you can cure it as follows.  Here is the standard procedure.  
+If you suspect full or partial slave log corruption, you can cure it as follows.  Full corruption means that the log is unusable starting at the first record or even completely deleted.  Partial corruption means that the end of the log is unusable but the log is good before some seqno value that you can find out reasonably easily.  
+
+Here is the standard procedure.  
 
   # Take the slave offline using 'trepctl offline'. 
   # Determine the last good seqno in the log, if there is one. 
@@ -267,11 +269,11 @@ The master case also applies if you are operating a direct pipeline.
 
 === Regenerating a Fully Corrupted Master THL ===
 
-You can regenerate a completely corrupted master THL as follows.  In this case you do not have a proper restart point for the log.  
+You can regenerate a completely corrupted master THL as follows.  In this case we have to deal with the additional wrinkle that slaves already have a particular sequence number recorded, so you cannot just restart the log at seqno 0.  You must tell Tungsten where to start in the native log as well as which seqno value to start with. 
 
   # Take the master offline using 'trepctl offline'.  Slaves will move from ONLINE to SYNCHRONIZING. 
-  # Search the slave trep_commit_seqno tables for the slave with the smallest seqno value.  Record the values of seqno and event ID from the table.  
-  # Delete the master log directory.   
+  # Search the slave trep_commit_seqno tables for the slave with the smallest seqno value.  Record the values of seqno and event ID from the slave table.  
+  # Delete the master log directory. 
   # Bring the master back online using 'trepctl online -from-event _slave event ID_ -base-seqno _slave seqno_' 
   # The master will re-extract the missing log records from the master DBMS.  Slaves will move from SYNCHRONIZING to OFFLINE-ERROR as the master epoch numbers in the newly generated log will be different from what the slaves expect. 
   # Bring any failed slaves back online using 'trepctl online -force'.  This skips the epoch number check and enables the slaves to reconnect.  
