@@ -94,6 +94,7 @@ The new feature requires the ability of installing three different topologies of
 In all the configurations, users can tune the pre-fetching service with the following options:
 
 {{{
+   --prefetch-enabled
    --time-ahead
    --sleep-time
    --warmup-event-count
@@ -104,31 +105,48 @@ In all the configurations, users can tune the pre-fetching service with the foll
 #replicator.applier.prefetch.warmUpEventCount=200
 }}}
 
-=== stand-alone replicator reading from THL ===
+=== stand-alone replicator reading from THL on a remote server ===
 
 {{{
 ./tools/tungsten-installer 
-    --prefetch    # This is the role.
+    --masterslave    # This is the role.
+    --prefetch-enabled=true   # Tell it to use the prefetch applier
     # all the following options refer to the
     # slave being boosted
-    --thl-directory 
-    --datasource-host
+    --cluster-hosts
     --datasource-port
     --datasource-user
     --datasource-password
-    --slave-thl-port    
+    --master-host
+    --master-thl-port
+    --thl-port    
 }}}
 
 === stand-alone replicator reading from relay logs ===
 
-TBD
+{{{
+./tools/tungsten-installer
+    --direct
+    --prefetch-enabled=true
+    --master-host
+    --master-port
+    --master-user
+    --master-password
+   --slave-host
+   --slave-port
+   --slave-user
+   --slave-password
+}}}
 
 === additional service of existing replicator ===
 
 {{{
-./tools/configure-service
-  -C
-  --role=prefetch
-  --thl-directory
-  --local-service-name
+./tools/configure --home-directory=/opt/continuent
+/opt/continuent/tools/configure-service
+    -C
+    --role=slave
+    --prefetch-enabled=true
+    --local-service-name
+    --service-type=remote
+    --thl-directory
 }}}
