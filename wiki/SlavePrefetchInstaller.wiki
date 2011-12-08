@@ -1,5 +1,5 @@
 #summary Interface design for slave pre-fetching
-= Slave pre-fetch installation design =
+= Slave Prefetch Design and Operation =
 <wiki:toc max_depth="4" />
 == Overview ==
 Slave pre-fetching is a feature that reads ahead of the slave applier, and warms up the pages needed by the applier by converting THL updates into selects and executing them a few seconds before the slave applies the change. This way, the page is already in memory by the time the change is applied.
@@ -75,7 +75,7 @@ replicator.applier.prefetch.password=${replicator.global.db.password}
 #
 replicator.filter.prefetch=com.continuent.tungsten.replicator.filter.PrefetchFilter
 replicator.filter.prefetch.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/
-replicator.filter.prefetch.aheadMaxTime=5000
+replicator.filter.prefetch.aheadMaxTime=120
 replicator.filter.prefetch.sleepTime=200
 replicator.filter.prefetch.warmUpEventCount=200
 }}}
@@ -90,37 +90,42 @@ The new feature requires the ability of installing three different topologies of
  * stand-alone replicator reading from relay logs
  * additional service of existing replicator
 
+Note:  Current implementations focus on the first case, namely downloading from the slave THL via TCP/IP. 
+
 === Common properties ===
-In all the configurations, users can tune the pre-fetching service with the following options:
+In all the configurations, users can tune the pre-fetching service with the following installation options:
+
+|| Install option || Meaning ||
+|| prefetch-enabled || If true set the service up as a prefetch applier ||
+|| prefetch-time-ahead || Max seconds prefetch can precede the slave applier ||
+|| prefetch-sleep-time || Number of milliseconds to sleep when the prefetch applier gets too far ahead ||
+|| prefetch-warmup-event-count || Events to skip when applier first goes online ||
+|| prefetch-schema || Catalog schema of slave for which we are prefetching ||
+
+=== Installation Command to Read from Remote THL ===
+
+The following command shows a typical command to prefetch from a slave by downloading from the slave THL.  This command installs a completely separate replicator process and can be used for both Tungsten 2.0 as well as Tungsten 1.3 replicators. 
 
 {{{
-   --prefetch-enabled
-   --time-ahead
-   --sleep-time
-   --warmup-event-count
-
-# The above options map to the following properties:
-#replicator.applier.prefetch.aheadMaxTime=5000
-#replicator.applier.prefetch.sleepTime=200 
-#replicator.applier.prefetch.warmUpEventCount=200
+$ tools/tungsten-installer --master-slave -a \
+  --home-directory=$TUNGSTEN_HOME \
+  --prefetch-enabled=true \
+  --prefetch-schema=tungsten \
+  --prefetch-max-ahead-time=120 \
+  --cluster-hosts=logos2 \
+  --datasource-port=3306 \
+  --datasource-user=tungsten \
+  --datasource-password=secret \
+  --master-host=logos2 \
+  --master-thl-port=2112 \
+  --thl-port=2114 \
+  --rmi-port=10002 \
+  --service-name=slave_prefetch \
+  --channels=10 \
+  --start-and-report
 }}}
 
-=== stand-alone replicator reading from THL on a remote server ===
-
-{{{
-./tools/tungsten-installer 
-    --masterslave    # This is the role.
-    --prefetch-enabled=true   # Tell it to use the prefetch applier
-    # all the following options refer to the
-    # slave being boosted
-    --cluster-hosts
-    --datasource-port
-    --datasource-user
-    --datasource-password
-    --master-host
-    --master-thl-port
-    --thl-port    
-}}}
+In this configuration 'master' refers to the slave for which this service acts as a prefetcher.  Note that the prefetch service uses offset (i.e. non-default) THL and RMI ports to prefetch clashes with the slave.  
 
 === stand-alone replicator reading from relay logs ===
 
