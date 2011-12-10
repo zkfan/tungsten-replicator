@@ -46,6 +46,7 @@ If your error only shows itself with large data, there is often a logistical pro
 ==DOs and DONTs==
 
  * DO
+   ** Search the bug repository and the mailing lists (or forums) before submitting yours. Someone may have had the same problem before you did.
    ** Put yourself in the receiver's position, and try to reproduce the problem from a clean initial state.
    ** If there is a workaround, mention it: it might give a good clue to the developers.
    ** More information is better. Anything that can improve the identification of the bug root cause will be welcome. (But don't overdo: see below)
