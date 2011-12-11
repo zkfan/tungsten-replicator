@@ -39,9 +39,9 @@ This is a more complex case of the above one. Not only you need concurrency, but
 
 If your error only shows itself with large data, there is often a logistical problem, as you can't easily provide gigabytes of data, even if there privacy and security issues weren't in the way (which usually are). There are three strategies that you can use to report such bugs:
 
-* If only the size matters, then describing the kind of data used could be enough. E.g. ''When a table with such fields and such indexes grows beyond X GB, then the optimizer warp drive explodes.'' (Don't try this at home)
-* Create a script to generate the data that will ultimately trigger the error. This method requires both skills and an understanding of what the error is.
-* You may use a publicly available database to reproduce the error (for example, the [https://launchpad.net/test-db Sample database with test suite].) Just mention in the bug report where to find the database, eventually how to load it if it is not simple, and then describe the steps needed to reproduce the bug after loading it.
+ * If only the size matters, then describing the kind of data used could be enough. E.g. ''When a table with such fields and such indexes grows beyond X GB, then the optimizer warp drive explodes.'' (Don't try this at home)
+ * Create a script to generate the data that will ultimately trigger the error. This method requires both skills and an understanding of what the error is.
+ * You may use a publicly available database to reproduce the error (for example, the [https://launchpad.net/test-db Sample database with test suite].) Just mention in the bug report where to find the database, eventually how to load it if it is not simple, and then describe the steps needed to reproduce the bug after loading it.
 
 ==DOs and DONTs==
 
