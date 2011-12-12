@@ -8,6 +8,8 @@ Slave pre-fetching is a feature that reads ahead of the slave applier, and warms
 The pre-fetcher is a replicator service that can be installed in two ways: either as a service to an already existing replicator or as a separate replicator. This second one, while likely less efficient, is possibly more common, as it can be used to boost a Tungsten Enterprise slave or (eventually) to speed up a MySQL native replication slave by reading the relay logs and applying from them.
 Either way, the pre-fetching replicator service will not write anywhere in the database, will not have its own service database, and will borrow connecting credentials from another replication service.
 
+=== Pipeline for Pre-fetching ===
+
  * Connection parameters will be taken from the slave that needs to be boosted. It should be on the same host, for efficiency reasons;
  * There should be a new role, *prefetch* that will set the defaults for this case.
  *  The pipeline will be a simple *thl-to-q,q-to-dbms*.
@@ -17,6 +19,8 @@ Either way, the pre-fetching replicator service will not write anywhere in the d
    * time to read ahead
    * sleep time (purpose required)
    * events to skip
+
+=== Configuration Description ===
 
 The snippet below is an example of the changes made to the static properties file.  It shows how to define a prefetch pipeline, configure, the prefetch applier, and configure the supplemental prefetch filter, which controls the rate at which transactions are fed to the parallel queue in the second stage.  
 
@@ -81,6 +85,77 @@ replicator.filter.prefetch.warmUpEventCount=200
 }}}
 
 All other property file values remain the same. 
+
+=== Pre-Fetch Query Generation ===
+
+Pre-fetch may require multiple queries to read data pages for a single update operation.  Let's assume the following example table.  
+
+{{{
+CREATE TABLE `appuser` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `last_name` varchar(128) DEFAULT NULL,
+  `first_name` varchar(128) DEFAULT NULL,
+  `office_id` int(11) DEFAULT NULL,
+  `login` varchar(32) DEFAULT NULL,
+  `salary` int(11) DEFAULT NULL,
+  `creation_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `appuser_idx_name` (`last_name`,`first_name`),
+  KEY `appuser_idx_login` (`login`),
+  KEY `appuser_fk_1` (`office_id`),
+  CONSTRAINT `appuser_fk_1` FOREIGN KEY (`office_id`) REFERENCES `office` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1
+}}}
+
+To pre-fetch properly on this table we need to generate queries to fetch the following kinds of pages into the buffer cache: 
+
+# Primary keys and leaf rows.  We need to select each row that will be written into memory.  
+# Secondary index pages.  We need to force reading of pages on affected secondary indexes such as appuser_idx_name.  These pages may be used to find data in the first place and will certainly need to be present if they are updated.  This can be accomplished by issuing queries that use the secondary index as a covering index.  
+# Foreign keys.  Foreign key constraints require that affected primary key pages on referenced tables should be available. 
+
+The next three subsections describe how to generate appropriate prefetch queries. 
+
+==== Pre-fetch for INSERT ====
+
+We can prefetch on INSERT statements as follows.  Assume the following sample statement: 
+
+{{{
+insert into appuser 
+  (last_name, first_name, office_id, login, salary, creation_date)   
+     values ('smith', 'bob', 23, 'bobsmith', 25000, now());
+}}}
+
+  # Generate a SELECT on the primary key, if known.  This loads the page that will receive the row.  For auto_increment keys like the sample this is not possible.
+  # If the INSERT uses a SELECT to fetch data from another table, execute that SELECT statement. 
+  # Issue covering queries on all matching indexes, for example: {{{SELECT count(*) from appuser force index(appuser_idx_login) where login='bobsmith'}}}
+  # Issue queries to fetch foreign key values on their original tables, for example:  {{{SELECT id from office where id=23}}}
+
+==== Pre-fetch for UPDATE ====
+
+We can prefetch on UPDATE statements as follows.  Assume the following update statement: 
+
+{{{
+update appuser set last_name='brown' where id=352
+}}}
+
+  # Generate a SELECT on the update where clause. 
+  # If the UPDATE uses a sub-select to fetch data from another table, execute that SELECT statement. 
+  # Issue covering queries on all matching indexes, for example: {{{SELECT count(*) from appuser force index(appuser_idx_name) where last_name='brown'}}}
+  # Issue queries to fetch affected foreign key values on their original tables, for example:  {{{SELECT id from office where id=23}}}
+
+Update pre-fetch is somewhat inefficiently when using statement replication as we cannot see the affected values easily. 
+
+==== Pre-fetch for DELETE ====
+
+We can prefetch on DELETE statements as follows.  Assume the following statement: 
+
+{{{
+delete from appuser where id=352
+}}}
+
+  # Generate a SELECT on the where clause used to delete rows.  Record the data received from the query to generate additional queries. 
+  # Issue covering queries on all matching indexes, for example: {{{SELECT count(*) from appuser force index(appuser_idx_name) where last_name='smith' and first_name='bob'}}}
+  # If there are cascading deletes due to foreign key relationships we should presumably issue selects on those tables as well using the same logic. 
 
 == User interface ==
 
