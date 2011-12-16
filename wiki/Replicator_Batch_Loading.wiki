@@ -1,5 +1,6 @@
 #summary Theory and Practice of Batch Loading using Tungsten
-
+= Contents = 
+<wiki:toc max_depth="1" />
 = Introduction =
 
 Tungsten Replicator normally applies SQL changes to slaves by constructing SQL statements and executing in the exact order that transactions appear in the Tungsten History Log (THL).  This works well for OLTP databases like MySQL, PostgreSQL, Oracle, and MongoDB.  However, it is a poor approach for data warehouses. 
