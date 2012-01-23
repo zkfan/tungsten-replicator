@@ -44,7 +44,22 @@ Here is how to set up on MySQL.
 
 1. Enable row replication on the MySQL master using {{{set global binlog_format=row}}} or by updating my.cnf.  
 
-2. Install using the --batch-enable=true option.  Here's a typical installation command.  The options for validation checks are necessary due a problem in the tungsten-installer.  
+2. Tweak the wrapper.conf file in the release to enable the correct platform encoding and timezone for the Java VM.  Uncomment the following lines and edit to suit your platform. 
+
+{{{
+# You may need to set the Java platform charset to replicate heterogeneously
+# from MySQL using row replication.  This should match the default charset
+# of your MySQL tables.  Common values are UTF8 and ISO_8859_1.  Many Linux# platforms default to ISO_8859_1 (latin1). 
+wrapper.java.additional.4=-Dfile.encoding=UTF8
+
+# To ensure consistent handling of dates in heterogeneous and batch replication
+# you should set the JVM timezone explicitly.  Otherwise the JVM will default
+# to the platform time, which can result in unpredictable behavior when 
+# applying date values to slaves.  GMT is recommended to avoid inconsistencies.
+wrapper.java.additional.5=-Duser.timezone=GMT
+}}}
+
+3. Install using the --batch-enable=true option.  Here's a typical installation command.  The options for validation checks are necessary due a problem in the tungsten-installer.  
 
 {{{
 tools/tungsten-installer --direct -a \
@@ -70,8 +85,6 @@ tools/tungsten-installer --direct -a \
 }}}
 
 Batch installation creates an applier definition for batch loading that looks like the following.  You can change additional property values by tweaking the static properties file manually or using the --property option.  
-
-2. Find the applier section and comment out or delete whatever is there.  Replace it with the following: 
 
 {{{
 # Batch applier basic configuration information. 
@@ -123,6 +136,8 @@ CREATE TABLE `stage_xxx_croc_insertfloat` (
 }}}
 
 *Note*:  Staging tables are by default in the same schema as the table they update.  You can put them in a different schema using the stageSchemaPrefix property, which adds a prefix to the base schema name.  If the replicator cannot find a required transfer table, it will fail. 
+
+*Another note*:  Staging table columns other than the base table primary key must allow nulls.  Otherwise you will get failures when processing deletes.  For now you should not define primary keys on the staging tables. 
 
 = Connect, Copy, and Load Scripts = 
 
@@ -192,8 +207,24 @@ Load scripts are stored by convention in directory tungsten-replicator/samples/s
 Character sets are a headache in batch loading because all updates are written and read from CSV files, which can result in invalid transactions along the replication path.  Such problems are very difficult to debug.  Here are some tips to improve chances of happy replicating. 
 
   # Use UTF8 character sets consistently for all string and text data. 
-  # Force Tungsten to convert data to Unicode rather than transfering strings.  I.e., specify `tungsten-installer ... --mysql-use-bytes-for-string=false`.  
-  # When starting the replicator for MySQL replication, include the following command in the wrapper.conf file: `wrapper.java.additional.4=-Dfile.encoding=UTF8`. 
+  # Force Tungsten to convert data to Unicode rather than transferring strings.  I.e., specify `tungsten-installer ... --mysql-use-bytes-for-string=false`.  
+  # When starting the replicator for MySQL replication, include the following command in the wrapper.conf file: `wrapper.java.additional.4=-Dfile.encoding=UTF8`.  
+
+= Time Zones =
+
+Time zones are another headache when using batch loading.  For best results applications should standardize on a single time zone, preferably UTC, and use this consistently for all data.  To ensure the Java VM outputs time data correctly to CSV files, you must set the JVM time zone to be the same as the standard time zone for your data.  Here is the JVM setting in wrapper.conf: 
+
+{{{
+# To ensure consistent handling of dates in heterogeneous and batch replication
+# you should set the JVM timezone explicitly.  Otherwise the JVM will default
+# to the platform time, which can result in unpredictable behavior when 
+# applying date values to slaves.  GMT is recommended to avoid inconsistencies.
+wrapper.java.additional.5=-Duser.timezone=GMT
+}}}
+
+In addition, you must ensure that the batch applier 
+
+*Note*:  Beware that MySQL has two very similar data types:  timestamp and datetime.   Timestamps are stored in UTC and convert back to local time on display.  Datetimes by contrast do not convert back to local time.  If you mix timezones and use both data types your time values will be inconsistent on loading.  
 
 = Testing and Operation = 
 
