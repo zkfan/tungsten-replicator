@@ -52,7 +52,9 @@ $TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
 
 == Connecting a Slave with Event ID after Loading a "Dirty" Snapshot ==
 
-Dirty snapshots are backups taken on a master where the stage of the DBMS does not match the contents of the trep_commit_seqno.  Here is an example.  You have a master DBMS with Tungsten Replicator running as a master.  You use a file system snapshot to capture the master DBMS state and load it to a slave.  However, when it is time to connect the slave to the Tungsten master, your snapshot might have a value in trep_commit_seqno that does not quite match the state of the database. 
+Dirty snapshots are backups taken on a master where the DBMS does not match the contents of the trep_commit_seqno.  This situation comes up when provisioning slaves as well as recovering failed masters from file system snapshots. 
+
+Here is an example.  You have a master DBMS with Tungsten Replicator running as a master.  You use a file system snapshot to capture the master DBMS state and load it to a slave.  However, when it is time to connect the slave to the Tungsten master, your snapshot might have a value in trep_commit_seqno that does not quite match the state of the database. 
 
 Here is how to connect the slave on MySQL.  We assume Tungsten is configured but offline on the slave. 
 
