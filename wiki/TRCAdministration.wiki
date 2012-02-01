@@ -50,6 +50,28 @@ You may go online with several options, such as skipping one or more transaction
 $TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
 }}}
 
+== Connecting a Slave with Event ID after Loading a "Dirty" Snapshot ==
+
+Dirty snapshots are backups taken on a master where the stage of the DBMS does not match the contents of the trep_commit_seqno.  Here is an example.  You have a master DBMS with Tungsten Replicator running as a master.  You use a file system snapshot to capture the master DBMS state and load it to a slave.  However, when it is time to connect the slave to the Tungsten master, your snapshot might have a value in trep_commit_seqno that does not quite match the state of the database. 
+
+Here is how to connect the slave on MySQL.  We assume Tungsten is configured but offline on the slave. 
+
+1. After MySQL reboots, look in the error log.  You will see a line like the following in the log messages: 
+
+{{{
+InnoDB: Last MySQL binlog file position 0 370418394, file name /mysqlLogs/mysql-bin.002106
+}}}
+
+2. Bring the master online using the master binlog position from the error log. 
+
+{{{
+trepctl online -from-event mysql-bin.002106:370418394
+}}}
+
+Tungsten will seek forward in the master log and start replicating from the first transaction after this binlog position.  
+
+*Note:* Tungsten only seeks forward in the master log.  You cannot specify an event ID that is before the seqno in trep_commit_seqno.  
+
 == Inspect Transaction History Logs ==
 
 The THL (Transaction History Logs) is the data that Tungsten has taken from the master's binary logs and transported to its servers, with the addition of some metadata.
