@@ -314,4 +314,41 @@ JConsole requires that jmxremote is enabled in {{{tungsten-replicator/conf/wrapp
 
 You can get information on JConsole at [http://java.sun.com/developer/technicalArticles/J2SE/jconsole.html].
 
+= Tungsten Limations = 
+
+== Triggers and Row Replication ==
+
+Tungsten Replicator does not automatically shut off triggers on slaves.  This creates problems on slaves when using row-based replication (RBR) as the trigger will run twice.  Tungsten cannot do this because the setting required to do so is not available to MySQL client applications. Typical symptoms are duplicate key errors, though other problems may appear.  Consider the following fixes: 
+
+1.) Drop triggers on slaves.  This is practical in fan-in for reporting or other cases where you do not need to failover to the slave at a later time. 
+
+2.) Create an "is_master()" function that triggers can use to decide whether they are on the master or slave.
+
+3.) Use statement replication.  Beware, however, that even in this case you may find problems with triggers and auto-increment keys.  For more look [http://bugs.mysql.com/bug.php?id=45677 here].  
+
+The is_master() approach is simple to implement.  First, create a function like the following that returns 1 if we are using the Tungsten user, as would be the case on a slave. 
+
+{{{
+create function is_master()
+    returns boolean
+    deterministic
+    return if(substring_index(user(),'@',1) != 'tungsten',true, false); 
+}}}
+
+Next add this to triggers that should not run on the slave, as shown in the next example.  This suppresses trigger action to insert into table bar except on the master. 
+
+{{{
+set delimiter //
+create trigger foo_insert after insert on foo
+  for each row begin
+    if is_master() then 
+      insert into bar set id=NEW.id; 
+    end if; 
+  end;
+//
+}}}
+
+As long as applications do not use the Tungsten account on the master, the preceding approach will be sufficient to suppress trigger operation.
+
+
 Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
