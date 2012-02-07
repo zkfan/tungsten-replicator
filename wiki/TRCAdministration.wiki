@@ -314,7 +314,7 @@ JConsole requires that jmxremote is enabled in {{{tungsten-replicator/conf/wrapp
 
 You can get information on JConsole at [http://java.sun.com/developer/technicalArticles/J2SE/jconsole.html].
 
-= Tungsten Limations = 
+= Tungsten Limitations = 
 
 == Triggers and Row Replication ==
 
