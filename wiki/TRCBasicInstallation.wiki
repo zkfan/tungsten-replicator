@@ -151,6 +151,8 @@ With this command, Tungsten stops the MySQL slave, gets the binlog file and posi
 
 When the replicator goes offline, it will send a "CHANGE MASTER TO" command to the slave to update log file and position, so that you can continue moving data either with Tungsten or with native replication.
 
+*BEWARE*  If you use this option on a MySQL slave that has an invalid slave or out-of-date slave position it can cause serious problems as the replicator will start at the wrong position.  You can correct by turning off slave replication completely or removing this option from the installation. 
+
 == Install Tungsten master/slave replication in a sandbox ==
 
 [http://code.google.com/p/tungsten-toolbox/wiki/TungstenSandbox Tungsten Sandbox] is a dedicated script that allows you to install 
