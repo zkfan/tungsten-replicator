@@ -69,14 +69,15 @@ replicator.store.prefetch-queue.url=jdbc:mysql:thin://${replicator.global.db.hos
 # Name of the catalog schema of the slave for which we are prefetching. 
 replicator.store.prefetch-queue.slaveCatalogSchema=tungsten_parallel
 
+# Minimum number of seconds latency on prefetched events. 
+replicator.store.prefetch-queue.minTimeAhead=3
+
 # Maximum number of seconds to precede slave.  
-replicator.store.prefetch-queue.aheadMaxTime=60
+replicator.store.prefetch-queue.maxTimeAhead=120
 
 # Time *in milliseconds* that prefetcher should sleep if it gets too far ahead
 # of the slave. 
 replicator.store.prefetch-queue.sleepTime=200
-
-# Number of transactions to drop when starting up on a brand new slave. replicator.store.prefetch-queue.warmUpEventCount=200
 
 # If set to true allow all events to be prefetched.  This aids debugging
 # as it causes all events to flow through the prefetcher regardless of the
@@ -94,6 +95,15 @@ replicator.applier.dbms=com.continuent.tungsten.replicator.prefetch.PrefetchAppl
 replicator.applier.dbms.url=jdbc:mysql:thin://${replicator.global.db.host}:${replicator.global.db.port}/
 replicator.applier.dbms.user=${replicator.global.db.user}
 replicator.applier.dbms.password=${replicator.global.db.password}
+
+# Slow query cache parameters.  Slow queries include those with large
+# numbers of rows or poor selectivity, where selectivity is the
+# fraction of the rows selected.  Any query that exceeds these is
+# not repeated for the number of seconds in the cache duration property.  
+replicator.applier.dbms.slowQueryCacheSize=10000
+replicator.applier.dbms.slowQueryRows=1000
+replicator.applier.dbms.slowQuerySelectivity=.05
+replicator.applier.dbms.slowQueryCacheDuration=60
 }}}
 
 All other property file values remain the same. 
@@ -171,20 +181,36 @@ delete from appuser where id=352
 
   # Generate a SELECT on the where clause used to delete rows.  Record the data received from the query to generate additional queries. 
   # Issue covering queries on all matching indexes, for example: {{{SELECT count(*) from appuser force index(appuser_idx_name) where last_name='smith' and first_name='bob'}}}
-  # If there are cascading deletes due to foreign key relationships we should presumably issue selects on those tables as well using the same logic. 
+  # If there are cascading deletes due to foreign key relationships we should presumably issue selects on those tables as well using the same logic.  
+
+=== Low-Cardinality Indexes and Slow Query Handling ===
+
+Queries on secondary indexes can be very slow if the index has low cardinality, i.e., a small number of unique values.   Such indexes can have an enormous number of entries per value if the base table is large.  For example, an index with 100 unique values on a 10M row table would average 100K entries per index value.  
+
+Prefetch queries on low cardinality indexes slow down the entire prefetch operation if we repeat them constantly.  The prefetch applier therefore maintains a slow query cache, which "remembers" queries that either count a large absolute number of rows or a high fraction of the table.  The cache parameters and their meanings are described below. 
+
+|| *Cache Property* || *Meaning* ||
+|| slowQueryCacheSize || Maximum number of query records to cache at any time ||
+|| slowQueryRows || Queries that count or return more than this number of rows go into the cache ||
+|| slowQuerySelectivity || Queries that count or return this fraction or more out of the total estimated rows go into the cache ||
+|| slowQueryDuration || Number of seconds to wait before repeating slow queries ||
+
+The default values should be OK for most purposes.  If the prefetcher cannot keep up with the slave and skips a lot of rows as shown by {{{trepctl status -name stores}}} you may want to consider increasing the cache size.  
+
+The current settings of the cache as well as other prefetch statistics are dumped to the replicator log whenever the prefetch pipeline goes offline.  You can put the replicator offline and online again to see recent statistics. 
 
 == User interface ==
 
-The tungsten-installer has been extended to install a prefetch pipeline that reads from a local slave.  This downloads transactions from the slave using the slave's THL port.  The prefetch pipeline has no local storage of its own. 
+The tungsten-installer has been extended to install a prefetch pipeline that reads from a slave.  This downloads transactions from the slave using the slave's THL port.  The prefetch pipeline has no local storage of its own. 
 
 === Common properties ===
 In all the configurations, users can tune the pre-fetching service with the following installation options:
 
-|| Install option || Meaning ||
+|| *Install option* || Meaning ||
 || prefetch-enabled || If true set the service up as a prefetch applier ||
-|| prefetch-time-ahead || Max seconds prefetch can precede the slave applier ||
+|| prefetch-max-time-ahead || Max seconds prefetch can precede the slave applier.  Prefetch sleeps to let the slave catch up when it hits this limit ||
+|| prefetch-min-time-ahead || Minimum seconds prefetch should precede slave applier.  Prefetch discards events to get ahead when it hits this limit ||
 || prefetch-sleep-time || Number of milliseconds to sleep when the prefetch applier gets too far ahead ||
-|| prefetch-warmup-event-count || Events to skip when applier first goes online ||
 || prefetch-schema || Catalog schema of slave for which we are prefetching ||
 
 === Installation Command to Read from Remote THL ===
