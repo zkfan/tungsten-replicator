@@ -50,7 +50,7 @@ You may go online with several options, such as skipping one or more transaction
 $TUNGSTEN_BIN/trepctl -service service_name online -skip-seqno 2340
 }}}
 
-== Connecting a Slave with Event ID after Loading a "Dirty" Snapshot ==
+== Connecting a Slave with Event ID after Loading a Dirty Snapshot ==
 
 Dirty snapshots are backups taken on a master where the DBMS does not match the contents of the trep_commit_seqno.  This situation comes up when provisioning slaves as well as recovering failed masters from file system snapshots. 
 
