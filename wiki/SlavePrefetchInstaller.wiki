@@ -1,4 +1,4 @@
-#summary Interface design for slave pre-fetching
+#summary Theory and Practice of Slave Prefetch
 = Slave Prefetch Design and Operation =
 <wiki:toc max_depth="4" />
 == Overview ==
