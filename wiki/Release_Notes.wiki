@@ -7,6 +7,99 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.0.5 ==
+
+This release adds robustness to replication capabilities by fixing a number of annoying bugs that affected stability of replication in production environments and increases robustness of parallel replication, which now clocks in at 4-5 times MySQL native replication performance.  It also includes robust installation commands for MongoDB and Oracle slavs.  There is a working prefetch applier available.  Finally, a draft batch load capability is available. 
+
+Issue 17 - `./trepctl stop` doesn't stop the Replicator process
+
+Issue 67 - tungsten-installer does not detect already installed instances
+
+Issue 73 - trepctl status does not show the host name and RMI port 
+
+Issue 74 - Null point exception when thl is used on an empty file after installing in --direct mode 
+
+Issue 88 - trepctl services does not display the latest sequence number with parallel replication
+
+Issue 147 - Enable THL to regenerate itself after an error
+
+Issue 148 - Enable backwards propagation of purge points 
+
+Issue 149 - Enable round-robin assignment of shards to channels.
+
+Issue 152 - Support direct extract of MySQL binlog across network
+
+Issue 153 - Improve usability of message logs.
+
+Issue 174 - `./trepctl online -seqno X` leads to deferred offline request
+
+Issue 186 - Installation fails on master only.
+
+Issue 189 - date 0000:00:00 does not replicate in ROW binlog format correctly.
+
+Issue 200 - Tungsten Replicator removes log files before their contents are processed
+
+Issue 201 - Purging all records from log using 'thl purge' hangs replication service
+
+Issue 210 - tungsten installer does not recognize "~" as $HOME 
+
+Issue 217 - Regression: Installation fails with error concerning backup methods
+
+Issue 218 - Extractor error during flush JMX call causes replicator to hang 
+
+Issue 220 - tungsten-installer --property can't insert an empty property
+
+Issue 221 - thl list assumes 0 as lower seqno in every file
+
+Issue 226 - Add 'version' to trepctl help
+
+Issue 229 - Implement installation support for MySQL to MongoDB replication
+
+Issue 231 - Installation does not support log fsync settings that are fully crash-safe
+
+Issue 233 - Offline operation is very slow on slaves running parallel apply
+
+Issue 235 - MySQL event extraction fails intermittently when using relay log downloading
+
+Issue 239 - Improve DatabaseTransformFilter in order to handle more than one regular expression
+
+Issue 240 - Installer should check replicator JMX ports are not boundIssue 
+
+241 - Develop generic infrastructure for testing replication within and across DBMS types
+
+Issue 245 - TableMapLogEvent are badly extracted for table with large number of columns
+
+Issue 248 - OptimizeUpdatesFilter can fail with NPEIssue 249 - Docs: add `which` to prerequisites
+
+Issue 251 - Slave restart may fail if the last applied transaction was from a filtered event
+
+Issue 252 - CatalogManager does not correctly set the session log level
+
+Issue 254 - ReplicateFilter gets NullPointerException if a filter string is omitted
+
+Issue 255 - Add a new applier that can be used to prefetch data into database cache
+
+Issue 257 - Replicator may fail to process binlog files that are more than 2 GB large
+
+Issue 259 - Direct pipeline start-up after clearing logs fails 
+
+Issue 260 - Building with OpenJDK 7 Fails in DiagnosticWizard.java (sun.management.ManagementFactory is not public…)
+
+Issue 265 - Requirements are not complete (rsync missing)
+
+Issue 267 - MySQL extraction fails on binlog file open when using using relay log downloading
+
+Issue 269 - THLStorageCheck breaks multiple master installation
+
+Issue 272 - Infinite loop in options parsing in `configure-service`
+
+Issue 290 - Replicator fails to delete temp files on slaves when processing LOAD DATA LOCAL INFILE
+
+Issue 295 - Using Load Data Infile into temporary table breaks replication
+
+Issue 297 - Enable slave replicators to restart from a specific event ID on the master
+
+
 == Tungsten Replicator 2.0.4 ==
 
 This release contains greatly improved parallel replication capabilities including high-performance on-disk queues, a production quality single-command install, and new features to support multi-master replication using the system-of-record model.  In addition, there are numerous bug fixes.  
