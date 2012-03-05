@@ -9,7 +9,7 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.0.5 ==
 
-This release improves overall replication capabilities by fixing a number of bugs that affected stability of replication in production environments and increases robustness of parallel replication, which now clocks in at 4-5 times MySQL native replication performance.  It also includes robust installation commands for MongoDB and Oracle slavs.  There is a working prefetch applier available.  Finally, a draft batch load capability is available.  (See Issue 238 for more information; Vertica will be fully supported in the next replicator release.) 
+This release improves overall replication capabilities by fixing a number of bugs that affected stability of replication in production environments and increases robustness of parallel replication, which now clocks in at 4-5 times MySQL native replication performance.  It also includes robust installation commands for MongoDB and Oracle slaves.  There is a working prefetch applier available.  Finally, a draft batch load capability is available.  (See Issue 238 for more information; Vertica will be fully supported in the next replicator release.) 
 
 Unlike previous releases there should be minimal issues with upgrade.  Tungsten 2.0.5 should be fully interoperable with Tungsten 2.0.4.  Note that there may be occasional changes in options used by tungsten-installer. Check 'tungsten-installer --help-all -a' for currently supported settings. 
 
