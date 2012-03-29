@@ -56,12 +56,47 @@ Therefore, before installing Tungsten again, do the following in all the servers
  * Either run 'reset master', or use the appropriate options when installing ({{{--master-log-file}}} and {{{--master-log-port}}}).
 
 == Operation ==
+
 === Changes are not appearing on the slave ===
  * Run {{{tungsten-replicator/bin/trepctl services}}} to make sure all replication services are {{{ONLINE}}}
  * If a service is not {{{ONLINE}}}, run {{{tungsten-replicator/bin/trepctl -service service_name status}}} to get more details
  * Review the {{{tungsten-replicator/log/user.log}}} and {{{tungsten-replicator/log/trepsvc.log}}} for additional information about the error
  * Once you have resolved the error, restart replication by running {{{tungsten-replicator/bin/trepctl -service service_name online}}}
  * Use the trepctl command to monitor replication status and resolve any other issues
+
+=== Help! My dates are getting corrupted! ===
+
+Time zones are a headache.  For best results applications should standardize on a single time zone, preferably UTC, and use this consistently for servers in all locations.  To ensure the Java VM handles time data correctly, you must set the *JVM time zone* to be the same as the standard time zone for your data.  Here is the JVM setting in wrapper.conf: 
+
+{{{
+# To ensure consistent handling of dates in heterogeneous and batch replication
+# you should set the JVM timezone explicitly.  Otherwise the JVM will default
+# to the platform time, which can result in unpredictable behavior when 
+# applying date values to slaves.  GMT is recommended to avoid inconsistencies.
+wrapper.java.additional.5=-Duser.timezone=GMT
+}}}
+
+Restart the replicator after making this change. 
+
+*Note*:  Beware that MySQL has two very similar data types:  timestamp and datetime.   Timestamps are stored in UTC and convert back to local time on display.  Datetimes by contrast do not convert back to local time.  If you mix timezones and use both data types your time values will be inconsistent on loading.  
+
+=== Help! International characters are getting corrupted! ===
+
+If you see cases where character strings are corrupted between master and slave, you may need to set the JVM platform character set using the --java-file-encoding option at installation time.  Here's an example for heterogeneous replication, which also needs to transfer strings. 
+
+tools/tungsten-installer ... --java-file-encoding=UTF8 --mysql-use-bytes-for-string=false ...
+
+If you have already installed, you can update the option directly in wrapper.conf.  Look for the following, change appropriately, and restart the replicator to take effect.  
+
+{{{
+# You may need to set the Java platform charset to replicate heterogeneously
+# from MySQL using row replication.  This should match the default charset
+# of your MySQL tables.  Common values are UTF8 and ISO_8859_1.  Many Linux
+# platforms default to ISO_8859_1 (latin1).
+#wrapper.java.additional.4=-Dfile.encoding=UTF8
+}}}
+
+This problem occurs most commonly when using row replication and heterogenous transfer but it can also occur in MySQL to MySQL cases.  In that case make sure you use --mysql-use-bytes-for-string=true, which is the default.  
 
 === {{{Event application failed: seqno=3 fragno=0 message=java.sql.SQLException: Statement failed on slave but succeeded on master}}} ===
 The key to resolving this issue is to examine the failed transaction and then take action to resolve the issue and then restart replication.
