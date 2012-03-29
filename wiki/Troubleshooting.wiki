@@ -93,7 +93,7 @@ If you have already installed, you can update the option directly in wrapper.con
 # from MySQL using row replication.  This should match the default charset
 # of your MySQL tables.  Common values are UTF8 and ISO_8859_1.  Many Linux
 # platforms default to ISO_8859_1 (latin1).
-#wrapper.java.additional.4=-Dfile.encoding=UTF8
+wrapper.java.additional.4=-Dfile.encoding=UTF8
 }}}
 
 This problem occurs most commonly when using row replication and heterogenous transfer but it can also occur in MySQL to MySQL cases.  In that case make sure you use --mysql-use-bytes-for-string=true, which is the default.  
