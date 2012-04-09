@@ -198,7 +198,7 @@ REPLACE INTO %%BASE_TABLE%%(%%BASE_COLUMNS%%)
   (SELECT MAX(tungsten_row_id) FROM %%STAGE_TABLE%% GROUP BY %%PKEY%%)
 }}}
 
-Note that it is important to get the delete+insert logic write or you will end up applying data in a way that breaks serialization.  It is also *very* easy to write slow merge queries.  (The foregoing are OK but could probably be made more efficient.)  If you develop new scripts, test them carefully on large data sets. 
+Note that it is important to get the delete+insert logic right or you will end up applying data in a way that breaks serialization.  It is also *very* easy to write slow merge queries.  The foregoing queries are OK on smallish data sets but the DELETE operation in particular causes substantial random I/O if the number of deletes is very large.  If you develop new scripts, test them carefully on large data sets. 
 
 Load scripts are stored by convention in directory tungsten-replicator/samples/scripts/batch.  You can find scripts for MySQL as well as Vertica there. 
 
