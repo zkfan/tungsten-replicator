@@ -14,7 +14,7 @@ This is work in progress. Please check this page from time to time as we will ad
 
 || *Action* || *MySQL* || *Tungsten* ||
 || defining replication relations || `CHANGE MASTER TO master_host=x` || `trepctl -host slave_host setrole -role slave -uri master_host ` ||
-|| starting replication, data transfer|| `START SLAVE IO_THREAD` || `replicator start` ||
+|| starting replication|| `START SLAVE ` || `replicator start` ||
 || starting replication, data applier || `START SLAVE SQL_THREAD`|| `trepctl -service name online` ||
 || Stopping replication applier || `STOP SLAVE SQL_THREAD` || `trepctl -service name offline` ||
 || Stopping replication || `STOP SLAVE` || `replicator stop` ||
