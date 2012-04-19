@@ -51,12 +51,12 @@ The {{{thl}}} command only requires a service name if you have more than one per
 
 == Changing Replication Settings ==
 
-All changes to settings require that the replicator to be offline. 
+Replication must go offline or restart to change configuration settings. 
 
 || *Action* || *MySQL* || *Tungsten* ||
 || Set master || `CHANGE MASTER TO master_host='host1'` || `trepctl -service name setrole -role slave -uri thl://host1/ ` ||
 || Change global parameters || Edit `my.cnf` || Edit `static-service.properties` ||
-|| Reread configuration settings || `service mysql restart` || `trepctl configure` ||
+|| Reread configuration settings || `service mysql restart` || `trepctl configure` or `replicator restart` ||
 || Don't bring replication online by default || `skip-slave-start=1` || `replicator.auto_enable=false` ||
 || Set log retention to 7 days || `expire_logs_days=7`  || `replicator.store.thl.log_file_retention=7d` ||
 || Log slave updates || `log-slave-updates=1`  || `replicator.log.slave.updates=true`||
