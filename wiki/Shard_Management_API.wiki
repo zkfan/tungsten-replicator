@@ -1,4 +1,4 @@
-#summary Shard Management API Design
+#summary Shard Management API And System-Of-Record Architecture Support
 
 = Introduction =
 
