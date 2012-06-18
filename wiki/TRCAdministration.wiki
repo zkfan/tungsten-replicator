@@ -351,4 +351,44 @@ create trigger foo_insert after insert on foo
 As long as applications do not use the Tungsten account on the master, the preceding approach will be sufficient to suppress trigger operation.
 
 
+= Role changing =
+
+To switch roles in a master/slave topology, you use trepctl.
+
+Let's assume that you have *node1*=master, *node2* and *node3* = slaves.
+
+First, you need to block traffic going to node1. Then, you make sure that the slaves are in sync:
+
+{{{
+$ trepctl -host node1 flush
+Master log is synchronized with database at log sequence number: 3245
+
+$ trepctl -host node2 wait -applied 3245
+$ trepctl -host node3 wait -applied 3245
+}}}
+
+After this, it's safe to put the replicators offline
+
+{{{
+$ trepctl -host node1 offline
+$ trepctl -host node2 offline
+$ trepctl -host node3 offline
+}}}
+
+and start the switch. We want to make node2 the new master.
+
+{{{
+$ trepctl -host node2 setrole -role master
+$ trepctl -host node1 setrole -role slave -uri thl://node2
+$ trepctl -host node3 setrole -role slave -uri thl://node2
+}}}
+
+Finally, we put back the replicators online:
+{{{
+$ trepctl -host node2 online
+$ trepctl -host node1 online
+$ trepctl -host node3 online
+}}}
+
+
 Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
