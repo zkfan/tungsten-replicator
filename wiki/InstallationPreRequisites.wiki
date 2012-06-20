@@ -1,0 +1,20 @@
+#summary Tungsten Replicator requisites for installation.
+<wiki:toc max_depth="4" />
+= Tungsten Replicator Pre-Requisites =
+
+To start Tungsten installation, there are some requirements to be met, for the operating system and for the database server.
+
+== Operating system requirements ==
+
+=== Commands / programs that must exist ===
+
+  * which
+  * rsync (which rsync) 
+  * Ruby 1.5 or later ({{{ruby --version}}} )
+  * Ruby openssl libraries ( {{{echo "p 'OK'" | ruby -ropenssl }}} )
+  * Java 1.6 or later ({{{java -version}}}) 
+  * GNU tar ({{{tar --version}}})
+
+
+
+== MySQL Requirements ==
