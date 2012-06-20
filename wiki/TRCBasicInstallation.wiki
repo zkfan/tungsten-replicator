@@ -21,13 +21,13 @@ All the recipes about installation require that you get Tungsten Replicator bina
 
 [https://lh5.googleusercontent.com/-jgCZbwwB4WE/TfC6Ksv2LiI/AAAAAAAABIQ/Ygpazw8EvEQ/s640/master_slave.png]
 
- # make sure that all the hosts meet the [https://s3.amazonaws.com/releases.continuent.com/doc/replicator-2.0.4/html/Tungsten-Installation-Guide-mysql/content/ch05.html requirements]
+ # make sure that all the hosts meet the [http://code.google.com/p/tungsten-replicator/wiki/InstallationPreRequisites requirements]
  # create a directory where you want to install the replicator. We refer to this directory as the * Tungsten home directory*;
  # Get the replicator binaries using [TRCBasicInstallation#Get_the_replicator]
  # Run the following command, after changing the directory and host names to match your environment.
 
 {{{
-  TUNGSTEN_HOME=$HOME/replication
+  TUNGSTEN_HOME=/opt/continuent
   MASTER=m1.mynetwork.com
   SLAVE1=m2.mynetwork.com
   SLAVE2=m3.mynetwork.com
@@ -108,7 +108,7 @@ The additional effort of creating relay logs is then compensated by using parall
 This installation assumes that the slave is not running native MySQL replication. For that case, see [TRCBasicInstallation#Taking_over_replication_from_a_MySQL_slave_in_direct_mode].
 
 {{{
-  TUNGSTEN_HOME=$HOME/replication
+  TUNGSTEN_HOME=/opt/continuent
   MASTER=m1.mynetwork.com
   SLAVE1=m2.mynetwork.com
   ./tools/tungsten-installer \
