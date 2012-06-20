@@ -38,6 +38,19 @@ If you change the default ports, make sure they are open.
 == MySQL Requirements ==
 
   * As of June 2012, Tungsten supports database servers from 5.0 to 5.5. Future version compatibility will be tested and announced in due time.
-   * The database server must support InnoDB
-   * the default storage engine should be set to Innodb
-
+  * The database server must support InnoDB
+  * the default storage engine should be set to Innodb
+  * there must be a user that has all privileges, including GRANT option, and can connect to every database server from every host. {{{mysql -u USER -pPASSWORD -P PORT -h HOST}}}
+  * Binary logs must be enables, and a fixed pattern used for log names (e.g. {{{log-bin=mysql-bin}}}
+  * Each server must have a unique server-id
+  * The database server should be configured for good performance, according to best practices. The following properties are highly recommended:
+    {{{
+    [mysqld]
+    innodb-file-per-table=1
+    server-id=###
+    log-bin=mysql-bin
+    innodb-flush-method=O_DIRECT
+    max_allowed_packet=52M
+    innodb-thread-concurrency=0
+    default-storage-engine=innodb
+}}}
