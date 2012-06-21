@@ -235,6 +235,56 @@ The following example drops tables foo and bar in schema tpc:
 
 Important note:  Due Issue 258 the replicate filter currently only works on statements if it is an extract filter.  It works in any stage for row updates.  
 
+== Use a different schema name in the slave ==
+
+If you want to replicate schema _stores_ in the master to schema _playground_ in the slave, you can use the *dbtransform* filter.
+
+If you are installing a slave from scratch, you can add the following options to your tungsten-installer command:
+
+{{{
+    -a --svc-applier-filters=dbtransform \
+    --property=replicator.filter.dbtransform.from_regex1=stores \
+    --property=replicator.filter.dbtransform.to_regex1=playground \
+}}}
+
+If you had already installed the slave, you can achieve the same result with:
+
+{{{
+./tools/configure-service \
+    -U \
+    --release-directory=/where/tungsten/is/installed  \
+    -a --svc-applier-filters=dbtransform \
+    --property=replicator.filter.dbtransform.from_regex1=stores \
+    --property=replicator.filter.dbtransform.to_regex1=playground \
+    SERVICE_NAME
+}}}
+And then restart the replicator.
+
+Sample session:
+{{{
+slave> create schema playground;
+
+master> create schema stores;
+master> use stores;
+master> create table mytable (i int);
+
+master> select table_schema, table_name from information_schema.tables where table_name="mytable"
++--------------+------------+
+| table_schema | table_name |
++--------------+------------+
+| stores       | mytable    |
++--------------+------------+
+
+slave> select table_schema, table_name from information_schema.tables where table_name="mytable"
++--------------+------------+
+| table_schema | table_name |
++--------------+------------+
+| playground   | mytable    |
++--------------+------------+
+
+}}}
+
+
 == Add one slave to an existing master ==
 
 The procedure is almost the same used to create a master-slave cluster. You use a similar command, with {{{--master-slave}}} and {{{--master-host}}} as in the full cluster installation command. The difference is that the {{{--cluster-hosts}}} list will only contain the slave host. Tungsten will do the right thing.
