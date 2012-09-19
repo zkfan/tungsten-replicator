@@ -338,7 +338,7 @@ create function is_master()
 Next add this to triggers that should not run on the slave, as shown in the next example.  This suppresses trigger action to insert into table bar except on the master. 
 
 {{{
-set delimiter //
+delimiter //
 create trigger foo_insert after insert on foo
   for each row begin
     if is_master() then 
