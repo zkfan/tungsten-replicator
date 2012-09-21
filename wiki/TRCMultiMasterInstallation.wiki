@@ -12,7 +12,7 @@ To install multiple replication services on two nodes, you need first to install
 {{{
 TUNGSTEN_HOME=$HOME/replication
 MASTER1=m1.mynetwork.com
-MASTER1=m2.mynetwork.com
+MASTER2=m2.mynetwork.com
 
 ./tools/tungsten-installer \
     --master-slave \
