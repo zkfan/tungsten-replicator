@@ -10,7 +10,7 @@ To start Tungsten installation, there are some requirements to be met, for the o
 
   * which
   * rsync (which rsync) 
-  * Ruby 1.5 or later ({{{ruby --version}}} )
+  * Ruby 1.8.5 or later ({{{ruby --version}}} )
   * Ruby openssl libraries ( {{{echo "p 'OK'" | ruby -ropenssl }}} )
   * Java 1.6 or later ({{{java -version}}}) 
   * GNU tar ({{{tar --version}}})
