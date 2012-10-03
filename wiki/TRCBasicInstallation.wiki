@@ -233,7 +233,7 @@ The following example drops tables foo and bar in schema tpc:
   --start-and-report
 }}}
 
-Important note:  Due Issue 258 the replicate filter currently only works on statements if it is an extract filter.  It works in any stage for row updates.  
+Important note:  Due Issue 258 the replicate filter currently only works out of the box on statements if it is an extract filter.  You can work around Issue 258 by adding the eventmetadata filter to the chain so that it runs before the replicate filter.  The replicate filter works in any stage for row updates.  
 
 == Use a different schema name in the slave ==
 
