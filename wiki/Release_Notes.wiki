@@ -7,6 +7,100 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.0.6 ==
+
+Issue 8 - Race condition when a DDL statement is immediately followed by a DML statement on the same object   Durability	 
+
+Issue 39 - Auto-commit DDL statements break block commit   Durability	 
+
+Issue 51 - PostgreSQL Slony Log Extractor: POC	 
+
+Issue 90 - waitForAppliedSequenceNumber can return before the sequence number event was actually committed	 
+
+Issue 129 - Certify MySQL->PostgreSQL support  
+
+Issue 168 - MySQL extractor is slow due to large number of calls to slow disk metadata commands	 
+
+Issue 172 - './trepctl online -from-event' is dangerous	 
+
+Issue 181 - Parallel replication does not use all channels	 
+
+Issue 183 - Clean up code, unit tests, and build scripts to speed up builds and eliminate warnings and/or hung builds	 
+
+Issue 238 - Implement an applier for Vertica data warehouse	 
+
+Issue 256 - Master replicator unable to connect to MariaDB 5.2.9 after installation	 
+
+Issue 291 - DROP TABLE loops in multi-master environment on MYSQL 5.5	 
+
+Issue 299 - Installer support for AWS EC2 Linux   FoundIn	 
+
+Issue 305 - Add installation support for logging slave updates	 
+
+Issue 308 - Tungsten generates warning and skips prefetch on rows that contain MySQL "zero" dates of the form '0000-00-00 00:00:00'	 
+
+Issue 317 - Filters should not drop parts of fragmented events, and even less the last fragment	 
+
+Issue 328 - When reconnecting, slaves do not close sockets for connection to master if the master goes away/offline, leading to file descriptors leak.	 
+
+Issue 330 - configure_deployment_handler.rb uses -C option for rsync, *.so files fail to be copied during installation	 
+
+Issue 333 - Tungsten does not correctly compute restart point after restore of hot backup on slave with parallel apply enabled	 
+
+Issue 334 - Unable to restore the same backup to a slave and then a slave of a slave	 
+
+Issue 336 - EnumToString filter URL is not properly configured with MySQL schema name	 
+
+Issue 339 - In row replication, NULL blobs are badly handled and can lead to 'java.sql.SQLException: You need to set exactly X parameters on the prepared statement' when applied on slave	 
+
+Issue 343 - Remove FSM (Finite State Machine) library source code and use JAR instead	 
+
+Issue 346 - Add support for round-robin THL connection using a list of THL URLs instead of a single THL	 
+
+Issue 355 - Oracle UPDATEs that change no columns lead to OptimizeUpdatesFilter removing too much   
+
+Issue 359 - Clean-up : remove classes in Commons project that are not needed by Tungsten Replicator   
+
+Issue 360 - Pipeline locks up when attempting to serialize #UNKOWN shard using disk parallel queue	 
+
+Issue 362 - Installer support for round-robin THL connection list	 
+
+Issue 364 - Option for applier to use column names from the underlying THL event	 
+
+Issue 368 - tungsten-installer ability to install master extracting from a remote DBMS	 
+
+Issue 372 - Add Oracle event ID type	 
+
+Issue 373 - trepctl online -from-event does not work from slave	 
+
+Issue 376 - OpenReplicatorManager doesn't have correct Method Descriptions	 
+
+Issue 377 - Tungsten replicator generates a large number of build warnings	 
+
+Issue 378 - Parallel replication locks up when waiting for #UNKOWN transaction to commit	 
+
+Issue 380 - JMX configuration file misses the database port in its "resourceJdbcUrl"	 
+
+Issue 381 - Timestamp value of 0 fails to replicate on MySQL when using row replication.	 
+
+Issue 383 - Add support for an incremental xtrabackup method	 
+
+Issue 384 - Tungsten generates invalid SQL when updating DROP TABLE statements to prevent replication loops	 
+
+Issue 385 - Protobuf fails to deserialize events that are too large (more than 64MB)	 
+
+Issue 387 - Replication has excessive latency in recent versions	 
+
+Issue 389 - Replicator default heap size is too low	 
+
+Issue 390 - replicator does not commit large RBR transactions   Usability	 
+
+Issue 392 - Replicator hangs on large transactions with multiple fragments	 
+
+Issue 393 - installer accepts invalid option --log-slave instead of --log-slave-updates
+	 
+Issue 394 - Rename Tungsten commons library and Eclipse projects
+
 == Tungsten Replicator 2.0.5 ==
 
 This release improves overall replication capabilities by fixing a number of bugs that affected stability of replication in production environments and increases robustness of parallel replication, which now clocks in at 4-5 times MySQL native replication performance.  It also includes robust installation commands for MongoDB and Oracle slaves.  There is a working prefetch applier available.  Finally, a draft batch load capability is available.  (See Issue 238 for more information; Vertica will be fully supported in the next replicator release.) 
