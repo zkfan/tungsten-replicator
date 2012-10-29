@@ -11,7 +11,7 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 This release improves includes the first working implementation of batch loading for data warehouses, focusing on Vertica.  It also includes substantial improvements to parallel replication including fixes for bugs that caused replicator freezes as well as problems with serialization in large data sets.  There are minor improvements to enhance multi-master replication as well as a number of general fixes that improve performance and robustness of the replicator as a whole, especially when processing large transactions.  Finally, this release adds additional support for MySQL to Oracle as well as MySQL to PostgreSQL replication.  
 
-You should be able to upgrade from Tungsten Replicator 2.0.6 using the tools/update command.  See the official documentation at https://docs.continuent.com/wiki/display/TEDOC/Tungsten+Documentation+Home, for instructions on upgrade.  Starting with this and future releases, replicator documentation is shifting to a new home on the Continuent website.  It is our goal to provide very complete documentation of replicator operation.  
+You should be able to upgrade from Tungsten Replicator 2.0.5 using the tools/update command.  See the official documentation at https://docs.continuent.com/wiki/display/TEDOC/Tungsten+Documentation+Home, for instructions on upgrade.  Starting with this and future releases, replicator documentation is shifting to a new home on the Continuent website.  It is our goal to provide very complete documentation of replicator operation.  
 
 Issue 8 - Race condition when a DDL statement is immediately followed by a DML statement on the same object   Durability	 
 
