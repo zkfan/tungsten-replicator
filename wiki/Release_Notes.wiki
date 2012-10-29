@@ -9,6 +9,10 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.0.6 ==
 
+This release improves includes the first working implementation of batch loading for data warehouses, focussing on Vertica.  It also includes substantial improvements to parallel replication including fixes for bugs that caused replicator freezes as well as problems with serialization in large data sets.  There are minor improvements to enhance multi-master replication as well as a number of general fixes that improve performance and robustness of the replicator as a whole, especially when processing large transaction.  Finally, this release adds additional support for MySQL to Oracle as well as MySQL to PostgreSQL replication.  
+
+You should be able to upgrade from Tungsten Replicator 5.0.6 using the tools/update command.  See the official documentation at https://docs.continuent.com/wiki/display/TEDOC/Tungsten+Documentation+Home, for instructions on upgrade.  Starting with this and future releases, replicator documentation is shifting to a new home on the Continuent website.  It is our goal to provide very complete documentation of replicator operation.  
+
 Issue 8 - Race condition when a DDL statement is immediately followed by a DML statement on the same object   Durability	 
 
 Issue 39 - Auto-commit DDL statements break block commit   Durability	 
@@ -33,7 +37,7 @@ Issue 256 - Master replicator unable to connect to MariaDB 5.2.9 after installat
 
 Issue 291 - DROP TABLE loops in multi-master environment on MYSQL 5.5	 
 
-Issue 299 - Installer support for AWS EC2 Linux   FoundIn	 
+Issue 299 - Installer support for AWS EC2 Linux	 
 
 Issue 305 - Add installation support for logging slave updates	 
 
@@ -161,7 +165,7 @@ Issue 239 - Improve DatabaseTransformFilter in order to handle more than one reg
 
 Issue 240 - Installer should check replicator JMX ports are not boundIssue 
 
-241 - Develop generic infrastructure for testing replication within and across DBMS types
+Issue 241 - Develop generic infrastructure for testing replication within and across DBMS types
 
 Issue 245 - TableMapLogEvent are badly extracted for table with large number of columns
 
