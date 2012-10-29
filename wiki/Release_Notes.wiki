@@ -1,6 +1,6 @@
 #summary Tungsten Replicator Release Notes
 #labels Featured
-
+<wiki:toc max_depth="4" />
 = Tungsten Replicator Release Notes =
 
 == Introduction ==
