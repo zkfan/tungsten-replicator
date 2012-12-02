@@ -6,7 +6,7 @@ Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
 
 == Get the replicator ==
 
-All the recipes about installation require that you get Tungsten Replicator binaries. This recipe explains how to do it once for ever.
+All the recipes about installation require that you get Tungsten Replicator binaries. This recipe explains how to do it once for all.
 
  # Determine which is the latest version. The latest stable version is the one featured on [http://code.google.com/p/tungsten-replicator/ Tungsten Replicator project page]
  # If you want the latest release, which probably has more features, more bug fixes, and possibly more unknown bugs, you may get the very latest binaries [http://s3.amazonaws.com/files.continuent.com/builds/nightly/tungsten-2.0-snapshots/index.html from the build server].
@@ -14,34 +14,57 @@ All the recipes about installation require that you get Tungsten Replicator bina
  # Create a temporary directory. This is *not* the directory where you want to install Tungsten. You will use it only to launch the installation command. 
  # Expand the tarball
  # Get inside the newly created directory
- # We refer to this directory as the *release directory*
+ # We refer to this directory as the *staging directory*
  # Now you can follow the directions from another recipe.
+
+== Choose topology and customize your installation ==
+
+Starting with Tungsten Replicator 2.0.7, there is a *./cookbook* directory , containing a collection of recipes to install several replication topologies.
+
+The following topologies are supported
+
+  * master/slave (one master, many slaves)
+  * fan-in (many masters, one slave)
+  * all-masters (many masters, with slave services for all nodes)
+  * star schema (many masters, interconnected through a hub)
+
+*GETTING STARTED:*
+
+  # unpack the Tungsten tarball
+  # edit ./cookbook/COMMON_NODES.sh file, with the list of your nodes
+  # If you are using a number of nodes other than 4, in the NODES_xxxxxx file, 
+   * add as many nodes you are using
+   * check the variables ALL_NODES, MASTERS, and SLAVES, and make sure that they list existing nodes
+   * if you are using less than 4 nodes, comment out the extra ones
+  # edit ./cookbook/USER_VALUES.sh
+  # Run the command corresponding to the topology you want to install. The command must run from the directory above the cookbook, i.e the directory from where you can access ./tools/tungsten-replicator.
+For example:
+   ./cookbook/install_master_slave.sh
+   ./cookbook/install_all_masters.sh
+   ./cookbook/install_fan_in.sh
+   ./cookbook/install_star.sh
+
+== Checking if a cluster meets the requirements ==
+
+To check if a cluster meets the requirements without installing, after you have set the values for the cookbook (previous section), you can run the following:
+
+{{{
+   $ VALIDATE_ONLY=1  ./cookbook/install_master_slave.sh
+}}}
+If no message is shown after the execution, your cluster is clear. If you want to see all the gory details of the validation, you can run:
+
+{{{
+   $ VERBOSE=1 VALIDATE_ONLY=1  ./cookbook/install_master_slave.sh
+}}}
 
 == Install a master / slave cluster ==
 
 [https://lh5.googleusercontent.com/-jgCZbwwB4WE/TfC6Ksv2LiI/AAAAAAAABIQ/Ygpazw8EvEQ/s640/master_slave.png]
 
- # make sure that all the hosts meet the [http://code.google.com/p/tungsten-replicator/wiki/InstallationPreRequisites requirements]
- # create a directory where you want to install the replicator. We refer to this directory as the * Tungsten home directory*;
- # Get the replicator binaries using [TRCBasicInstallation#Get_the_replicator]
- # Run the following command, after changing the directory and host names to match your environment.
+  # make sure that all the hosts meet the [http://code.google.com/p/tungsten-replicator/wiki/InstallationPreRequisites requirements]
+  # run {{{ $ ./cookbook/install_master_slave.sh}}}
 
-{{{
-  TUNGSTEN_HOME=/opt/continuent
-  MASTER=m1.mynetwork.com
-  SLAVE1=m2.mynetwork.com
-  SLAVE2=m3.mynetwork.com
-  ./tools/tungsten-installer \
-    --master-slave \
-    --master-host=$MASTER \
-    --datasource-user=MYUSER \
-    --datasource-password=MYPWD \
-    --service-name=dragon \
-    --home-directory=$TUNGSTEN_HOME \
-    --cluster-hosts=$MASTER,$SLAVE1,$SLAVE2 \
-    --start-and-report
-}}}
-
+ 
 This command takes several defaults into account.
 It assumes that MySQL is installed in {{{/var/lib/mysql/}}}, that the server uses port {{{3306}}}, and that the binary logs are in the data directory. We use these values because they are the ones used by RPM installers.
 If you use different values, please see [TRCBasicInstallation#Install_a_master_slave_directory_with_customized_parameters].
@@ -51,14 +74,7 @@ If you use different values, please see [TRCBasicInstallation#Install_a_master_s
 
 If the defaults used in [TRCBasicInstallation#Install_a_master_/_slave_cluster] are not convenient, you can instruct the replicator to use paths and ports that describe your server.
 
-You should add these options to the installation command.
-
-{{{
-  --datasource-port=${MASTER_MYSQL_PORT} \
-  --datasource-log-directory=/path/to/your/binary/logs \
-  --datasource-log-pattern=my-bin
-}}}
-
+You should edit ./cookbook/USER_VALUES.sh and enter the desired values
 
 == Install more than one Tungsten Replicator in one host ==
 
@@ -152,6 +168,10 @@ With this command, Tungsten stops the MySQL slave, gets the binlog file and posi
 When the replicator goes offline, it will send a "CHANGE MASTER TO" command to the slave to update log file and position, so that you can continue moving data either with Tungsten or with native replication.
 
 *BEWARE:*  If you use this option on a MySQL slave that has invalid slave setting or out-of-date slave position it can cause completely inscrutable problems as the replicator may start at the wrong position in the MySQL binlog.  (Ask us how we know...)  You can correct by turning off slave replication completely or removing the --native-slave-takeover option from the installation.  You can also set to false in the static properties file of your replication service after installation.
+
+== Take over from native MySQL replication in master/slave mode ==
+
+In the ./cookbook directory, there is a *takeover.sh* script that will do all the work for you
 
 == Install Tungsten master/slave replication in a sandbox ==
 
@@ -306,6 +326,8 @@ If the replicator has already been installed and we want to start replicating fr
 Notice that we don't give the complete binlog file name, but only the extension. The number after the colon is the position.
 
 If you are installing a new copy of the replicator, run {{{tungsten-installer}}} with {{{--auto-enable=false}}} to keep the replicator from going online the first time.  After you have put the replication service online, turn on auto-enable by running {{{tools/configure-service -a -U --auto-enable=true service_name}}}.
+
+Notice that there is a dedicated script for this task in the ./cookbook directory. (add_node_master_slave.sh)
 
 == Modify the configuration template file prior to configuration ==
 
