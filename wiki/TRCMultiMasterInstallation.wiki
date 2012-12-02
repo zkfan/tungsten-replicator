@@ -16,65 +16,6 @@ Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#U
 
 {{{./cookbook/install_all_masters.sh}}}
 
-<s>To install multiple replication services on two nodes, you need first to install the master service. This is similar to master-slave installation, with the difference that we are not installing any slaves. Only masters.
-
-{{{
-TUNGSTEN_HOME=$HOME/replication
-MASTER1=m1.mynetwork.com
-MASTER2=m2.mynetwork.com
-
-./tools/tungsten-installer \
-    --master-slave \
-    --master-host=$MASTER1 \
-    --datasource-user=tungsten \
-    --datasource-password=secret \
-    --service-name=charlie \
-    --home-directory=$TUNGSTEN_HOME \
-    --cluster-hosts=$MASTER1 \
-    --start-and-report
-
-  ./tools/tungsten-installer \
-    --master-slave \
-    --master-host=$MASTER2 \
-    --datasource-user=tungsten \
-    --datasource-password=secret \
-    --service-name=delta \
-    --home-directory=$TUNGSTEN_HOME \
-    --cluster-hosts=$MASTER2 \
-    --start-and-report
-
-}}}
-
-You run the above commands from the *release directory*. After that, the *Tungsten home directory* is populated, and the following commands need to run from there.
-
-What we need to do is creating, on each host, a slave service for the corresponding master on the other host. Thus, since we have "charlie" on MASTER1 and "delta" on MASTER2, we will create a slave service "delta" on MASTER1 and "charlie" on MASTER2.
-
-{{{
-TUNGSTEN_TOOLS=$TUNGSTEN_HOME/tungsten/tools
-
-$TUNGSTEN_TOOLS/configure-service \
-   --host $MASTER1 \
-   -C -q \
-   --local-service-name=charlie \
-   --role=slave \
-   --service-type=remote \
-   --datasource=m1_mynetwork_com \
-   --master-thl-host=$MASTER2 \
-   --svc-start delta
-
-$TUNGSTEN_TOOLS/configure-service 
-  --host $MASTER2 \
-  -C -q \
-    --local-service-name=delta \
-    --role=slave \
-    --service-type=remote \
-    --datasource=m2_mynetwork_com
-    --master-thl-host=$MASTER1 \
-    --svc-start charlie
-}}}
-
-The datasource name is the name of the local hostname, with dots replaced by underscores. (Note to self: this needs to become a bit easier to deal with).</s>
-
 == Install bi-directional replication with an additional slave ==
 
 The recipe is similar to [TRCMultiMasterInstallation#Install_bi-directional_replication].
@@ -102,8 +43,6 @@ Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#U
 
 {{{./cookbook/install_all_masters.sh}}}
 
-<s>This recipe is left as an exercise for readers who have successfully managed [TRCMultiMasterInstallation#Install_a_four_masters_replication].</s>
-
 == Install a four masters replication ==
 
 Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the file NODES_ALL_MASTERS.sh, and then run
@@ -111,212 +50,21 @@ Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#U
 {{{./cookbook/install_all_masters.sh}}}
 
 [https://lh4.googleusercontent.com/-gAnEaWOQK40/Tm2NpEWCT0I/AAAAAAAABMc/M3zIn7PdIQg/s720/Tungsten_four_masters_replication.png]
-<s>You want to install four nodes, in such a way that each node is a master, and each one receives changes from all other nodes.
-
-As in bi-directional replication, you install the master services first.
-
-{{{
-TUNGSTEN_HOME=$HOME/replication
-MASTER1=m1.mynetwork.com
-MASTER2=m2.mynetwork.com
-MASTER3=m3.mynetwork.com
-MASTER4=m4.mynetwork.com
-
-./tools/tungsten-installer \
-   --master-slave \
-   --master-host=$MASTER1 \
-   --datasource-user=tungsten \
-   --datasource-password=secret \
-   --service-name=alpha \
-   --home-directory=/home/tungsten/installs/four_masters \
-   --cluster-hosts=$MASTER1 --start-and-report
-
-./tools/tungsten-installer \
-   --master-slave \
-   --master-host=$MASTER2 \
-   --datasource-user=tungsten \
-   --datasource-password=secret \
-   --service-name=alpha \
-   --home-directory=/home/tungsten/installs/four_masters \
-   --cluster-hosts=$MASTER2 --start-and-report
-
-./tools/tungsten-installer \
-   --master-slave \
-   --master-host=$MASTER3 \
-   --datasource-user=tungsten \
-   --datasource-password=secret \
-   --service-name=alpha \
-   --home-directory=/home/tungsten/installs/four_masters \
-   --cluster-hosts=$MASTER3 --start-and-report
-
-./tools/tungsten-installer \
-   --master-slave \
-   --master-host=$MASTER4 \
-   --datasource-user=tungsten \
-   --datasource-password=secret \
-   --service-name=alpha \
-   --home-directory=/home/tungsten/installs/four_masters \
-   --cluster-hosts=$MASTER4 --start-and-report
-}}}
-
-Next, you will install three slave services for each master.
-
-{{{
-TUNGSTEN_TOOLS=$TUNGSTEN_HOME/tungsten/tools
-
-# MASTER 1
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER1 \
-  --datasource=m1_mynetwork_com \
-  --local-service-name=alpha \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER2 \
-  --svc-start bravo
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER1 \
-  --datasource=m1_mynetwork_com \
-  --local-service-name=alpha \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER3 \
-  --svc-start charlie
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER1 \
-  --datasource=m1_mynetwork_com \
-  --local-service-name=alpha \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER4 \
-  --svc-start delta
-}}}
-
-Let's see master 2 
-
-{{{
-# MASTER 2
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER2 \
-  --datasource=m2_mynetwork_com \
-  --local-service-name=bravo \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER1 \
-  --svc-start alpha
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER2 \
-  --datasource=m2_mynetwork_com \
-  --local-service-name=bravo \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER3 \
-  --svc-start charlie
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER2 \
-  --datasource=m2_mynetwork_com \
-  --local-service-name=bravo \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER4 \
-  --svc-start delta
-}}}
-
-And master 3:
-
-{{{
-# MASTER 3
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER3 \
-  --datasource=m3_mynetwork_com \
-  --local-service-name=charlie \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER1 \
-  --svc-start alpha
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER3 \
-  --datasource=m3_mynetwork_com \
-  --local-service-name=charlie \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER2 \
-  --svc-start bravo
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER4 \
-  --datasource=m3_mynetwork_com \
-  --local-service-name=bravo \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER4 \
-  --svc-start delta
-}}}
-
-And finally master 4:
-
-{{{
-# MASTER 4
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER4 \
-  --datasource=m4_mynetwork_com \
-  --local-service-name=delta \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER1 \
-  --svc-start alpha
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER4 \
-  --datasource=m4_mynetwork_com \
-  --local-service-name=bravo \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER2 \
-  --svc-start bravo
-
-$TUNGSTEN_TOOLS/configure-service \
-  -C --quiet \
-  --host=$MASTER4 \
-  --datasource=m4_mynetwork_com \
-  --local-service-name=delta \
-  --role=slave \
-  --service-type=remote \
-  --release-directory=$TUNGSTEN_HOME/tungsten \
-  --master-thl-host=$MASTER3 \
-  --svc-start charlie
-}}}
-
-The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.</s>
 
 Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
+
+
+== Install a star topology ==
+
+In a star topology, all the nodes are masters, passing information through a central point, named "hub".
+To define your cluster, using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the files COMMON_NODES.sh and eventually NODES_STAR.sh, and then run
+
+{{{./cookbook/install_star.sh}}}
+
+
+== install a fan-in topology ==
+
+In a fan_in topology, there is one slave, receiving data from several masters.
+To define your cluster, using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the files COMMON_NODES.sh and eventually NODES_FAN_IN.sh, and then run
+
+{{{./cookbook/install_fan_in.sh}}}
