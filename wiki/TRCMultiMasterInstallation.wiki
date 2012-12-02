@@ -6,8 +6,17 @@ Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
 
 == Install bi-directional replication ==
 
+Rather than doing it manually, you can use [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook] for each of these recipes.
+
+
+
 [https://lh5.googleusercontent.com/_gVfZHGgf5LA/TXO2MfOUagI/AAAAAAAABEc/jvt9lZC8uvY/Tungsten_bi_directional_replication.png]
-To install multiple replication services on two nodes, you need first to install the master service. This is similar to master-slave installation, with the difference that we are not installing any slaves. Only masters.
+
+Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the file NODES_ALL_MASTERS.sh to use only two nodes, and then run
+
+{{{./cookbook/install_all_masters.sh}}}
+
+<s>To install multiple replication services on two nodes, you need first to install the master service. This is similar to master-slave installation, with the difference that we are not installing any slaves. Only masters.
 
 {{{
 TUNGSTEN_HOME=$HOME/replication
@@ -64,7 +73,7 @@ $TUNGSTEN_TOOLS/configure-service
     --svc-start charlie
 }}}
 
-The datasource name is the name of the local hostname, with dots replaced by underscores. (Note to self: this needs to become a bit easier to deal with).
+The datasource name is the name of the local hostname, with dots replaced by underscores. (Note to self: this needs to become a bit easier to deal with).</s>
 
 == Install bi-directional replication with an additional slave ==
 
@@ -89,12 +98,20 @@ The only difference is SLAVE1 in the --cluster-hosts list, and Tungsten will tak
 
 == Install a three masters replication ==
 
-This recipe is left as an exercise for readers who have successfully managed [TRCMultiMasterInstallation#Install_a_four_masters_replication].
+Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the file NODES_ALL_MASTERS.sh to use only three nodes, and then run
+
+{{{./cookbook/install_all_masters.sh}}}
+
+<s>This recipe is left as an exercise for readers who have successfully managed [TRCMultiMasterInstallation#Install_a_four_masters_replication].</s>
 
 == Install a four masters replication ==
 
+Using  [http://code.google.com/p/tungsten-replicator/wiki/TRCBasicInstallation#Using_the_cookbook:_choose_topology_and_customize_your_installat the cookbook], you can edit the file NODES_ALL_MASTERS.sh, and then run
+
+{{{./cookbook/install_all_masters.sh}}}
+
 [https://lh4.googleusercontent.com/-gAnEaWOQK40/Tm2NpEWCT0I/AAAAAAAABMc/M3zIn7PdIQg/s720/Tungsten_four_masters_replication.png]
-You want to install four nodes, in such a way that each node is a master, and each one receives changes from all other nodes.
+<s>You want to install four nodes, in such a way that each node is a master, and each one receives changes from all other nodes.
 
 As in bi-directional replication, you install the master services first.
 
@@ -300,6 +317,6 @@ $TUNGSTEN_TOOLS/configure-service \
   --svc-start charlie
 }}}
 
-The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.
+The procedure is longish, but once you get the gist of it you will be able to make a loop instead of coding these commands manually.</s>
 
 Up to [TungstenReplicatorCookbook the Tungsten Replicator Cookbook]
