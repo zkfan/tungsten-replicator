@@ -17,7 +17,7 @@ All the recipes about installation require that you get Tungsten Replicator bina
  # We refer to this directory as the *staging directory*
  # Now you can follow the directions from another recipe.
 
-== Choose topology and customize your installation ==
+== Using the cookbook: choose topology and customize your installation ==
 
 Starting with Tungsten Replicator 2.0.7, there is a *./cookbook* directory , containing a collection of recipes to install several replication topologies.
 
