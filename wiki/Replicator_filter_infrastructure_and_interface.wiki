@@ -51,6 +51,14 @@ When inserting a filter, the stage is mandatory. In other cases, if there is no 
 The replicator will complain when users try to modify a filter without providing enough elements to identify it uniquely.
 
 
+=== Filter dependencies ===
+
+A filter can indicate dependencies, i.e. 
+
+  * which filters are needed 
+  * which filters are incompatible with this one
+  * which properties are needed for this filter to work (e.g. RBR)
+
 
 == On-the-fly filters ==
 
