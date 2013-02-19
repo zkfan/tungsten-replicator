@@ -7,6 +7,84 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.0.7 ==
+
+TODO: Robert to post a summarizing paragraph here.
+
+Issue 232 - Replication from MySQL to Oracle drops UPDATE statements silently when table lacks primary key
+
+Issue 258 - Statement transactions lack SQL parsing metadata for filtering after they are logged
+
+Issue 270 - Problems running installer on Solaris
+
+Issue 304 - Replicator hangs on connection to dead network interface
+
+Issue 323 - UPDATEs and DELETEs on a slave which update zero rows should fail
+
+Issue 370 - Add support for CVS batch loading using external utilities like Calpont cpimport
+
+Issue 371 - Parallel replication may lock up intermittently when Amazon instances are too small
+
+Issue 374 - Implement purge operation
+
+Issue 382 - Replication commits partial transaction following application error or OutOfMemory condition
+
+Issue 386 - Add support for fast batch loading using direct inserts and minimal staging table for deletes
+
+Issue 396 - Add option to make replicators read preferentially from a slave rather than a master
+
+Issue 397 - Replicator has problems finding filtered events in log, leading to slave restart failures
+
+Issue 398 - options for mysqldump backup are non-transactional safe
+
+Issue 401 - Channel assigments for round-robin selection are not cleared when replicator goes offline cleanly
+
+Issue 405 - Add Tungsten Replicator Cookbook to the standard tarball
+
+Issue 408 - Incorrect configuration of THL parameter causes potentially large memory usage
+
+Issue 411 - tools/configure fails if the $CONTINUENT_ROOT/tungsten directory already exists and is empty
+
+Issue 414 - Parallel apply may stop replicating databases if channel number is adjusted after unclean restart
+
+Issue 416 - Slave replicator stalls when parallel replication is enabled with on-disk queues
+
+Issue 417 - Table rename filter with regex support
+
+Issue 421 - Add filter to convert MySQL zero dates to null value
+
+Issue 422 - Omit installation of parallel queues when 'none' is the replication type
+
+Issue 424 - Filter to generate change rows for incoming transactions
+
+Issue 425 - Enable Tungsten replication into Amazon RDS slave
+
+Issue 426 - Add relative latency to enable users to tell when replicator is stalled or slave may be out of date
+
+Issue 430 - Position reported as -1
+
+Issue 433 - NULL values ini extract_timestamp or update_timestamp cause NPE
+
+Issue 434 - The xtrabackup-incremental script fails if $CONTINUENT_ROOT/backups/xtrabackup doesn't exist
+
+Issue 440 - tungsten does not read variables with underscores
+
+Issue 442 - BidiRemoteSlaveFilter fails with NullPointerException on filtered events
+
+Issue 443 - shardfilter does not fail replication on wrong shard
+
+Issue 445 - Tungsten installation fails with MySQL 5.6
+
+Issue 446 - Tungsten installer MySQL 5.6 checksum awareness
+
+Issue 448 - The xtrabackup methods ignore innodb_data_home_dir and innodb_log_group_home_dir
+
+Issue 449 - SetToStringFilter to convert SET to a VARCHAR list
+
+Issue 456 - Reduce the output of tools/configure and tools/configure-service
+
+Issue 457 - Consistency checking fails on keyword-named columns
+
 == Tungsten Replicator 2.0.6 ==
 
 This release includes the first working implementation of batch loading for data warehouses, focusing on Vertica.  It also includes substantial improvements to parallel replication including fixes for bugs that caused replicator freezes as well as problems with serialization in large data sets.  There are minor improvements to enhance multi-master replication as well as a number of general fixes that improve performance and robustness of the replicator as a whole, especially when processing large transactions.  Finally, this release adds support for MySQL to Oracle as well as MySQL to PostgreSQL replication.  
