@@ -63,6 +63,8 @@ Issue 426 - Add relative latency to enable users to tell when replicator is stal
 
 Issue 430 - Position reported as -1
 
+Issue 431 - Implement ./ddlscan utility for flexible schema transformations
+
 Issue 433 - NULL values ini extract_timestamp or update_timestamp cause NPE
 
 Issue 434 - The xtrabackup-incremental script fails if $CONTINUENT_ROOT/backups/xtrabackup doesn't exist
