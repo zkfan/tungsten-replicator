@@ -22,9 +22,12 @@
 
 package com.continuent.tungsten.replicator.extractor.mysql;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
+import com.continuent.tungsten.replicator.extractor.mysql.conversion.LittleEndianConversion;
 
 /**
  * @author <a href="mailto:seppo.jaakola@continuent.com">Seppo Jaakola</a>
@@ -70,6 +73,9 @@ public class RotateLogEvent extends LogEvent
     {
         super(buffer, descriptionEvent, MysqlBinlog.START_EVENT_V3);
         
+        logger.warn("ROTATE EVENT extraction");
+        
+        
         type = MysqlBinlog.ROTATE_EVENT;
 
         int headerSize = descriptionEvent.commonHeaderLength;
@@ -81,29 +87,44 @@ public class RotateLogEvent extends LogEvent
             throw new MySQLExtractException("Rotate event length is too short");
         }
 
-        // Removing code that does not seem to be very useful
-        // try
-        // {
-        // long pos = post_header_len > 0 ? MysqlBinlog.u64intToLong(buffer,
-        // MysqlBinlog.R_POS_OFFSET) : 4;
-        // }
-        // catch (IOException e)
-        // {
-        // logger.error("rotate event error while reading post header");
-        // return;
-        // }
 
+        
         filenameLength = eventLength - filenameOffset;
 
+        if(descriptionEvent.useChecksum())
+        {
+            logger.warn("Using checksummed events");
+            filenameLength -= 4;
+        }
+        
         if (filenameLength > MysqlBinlog.FN_REFLEN - 1)
         {
             filenameLength = MysqlBinlog.FN_REFLEN - 1;
         }
         filename = new String(buffer, filenameOffset, filenameLength);
 
-        if (logger.isDebugEnabled())
-            logger.debug("New binlog file is : " + filename);
-        return;
+        //if (logger.isDebugEnabled())
+            logger.warn("New binlog file is : " + filename);
+
+        if (descriptionEvent.useChecksum())
+        {
+            long checksum = MysqlBinlog.getChecksum(descriptionEvent.getChecksumAlgo(), buffer, 0, filenameOffset + filenameLength);
+            try
+            {
+                if (checksum != LittleEndianConversion.convert4BytesToLong(buffer, filenameOffset + filenameLength))
+                {
+                    logger.warn("RotateEvent : checksums do not match - event may be corrupted");
+                }
+                else
+                    logger.warn("RotateEvent : checksums match");
+                    
+            }
+            catch (IOException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } 
     }
 
     /**

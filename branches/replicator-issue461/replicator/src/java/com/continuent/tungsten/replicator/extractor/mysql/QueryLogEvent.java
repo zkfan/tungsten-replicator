@@ -176,6 +176,7 @@ public class QueryLogEvent extends LogEvent
             throws ReplicatorException
     {
         this(buffer, descriptionEvent, MysqlBinlog.QUERY_EVENT);
+        
         this.parseStatements = parseStatements;
 
         int dataLength;
@@ -199,8 +200,16 @@ public class QueryLogEvent extends LogEvent
             throw new MySQLExtractException("too short query event");
         }
 
+        if(descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            logger.warn("Using checksummed events");
+            eventLength -= 4;
+        }
+
         dataLength = eventLength - (commonHeaderLength + postHeaderLength);
 
+        
         short statusVariablesLength = 0;
         try
         {
@@ -359,6 +368,27 @@ public class QueryLogEvent extends LogEvent
             query = new String(buffer, end + databaseNameLength + 1,
                     queryLength);
         }
+     
+        if (descriptionEvent.useChecksum())
+        {
+            long checksum = MysqlBinlog.getChecksum(descriptionEvent.getChecksumAlgo(), buffer, 0, eventLength);
+            try
+            {
+                if (checksum != LittleEndianConversion.convert4BytesToLong(buffer, eventLength))
+                {
+                    logger.warn("QueryLogEvent : checksums do not match - event may be corrupted");
+                }
+                else
+                    logger.warn("QueryLogEvent : checksums match");
+                    
+            }
+            catch (IOException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } 
+
     }
 
     protected int extractStatusVariables(byte[] buffer, int start, int end)

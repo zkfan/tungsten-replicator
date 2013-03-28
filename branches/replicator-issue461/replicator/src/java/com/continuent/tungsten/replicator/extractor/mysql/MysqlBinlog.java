@@ -25,6 +25,7 @@ package com.continuent.tungsten.replicator.extractor.mysql;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Hashtable;
+import java.util.zip.CRC32;
 
 import org.apache.log4j.Logger;
 
@@ -46,6 +47,7 @@ public class MysqlBinlog
     public static final int                     EVENT_LEN_OFFSET                    = 9;
     public static final int                     LOG_POS_OFFSET                      = 13;
     public static final int                     FLAGS_OFFSET                        = 17;
+    public static final byte                    LOG_EVENT_BINLOG_IN_USE_F           = 0x1;
     public static final int                     LOG_EVENT_THREAD_SPECIFIC_F         = 0x4;
 
     public static final int                     BIN_LOG_HEADER_SIZE                 = 4;
@@ -109,12 +111,35 @@ public class MysqlBinlog
      */
 
     public static final int                     ENUM_END_EVENT                      = 27;
+
+    /* 5.6 new events */
+    public static final int                     HEARTBEAT_LOG_EVENT                 = 27;
     /*
-     * end marker
+     * In some situations, it is necessary to send over ignorable data to the
+     * slave: data that a slave can handle in case there is code for handling
+     * it, but which can be ignored if it is not recognized.
      */
+    public static final int                     IGNORABLE_LOG_EVENT                 = 28;
+    public static final int                     ROWS_QUERY_LOG_EVENT                = 29;
+
+    /* Version 2 of the Row events */
+    public static final int                     NEW_WRITE_ROWS_EVENT                = 30;
+    public static final int                     NEW_UPDATE_ROWS_EVENT               = 31;
+    public static final int                     NEW_DELETE_ROWS_EVENT               = 32;
+
+    public static final int                     GTID_LOG_EVENT                      = 33;
+    public static final int                     ANONYMOUS_GTID_LOG_EVENT            = 34;
+
+    public static final int                     PREVIOUS_GTIDS_LOG_EVENT            = 35;
+
+    public static final int                     ENUM_END_EVENT_FROM_56              = 36;
+    /* End of 5.6 new events */
 
     public static final int                     ST_SERVER_VER_LEN                   = 50;
-    public static final int                     LOG_EVENT_TYPES                     = 26;
+    public static final int                     LOG_EVENT_TYPES                     = ENUM_END_EVENT - 1;
+    public static final int                     LOG_NEW_5_6_EVENT_TYPES             = ENUM_END_EVENT_FROM_56
+                                                                                            - ENUM_END_EVENT
+                                                                                            - 1;
 
     public static final int                     OLD_HEADER_LEN                      = 13;
     public static final int                     LOG_EVENT_HEADER_LEN                = 19;
@@ -137,7 +162,12 @@ public class MysqlBinlog
     public static final int                     APPEND_BLOCK_HEADER_LEN             = 4;
     public static final int                     EXEC_LOAD_HEADER_LEN                = 4;
     public static final int                     DELETE_FILE_HEADER_LEN              = 4;
+
     public static final int                     FORMAT_DESCRIPTION_HEADER_LEN       = (START_V3_HEADER_LEN + 1 + LOG_EVENT_TYPES);
+    public static final int                     FORMAT_DESCRIPTION_HEADER_LEN_5_6   = (START_V3_HEADER_LEN
+                                                                                            + 1
+                                                                                            + LOG_EVENT_TYPES + LOG_NEW_5_6_EVENT_TYPES);
+
     public static final int                     ROWS_HEADER_LEN                     = 8;
     public static final int                     TABLE_MAP_HEADER_LEN                = 8;
     public static final int                     EXECUTE_LOAD_QUERY_EXTRA_HEADER_LEN = (4 + 4 + 4 + 1);
@@ -915,4 +945,23 @@ public class MysqlBinlog
         return "";
     }
 
+    public static long getChecksum(int chkAlgo, byte[] buffer, int offset, int length)
+    {
+        switch (chkAlgo)
+        {
+            case 1 :
+                return getCrc32(buffer, offset, length);
+            default :
+                break;
+        }
+        return -1;
+    }
+    
+    private final static CRC32 crc32 = new CRC32();
+    public static long getCrc32(byte[] buffer, int offset, int length)
+    {
+        crc32.reset();
+        crc32.update(buffer, offset, length);
+        return crc32.getValue();
+    }
 }
