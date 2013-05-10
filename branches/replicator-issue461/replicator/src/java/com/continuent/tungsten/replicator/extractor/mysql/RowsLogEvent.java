@@ -89,31 +89,38 @@ public abstract class RowsLogEvent extends LogEvent
      * </ul>
      * Source : http://forge.mysql.com/wiki/MySQL_Internals_Binary_Log
      */
-    static Logger     logger = Logger.getLogger(RowsLogEvent.class);
+    static Logger                       logger           = Logger.getLogger(RowsLogEvent.class);
 
-    private long      tableId;
+    private long                        tableId;
 
-    protected long    columnsNumber;
+    protected long                      columnsNumber;
 
     // BITMAP
-    protected BitSet  usedColumns;
+    protected BitSet                    usedColumns;
 
     // BITMAP for row after image
-    protected BitSet  usedColumnsForUpdate;
+    protected BitSet                    usedColumnsForUpdate;
 
     /* Rows in packed format */
-    protected byte[]  packedRowsBuffer;
+    protected byte[]                    packedRowsBuffer;
 
     /* One-after the end of the allocated space */
-    protected int     bufferSize;
+    protected int                       bufferSize;
 
-    protected boolean useBytesForString;
+    protected boolean                   useBytesForString;
+
+    protected FormatDescriptionLogEvent descriptionEvent = null;
 
     public RowsLogEvent(byte[] buffer, int eventLength,
             FormatDescriptionLogEvent descriptionEvent, int eventType,
             boolean useBytesForString) throws ReplicatorException
     {
         super(buffer, descriptionEvent, eventType);
+        this.descriptionEvent = descriptionEvent;
+
+        if (logger.isDebugEnabled())
+            logger.debug("Dumping rows event " + hexdump(buffer));
+
         this.useBytesForString = useBytesForString;
 
         int commonHeaderLength, postHeaderLength;
@@ -146,7 +153,8 @@ public abstract class RowsLogEvent extends LogEvent
             }
             else
             {
-                assert (postHeaderLength == MysqlBinlog.TABLE_MAP_HEADER_LEN);
+                // assert (postHeaderLength ==
+                // MysqlBinlog.TABLE_MAP_HEADER_LEN);
                 /* 6 bytes. The table ID. */
                 tableId = LittleEndianConversion.convert6BytesToLong(buffer,
                         fixedPartIndex);
@@ -193,7 +201,8 @@ public abstract class RowsLogEvent extends LogEvent
                 logger.debug("Bit-field of used columns "
                         + usedColumns.toString());
 
-            if (eventType == MysqlBinlog.UPDATE_ROWS_EVENT)
+            if (eventType == MysqlBinlog.UPDATE_ROWS_EVENT
+                    || eventType == MysqlBinlog.NEW_UPDATE_ROWS_EVENT)
             {
                 usedColumnsForUpdate = new BitSet(usedColumnsLength);
                 if (logger.isDebugEnabled())
@@ -209,6 +218,14 @@ public abstract class RowsLogEvent extends LogEvent
 
             int dataIndex = index;
 
+            if (descriptionEvent.useChecksum())
+            {
+                // Removing the checksum from the size of the event
+                if (logger.isDebugEnabled())
+                    logger.debug("Using checksummed events");
+                eventLength -= 4;
+            }
+
             int dataSize = eventLength - dataIndex;
             if (logger.isDebugEnabled())
                 logger.debug("tableId: " + tableId
@@ -221,6 +238,28 @@ public abstract class RowsLogEvent extends LogEvent
 
             // for (int i = 0; i < bufferSize; i++)
             // packedRowsBuffer[i] = buf[ptr_rows_data + i];
+
+            if (descriptionEvent.useChecksum())
+            {
+                long checksum = MysqlBinlog.getChecksum(
+                        descriptionEvent.getChecksumAlgo(), buffer, 0,
+                        eventLength);
+                if (checksum > -1)
+                    try
+                    {
+                        if (checksum != LittleEndianConversion
+                                .convert4BytesToLong(buffer, eventLength))
+                        {
+                            logger.warn("RowsLogEvent : checksums do not match - event may be corrupted");
+                        }
+                        else if (logger.isDebugEnabled())
+                            logger.warn("RowsLogEvent : checksums match");
+                    }
+                    catch (IOException ignore)
+                    {
+                    }
+            }
+
         }
         catch (IOException e)
         {
@@ -417,6 +456,8 @@ public abstract class RowsLogEvent extends LogEvent
             }
         }
 
+        if (logger.isDebugEnabled())
+            logger.debug("Handling type " + type);
         switch (type)
         {
             case MysqlBinlog.MYSQL_TYPE_LONG :
@@ -599,7 +640,89 @@ public abstract class RowsLogEvent extends LogEvent
                     spec.setType(java.sql.Types.TIMESTAMP);
                 return 4;
             }
+            case 17 : // MYSQL_TYPE_TIMESTAMP2
+                /**
+                 * Binlog stores field->type() as type code by default. This
+                 * puts MYSQL_TYPE_STRING in case of CHAR, VARCHAR, SET and
+                 * ENUM, with extra data type details put into metadata. We
+                 * cannot store field->type() in case of temporal types with
+                 * fractional seconds: TIME(n), DATETIME(n) and TIMESTAMP(n),
+                 * because binlog records with MYSQL_TYPE_TIME,
+                 * MYSQL_TYPE_DATETIME type codes do not have metadata. So for
+                 * temporal data types with fractional seconds we'll store
+                 * real_type() type codes instead, i.e. MYSQL_TYPE_TIME2,
+                 * MYSQL_TYPE_DATETIME2, MYSQL_TYPE_TIMESTAMP2, and put
+                 * precision into metatada. Note: perhaps binlog should
+                 * eventually be modified to store real_type() instead of type()
+                 * for all column types.
+                 */
+            {
+                int secPartsLength = 0;
+                long i32 = BigEndianConversion.convertNBytesToLong(row, rowPos,
+                        4);
 
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Extracting timestamp "
+                            + hexdump(row, rowPos, 4));
+                    logger.debug("Meta value is " + meta);
+                    logger.debug("Value as integer is " + i32);
+                }
+                if (i32 == 0)
+                {
+                    value.setValue(Integer.valueOf(0));
+                }
+                else
+                {
+                    // convert sec based timestamp to millisecond precision
+
+                    java.sql.Timestamp tsVal = new java.sql.Timestamp(
+                            i32 * 1000);
+                    if (logger.isDebugEnabled())
+                        logger.debug("Setting value to " + tsVal);
+
+                    value.setValue(tsVal);
+
+                    secPartsLength = getSecondPartsLength(meta);
+
+                    switch (meta)
+                    {
+                        case 0 :
+                        default :
+                            secPartsLength = 0;
+                            // Default case : nothing to do
+                            break;
+                        // Skip the timestamp bytes (4) and read fractional
+                        // second parts
+                        case 1 :
+                        case 2 :
+                        case 3 :
+                        case 4 :
+                        case 5 :
+                        case 6 :
+                            int pow = (int) Math.pow(10, (9 - meta));
+                            int secVal = BigEndianConversion
+                                    .convertNBytesToInt(row, rowPos + 4,
+                                            secPartsLength)
+                                    * pow;
+                            if (logger.isDebugEnabled())
+                            {
+                                logger.debug("Reading second parts : "
+                                        + secPartsLength + " bytes.");
+                                logger.debug(hexdump(row, rowPos + 4,
+                                        secPartsLength));
+                                logger.debug("value = 0." + secVal);
+                            }
+                            tsVal.setNanos(secVal);
+
+                            break;
+                    }
+                }
+
+                if (spec != null)
+                    spec.setType(java.sql.Types.TIMESTAMP);
+                return 4 + secPartsLength;
+            }
             case MysqlBinlog.MYSQL_TYPE_DATETIME :
             {
                 long i64 = LittleEndianConversion.convert8BytesToLong(row,
@@ -613,7 +736,7 @@ public abstract class RowsLogEvent extends LogEvent
                         spec.setType(java.sql.Types.TIMESTAMP);
                     return 8;
                 }
-                
+
                 // calculate year, month...sec components of timestamp
                 long d = i64 / 1000000;
                 int year = (int) (d / 10000);
@@ -667,7 +790,7 @@ public abstract class RowsLogEvent extends LogEvent
                         spec.setType(java.sql.Types.DATE);
                     return 3;
                 }
-                
+
                 Calendar cal = Calendar.getInstance();
                 cal.clear();
                 // Month value is 0-based. e.g., 0 for January.
@@ -849,6 +972,11 @@ public abstract class RowsLogEvent extends LogEvent
         }
     }
 
+    private int getSecondPartsLength(int meta)
+    {
+        return (meta + 1) / 2;
+    }
+
     // JIRA TREP-237. Need to expose the table ID.
     protected long getTableId()
     {
@@ -874,7 +1002,14 @@ public abstract class RowsLogEvent extends LogEvent
             TableMapLogEvent map, boolean isKeySpec) throws ReplicatorException
     {
         int startIndex = rowPos;
-
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("processExtractedEventRow " + hexdump(row)
+                    + " from position " + startIndex);
+            logger.debug(oneRowChange.getAction().toString() + " for table "
+                    + oneRowChange.getSchemaName() + "."
+                    + oneRowChange.getTableName());
+        }
         int usedColumnsCount = 0;
         for (int i = 0; i < columnsNumber; i++)
         {
@@ -910,6 +1045,10 @@ public abstract class RowsLogEvent extends LogEvent
 
         for (int i = 0; i < map.getColumnsCount(); i++)
         {
+            if (logger.isDebugEnabled())
+                logger.debug("Extracting column " + (i + 1) + " out of "
+                        + map.getColumnsCount());
+
             if (cols.get(i) == false)
                 continue;
 
@@ -925,6 +1064,7 @@ public abstract class RowsLogEvent extends LogEvent
                     spec.setIndex(i + 1);
                     oneRowChange.getKeySpec().add(spec);
                 }
+
                 oneRowChange.getKeyValues().get(rowIndex).add(value);
             }
             else

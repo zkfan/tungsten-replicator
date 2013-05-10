@@ -39,7 +39,7 @@ public class UpdateRowsLogEvent extends RowsLogEvent
             boolean useBytesForString) throws ReplicatorException
     {
         super(buffer, eventLength, descriptionEvent,
-                MysqlBinlog.UPDATE_ROWS_EVENT, useBytesForString);
+                buffer[MysqlBinlog.EVENT_TYPE_OFFSET], useBytesForString);
     }
 
     /**
@@ -70,28 +70,45 @@ public class UpdateRowsLogEvent extends RowsLogEvent
         int rowIndex = 0; /* index of the row in value arrays */
 
         int bufferIndex = 0;
-        while (bufferIndex < bufferSize)
+
+        int size = bufferSize;
+        if (descriptionEvent.useChecksum())
+        {
+            // Remove 4 bytes for CRC
+            size -= 4;
+        }
+
+        while (bufferIndex < size)
         {
             int length = 0;
 
             try
             {
                 /*
-                 * Removed row
+                 * Before Image
                  */
+                if (logger.isDebugEnabled())
+                    logger.debug("Processing Before Image");
                 length = processExtractedEventRow(oneRowChange, rowIndex,
                         usedColumns, bufferIndex, packedRowsBuffer, map, true);
+
+                if (logger.isDebugEnabled())
+                    logger.debug("Extracted " + length + " bytes keys");
 
                 if (length == 0)
                     break;
 
                 bufferIndex += length;
                 /*
-                 * Inserted row
+                 * After Image
                  */
+                if (logger.isDebugEnabled())
+                    logger.debug("Processing After Image");
                 length = processExtractedEventRow(oneRowChange, rowIndex,
                         usedColumnsForUpdate, bufferIndex, packedRowsBuffer,
                         map, false);
+                if (logger.isDebugEnabled())
+                    logger.debug("Extracted " + length + " bytes values");
             }
             catch (ReplicatorException e)
             {
@@ -105,5 +122,4 @@ public class UpdateRowsLogEvent extends RowsLogEvent
         }
         rowChanges.appendOneRowChange(oneRowChange);
     }
-
 }

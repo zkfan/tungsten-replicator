@@ -257,18 +257,21 @@ public abstract class LogEvent
                 // description_event);
                 break;
             case MysqlBinlog.WRITE_ROWS_EVENT :
+            case MysqlBinlog.NEW_WRITE_ROWS_EVENT :
                 if (logger.isDebugEnabled())
                     logger.debug("reading WRITE_ROWS_EVENT");
                 event = new WriteRowsLogEvent(buffer, eventLength,
                         descriptionEvent, useBytesForString);
                 break;
             case MysqlBinlog.UPDATE_ROWS_EVENT :
+            case MysqlBinlog.NEW_UPDATE_ROWS_EVENT :
                 if (logger.isDebugEnabled())
                     logger.debug("reading UPDATE_ROWS_EVENT");
                 event = new UpdateRowsLogEvent(buffer, eventLength,
                         descriptionEvent, useBytesForString);
                 break;
             case MysqlBinlog.DELETE_ROWS_EVENT :
+            case MysqlBinlog.NEW_DELETE_ROWS_EVENT :
                 if (logger.isDebugEnabled())
                     logger.debug("reading DELETE_ROWS_EVENT");
                 event = new DeleteRowsLogEvent(buffer, eventLength,

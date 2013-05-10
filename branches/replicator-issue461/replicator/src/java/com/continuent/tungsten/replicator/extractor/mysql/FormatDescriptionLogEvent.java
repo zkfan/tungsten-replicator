@@ -71,24 +71,23 @@ public class FormatDescriptionLogEvent extends StartLogEvent
             logger.debug("commonHeaderLength= " + commonHeaderLength
                     + " eventTypesCount= " + eventTypesCount);
 
-        // CRC32 crc32 = new CRC32();
-
         // Clear the IN_USE flag before computing the CRC
         // No need to save the value as we don't use it anyway.
         buffer[MysqlBinlog.FLAGS_OFFSET] = (byte) (buffer[MysqlBinlog.FLAGS_OFFSET] & ~MysqlBinlog.LOG_EVENT_BINLOG_IN_USE_F);
 
-        logger.warn("Checksumming : " + hexdump(buffer, 0, noCrcEventLength));
-        // crc32.update(buffer, 0, 112);
-        // long crcValue = crc32.getValue();
-        // logger.debug("Calculated checksum is : "
-        // + Long.toHexString(crcValue) + " / " + crcValue);
+        if (logger.isDebugEnabled())
+            logger.debug("Checksumming : "
+                    + hexdump(buffer, 0, noCrcEventLength));
+
         long evChecksum = 0L;
         try
         {
             evChecksum = LittleEndianConversion.convert4BytesToLong(buffer,
                     noCrcEventLength);
-            logger.warn("Binlog event checksum is : "
-                    + hexdump(buffer, noCrcEventLength) + " / " + evChecksum);
+            if (logger.isDebugEnabled())
+                logger.debug("Binlog event checksum is : "
+                        + hexdump(buffer, noCrcEventLength) + " / "
+                        + evChecksum);
         }
         catch (IOException e)
         {
@@ -152,7 +151,7 @@ public class FormatDescriptionLogEvent extends StartLogEvent
         logger.warn("Using checksum algo :" + checksumAlgo);
         this.checksumAlgo = checksumAlgo;
         this.binlogVersion = binlogVersion;
-        postHeaderLength = new short[MysqlBinlog.ENUM_END_EVENT];
+        postHeaderLength = new short[MysqlBinlog.ENUM_END_EVENT_FROM_56];
 
         /* identify binlog format */
         switch (binlogVersion)
@@ -198,7 +197,7 @@ public class FormatDescriptionLogEvent extends StartLogEvent
                 break;
             case 4 : // 5.0
                 commonHeaderLength = MysqlBinlog.LOG_EVENT_HEADER_LEN;
-                eventTypesCount = MysqlBinlog.LOG_EVENT_TYPES;
+                eventTypesCount = MysqlBinlog.LOG_NEW_5_6_EVENT_TYPES;
 
                 postHeaderLength[MysqlBinlog.START_EVENT_V3 - 1] = MysqlBinlog.START_V3_HEADER_LEN;
                 postHeaderLength[MysqlBinlog.QUERY_EVENT - 1] = MysqlBinlog.QUERY_HEADER_LEN;
@@ -217,6 +216,11 @@ public class FormatDescriptionLogEvent extends StartLogEvent
                 postHeaderLength[MysqlBinlog.EXECUTE_LOAD_QUERY_EVENT - 1] = MysqlBinlog.EXECUTE_LOAD_QUERY_HEADER_LEN;
                 postHeaderLength[MysqlBinlog.APPEND_BLOCK_EVENT - 1] = MysqlBinlog.APPEND_BLOCK_HEADER_LEN;
                 postHeaderLength[MysqlBinlog.DELETE_FILE_EVENT - 1] = MysqlBinlog.DELETE_FILE_HEADER_LEN;
+
+                postHeaderLength[MysqlBinlog.NEW_WRITE_ROWS_EVENT - 1] = MysqlBinlog.ROWS_HEADER_LEN + 2;
+                postHeaderLength[MysqlBinlog.NEW_UPDATE_ROWS_EVENT - 1] = MysqlBinlog.ROWS_HEADER_LEN + 2;
+                postHeaderLength[MysqlBinlog.NEW_DELETE_ROWS_EVENT - 1] = MysqlBinlog.ROWS_HEADER_LEN + 2;
+
                 break;
         }
     }

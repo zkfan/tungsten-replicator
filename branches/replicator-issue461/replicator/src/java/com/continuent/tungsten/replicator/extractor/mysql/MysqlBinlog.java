@@ -138,8 +138,7 @@ public class MysqlBinlog
     public static final int                     ST_SERVER_VER_LEN                   = 50;
     public static final int                     LOG_EVENT_TYPES                     = ENUM_END_EVENT - 1;
     public static final int                     LOG_NEW_5_6_EVENT_TYPES             = ENUM_END_EVENT_FROM_56
-                                                                                            - ENUM_END_EVENT
-                                                                                            - 1;
+                                                                                            - ENUM_END_EVENT;
 
     public static final int                     OLD_HEADER_LEN                      = 13;
     public static final int                     LOG_EVENT_HEADER_LEN                = 19;
@@ -165,7 +164,6 @@ public class MysqlBinlog
 
     public static final int                     FORMAT_DESCRIPTION_HEADER_LEN       = (START_V3_HEADER_LEN + 1 + LOG_EVENT_TYPES);
     public static final int                     FORMAT_DESCRIPTION_HEADER_LEN_5_6   = (START_V3_HEADER_LEN
-                                                                                            + 1
                                                                                             + LOG_EVENT_TYPES + LOG_NEW_5_6_EVENT_TYPES);
 
     public static final int                     ROWS_HEADER_LEN                     = 8;
@@ -305,6 +303,10 @@ public class MysqlBinlog
     public static final int                     MYSQL_TYPE_NEWDATE                  = 14;
     public static final int                     MYSQL_TYPE_VARCHAR                  = 15;
     public static final int                     MYSQL_TYPE_BIT                      = 16;
+    public static final int                     MYSQL_TYPE_TIMESTAMP2               = 17;
+    public static final int                     MYSQL_TYPE_DATETIME2                = 18;
+    public static final int                     MYSQL_TYPE_TIME2                    = 19;
+
     public static final int                     MYSQL_TYPE_NEWDECIMAL               = 246;
     public static final int                     MYSQL_TYPE_ENUM                     = 247;
     public static final int                     MYSQL_TYPE_SET                      = 248;
@@ -945,7 +947,8 @@ public class MysqlBinlog
         return "";
     }
 
-    public static long getChecksum(int chkAlgo, byte[] buffer, int offset, int length)
+    public static long getChecksum(int chkAlgo, byte[] buffer, int offset,
+            int length)
     {
         switch (chkAlgo)
         {
@@ -956,8 +959,9 @@ public class MysqlBinlog
         }
         return -1;
     }
-    
+
     private final static CRC32 crc32 = new CRC32();
+
     public static long getCrc32(byte[] buffer, int offset, int length)
     {
         crc32.reset();
