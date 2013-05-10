@@ -39,7 +39,7 @@ public class WriteRowsLogEvent extends RowsLogEvent
             boolean useBytesForString) throws ReplicatorException
     {
         super(buffer, eventLength, descriptionEvent,
-                MysqlBinlog.WRITE_ROWS_EVENT, useBytesForString);
+                buffer[MysqlBinlog.EVENT_TYPE_OFFSET], useBytesForString);
     }
 
     /**
@@ -64,7 +64,14 @@ public class WriteRowsLogEvent extends RowsLogEvent
 
         int rowIndex = 0; /* index of the row in value arrays */
 
-        for (int bufferIndex = 0; bufferIndex < bufferSize;)
+        int size = bufferSize;
+        if (descriptionEvent.useChecksum())
+        {
+            // Remove 4 bytes for CRC
+            size -= 4;
+        }
+
+        for (int bufferIndex = 0; bufferIndex < size;)
         {
             int length;
 
