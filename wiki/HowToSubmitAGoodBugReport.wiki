@@ -47,14 +47,14 @@ If your error only shows itself with large data, there is often a logistical pro
 
  * DO
    ** Search the bug repository and the mailing lists (or forums) before submitting yours. Someone may have had the same problem before you did.
-   ** Put yourself in the receiver's position, and try to reproduce the problem from a clean initial state.
+   ** *Put yourself in the receiver's position*, and try to reproduce the problem from a clean initial state.
    ** If there is a workaround, mention it: it might give a good clue to the developers.
    ** More information is better. Anything that can improve the identification of the bug root cause will be welcome. (But don't overdo: see below)
    ** If you feel that a missing feature should be useful, report it as a feature request. (Even better: suggest a patch)
 
  * DON'T
    ** Don't report a missing feature as a bug, unless the docs say that the feature should be there.
-   ** Don't just send the error message without the events that generated it.
+   ** *Don't just send the error message without the events that generated it.*
    ** Don't include SQL commands embedded in code.
    ** Don't say "my application doesn't work anymore," assuming it's the database's fault. Remember [http://www.codinghorror.com/blog/2008/03/the-first-rule-of-programming-its-always-your-fault.html The First Rule of Programming: It's Always Your Fault]
    ** Less is better. If there is a long way and a short way of reproducing the bug, the shorter one is better. Don't send more info just for the sake of it.
