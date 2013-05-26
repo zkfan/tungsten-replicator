@@ -172,7 +172,8 @@ tools/tungsten-installer --master-slave -a \
   --cluster-hosts=logos1 \
   --mysql-use-bytes-for-string=false \
   --svc-extractor-filters=colnames,pkey \
-  --svc-parallelization-type=disk --start-and-report
+  --java-file-encoding=UTF8 \
+  --svc-parallelization-type=none --start-and-report
 }}}
 
 === Install a MongoDB Slave ===
@@ -188,8 +189,9 @@ tools/tungsten-installer --master-slave -a \
   --service-name=mongodb \
   --home-directory=/opt/continuent \
   --cluster-hosts=logos2 \
+  --java-file-encoding=UTF8 \
   --skip-validation-check=InstallerMasterSlaveCheck \
-  --svc-parallelization-type=disk --start-and-report
+  --svc-parallelization-type=none --start-and-report
 }}}
 
 MySQL tables will be materialized as collections in MongoDB.  Columns convert to BSON properties.  SQL primary keys will be converted to (composite) indexes on collections. 
