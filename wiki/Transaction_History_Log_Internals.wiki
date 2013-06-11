@@ -89,6 +89,22 @@ DBMS transactions are stored as serialized objects of the Java ReplDBMSEvent cla
 
 It is also possible to use Java serialization; earlier versions of the replicator before Tungsten 1.3 do so.  Java serialization is extremely verbose and may not handle upgrades well.  For this reason it is no longer used by default or even recommended for use. 
 
+=== EPOCH Numbers ===
+
+The EPOCH value is used a check to ensure that the logs on the slave and the master match. The EPOCH is stored in the THL, and a new EPOCH is generated each time a master goes online. The EPOCH value is then written and stored in the THL alongside each individual event. The EPOCH acts as an additional check, beyond the sequence number, to validate the information between the slave and the master. The EPOCH value is used to prevent the following situations:
+
+  * In the event of a failover where there are events stored in the master log, but which did not make it to a slave, the EPOCH acts as a check so that when the master rejoins as the slave, the EPOCH numbers will not match the slave and the new master. The trapped transactions be identified by examining the THL output.
+
+  * When a slave joins a master, the existence of the EPOCH prevents the slave from accepting events that happen to match only the sequence number, but not the corresponding EPOCH.Each time a Tungsten Replicator master goes online, the EPOCH number is incremented. When the slave connects, it requests the SEQUENCE and EPOCH, and the master confirms that the requested SEQUENCE has the requested EPOCH. 
+
+If not, the request is rejected and the slave gets a validation error:
+
+{{{
+pendingExceptionMessage: Client handshake failure: Client response validation failed: Log epoch numbers do not match: client source ID=west-db2 seqno=408129 server epoch number=408128 client epoch number=189069
+}}}
+
+When this error occurs, the THL should be examined and compared between the master and slave to determine if there really is a mismatch between the two databases.
+
 === Indexing ===
 
 The THL does not have a persistent index.  Instead an in-memory index is computed each time the log is opened.  The current implemention reads the header of each log data and opens and reads to the end of the last data file in order to compute the index.  
