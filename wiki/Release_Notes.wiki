@@ -43,7 +43,6 @@ The following improvements, new features, and functionality, are available in th
     * The *xtrabackup* command used within the replicator restore procedure can now restore files directly to the MySQL data directory.Issues [https://code.google.com/p/tungsten-replicator/issues/detail?id=568 568], [https://code.google.com/p/tungsten-replicator/issues/detail?id=487 487]
     * A general purposes Ruby library has been provided that supports basic API operations into the core Tungsten Replicator. General Tungsten scripting Ruby library. More information can currently be located within the `cluster-home/lib/ruby/tungsten/README` file within the distribution.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=569 569]
   * *Filters*
-
 The following issues apply to the Replicator Filters system:
     * A new filter has been added, `RenameFilter`, which allows for easy renaming of schemas, tables and columns for ROW-based replication.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=464 464]
   * *Oracle Replication*
