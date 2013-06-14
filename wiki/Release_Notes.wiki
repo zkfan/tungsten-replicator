@@ -29,7 +29,6 @@ The following improvements, new features, and functionality, are available in th
     * The *trepctl* command has been updated to support the `-json` command-line option for status and service output to make it easier to parse the output of information from the tool.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=499 499]
     * The *tpm* command can be used instead of *tungsten-installer* for installing and configuring services.Cookbook recipes still use the *tungsten-replicator* command, and *tpm* is not yet certified for general use.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=501 501]
   * *Cookbook Utility*
-    The following issues apply only to the Cookbook system:
     * A script has been added to the Cookbook system that automatically starts a load on the replication service using Bristlecone. The new script is `cookbook/load_data.sh` in the Tungsten Replicator directory.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=483 483]
     * Deploy MySQL sandboxes in several hosts for Tungsten installations.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=485 485]
     * Shortcuts to the Tungsten Replicator tools have been added to the Cookbook directory, allowing for easier execution of selected tools and operations, such as the replicator and configuration viewing and editing.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=525 525]
@@ -43,7 +42,6 @@ The following improvements, new features, and functionality, are available in th
     * The *xtrabackup* command used within the replicator restore procedure can now restore files directly to the MySQL data directory.Issues [https://code.google.com/p/tungsten-replicator/issues/detail?id=568 568], [https://code.google.com/p/tungsten-replicator/issues/detail?id=487 487]
     * A general purposes Ruby library has been provided that supports basic API operations into the core Tungsten Replicator. General Tungsten scripting Ruby library. More information can currently be located within the `cluster-home/lib/ruby/tungsten/README` file within the distribution.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=569 569]
   * *Filters*
-The following issues apply to the Replicator Filters system:
     * A new filter has been added, `RenameFilter`, which allows for easy renaming of schemas, tables and columns for ROW-based replication.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=464 464]
   * *Oracle Replication*
     The following issues apply to the Oracle replicator:
