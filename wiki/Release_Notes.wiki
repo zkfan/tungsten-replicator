@@ -15,12 +15,15 @@ Upgrading Tungsten Replicator can be achieved using the *./tools/update* command
 
 The following improvements and fixes are available in Tungsten Replicator 2.1.0.
 
+<blockquote style="border-left: 5px solid red;">
 *Behavior Changes*
 
 The following changes have been made to Tungsten Replicator and may affect existing scripts and integration tools. Any scripts or environment which make use of these tools should check and update for the new configuration:
 
-  * Tungsten uses comments appended to statements to mark the replication service name. This allows Tungsten replicators to recognize the origin of statements and prevent statement loops. This feature is only required in multi-master replication topologies where statements are replicated into another master again then extracted from the log. It is not required in simple master/slave topologies or those master/master topologies in which updates are not logged into the database log. However, in star topologies the comment information is required to prevent duplication or re-application of statements. It is also required in master/master topologies where updates are logged when applied to another master.Comments are now disabled by default. Cookbook templates for star topologies have been updated to enable this feature by default. This option should be enabled when creating a star topology, or when advised to do so. However, care should be taken to ensure that character set definitions for their table data, definitions and environment matches to prevent issues with the addition of comments to existing statements.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=547 547]
-  * In previous releases, a restore operation using *trepctl* would automatically set the replicator _`ONLINE`_ once the restore operation had been completed. In Tungsten Replicator 2.1.0, the replicator will remain in the offline state after a restore operation.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=450 450]
+  * Tungsten uses comments appended to statements to mark the replication service name. This allows Tungsten replicators to recognize the origin of statements and prevent statement loops. This feature is only required in multi-master replication topologies where statements are replicated into another master again then extracted from the log. It is not required in simple master/slave topologies or those master/master topologies in which updates are not logged into the database log. However, in star topologies the comment information is required to prevent duplication or re-application of statements. It is also required in master/master topologies where updates are logged when applied to another master.Comments are now disabled by default. Cookbook templates for star topologies have been updated to enable this feature by default. This option should be enabled when creating a star topology, or when advised to do so. However, care should be taken to ensure that character set definitions for their table data, definitions and environment matches to prevent issues with the addition of comments to existing statements.<br/>Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=547 547]
+  * In previous releases, a restore operation using *trepctl* would automatically set the replicator _`ONLINE`_ once the restore operation had been completed. In Tungsten Replicator 2.1.0, the replicator will remain in the offline state after a restore operation.
+    Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=450 450]
+</blockquote>
 
 The following improvements, new features, and functionality, are available in this release:
 
@@ -44,7 +47,6 @@ The following improvements, new features, and functionality, are available in th
   * *Filters*
     * A new filter has been added, `RenameFilter`, which allows for easy renaming of schemas, tables and columns for ROW-based replication.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=464 464]
   * *Oracle Replication*
-    The following issues apply to the Oracle replicator:
     * Support has been added to allow master extraction of the Oracle data for use in replication. This enables heterogeneous replication both to and from Oracle databases.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=551 551]
     * The *ddlscan* tool includes a number of new features to make operations easier when scanning the Oracle database. These options include the ability to import additional templates, user-defined template options, interface for determining reserved words and integrated use of RenameFilter CSV file.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=462 462]
     * Some sample scripts for easing the provisioning of MySQL databases to Oracle.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=585 585]
@@ -54,9 +56,11 @@ The following improvements, new features, and functionality, are available in th
     * During installation and configuration, the THL port numbers for all services are compared to ensure that there are no duplicate port specifications on each host. A warning is generated during configuration. This affects *tpm* only.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=337 337]
     * Concurrent garbage collection support has been added to the running replicator service. This can be configured by using the `--java-enable-concurrent-gc=true` option to the *tungsten-installer* or *configure* commands.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=412 412]
     * The port number in a THL host configuration (`--master-thl-host`) specification can be specified on the command line using the `host:port` format.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=472 472]
-    * The replicator service can now be started without automatically going into the online state. To start, or restart, the replicator but start in the offline mode, use the `-offline` option:{{{
-    shell> replicator start -offline
-    }}}Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=553 553]
+    * The replicator service can now be started without automatically going into the online state. To start, or restart, the replicator but start in the offline mode, use the `-offline` option:
+{{{
+shell> replicator start -offline
+}}}
+    Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=553 553]
     * A `--service-name` argument has been added to *tpm* to specify the service name to override the default service name.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=563 563]
     * A _`dump`_ command has been added as an alias for the _`reverse`_ command to the *tpm* command.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=564 564]
 
@@ -65,7 +69,6 @@ The following improvements, new features, and functionality, are available in th
 The following fixes and updates are included in this release:
 
   * *Cookbook Utility*
-    The following issues apply only to the Cookbook utility:
     * When installing a cluster using cookbook, the cookbook tools could not be used from the installed directory, only from the staging directory. directoryIssue [https://code.google.com/p/tungsten-replicator/issues/detail?id=532 532]
     * The cookbook test script would not detect missing services, reporting a success even if no services were identified.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=540 540]
     * The `cookbook/load_data` script would send data to the master as configured in the initial installation, instead of the current master within the replication service.Issue [https://code.google.com/p/tungsten-replicator/issues/detail?id=544 544]
