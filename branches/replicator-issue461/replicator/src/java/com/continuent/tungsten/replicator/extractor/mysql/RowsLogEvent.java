@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2009-2010 Continuent Inc.
+ * Copyright (C) 2009-2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -236,29 +237,7 @@ public abstract class RowsLogEvent extends LogEvent
             bufferSize = dataSize;
             System.arraycopy(buffer, dataIndex, packedRowsBuffer, 0, bufferSize);
 
-            // for (int i = 0; i < bufferSize; i++)
-            // packedRowsBuffer[i] = buf[ptr_rows_data + i];
-
-            if (descriptionEvent.useChecksum())
-            {
-                long checksum = MysqlBinlog.getChecksum(
-                        descriptionEvent.getChecksumAlgo(), buffer, 0,
-                        eventLength);
-                if (checksum > -1)
-                    try
-                    {
-                        if (checksum != LittleEndianConversion
-                                .convert4BytesToLong(buffer, eventLength))
-                        {
-                            logger.warn("RowsLogEvent : checksums do not match - event may be corrupted");
-                        }
-                        else if (logger.isDebugEnabled())
-                            logger.warn("RowsLogEvent : checksums match");
-                    }
-                    catch (IOException ignore)
-                    {
-                    }
-            }
+            doChecksum(buffer, eventLength, descriptionEvent);
 
         }
         catch (IOException e)
@@ -640,22 +619,7 @@ public abstract class RowsLogEvent extends LogEvent
                     spec.setType(java.sql.Types.TIMESTAMP);
                 return 4;
             }
-            case 17 : // MYSQL_TYPE_TIMESTAMP2
-                /**
-                 * Binlog stores field->type() as type code by default. This
-                 * puts MYSQL_TYPE_STRING in case of CHAR, VARCHAR, SET and
-                 * ENUM, with extra data type details put into metadata. We
-                 * cannot store field->type() in case of temporal types with
-                 * fractional seconds: TIME(n), DATETIME(n) and TIMESTAMP(n),
-                 * because binlog records with MYSQL_TYPE_TIME,
-                 * MYSQL_TYPE_DATETIME type codes do not have metadata. So for
-                 * temporal data types with fractional seconds we'll store
-                 * real_type() type codes instead, i.e. MYSQL_TYPE_TIME2,
-                 * MYSQL_TYPE_DATETIME2, MYSQL_TYPE_TIMESTAMP2, and put
-                 * precision into metatada. Note: perhaps binlog should
-                 * eventually be modified to store real_type() instead of type()
-                 * for all column types.
-                 */
+            case MysqlBinlog.MYSQL_TYPE_TIMESTAMP2 :
             {
                 int secPartsLength = 0;
                 long i32 = BigEndianConversion.convertNBytesToLong(row, rowPos,
@@ -675,48 +639,14 @@ public abstract class RowsLogEvent extends LogEvent
                 else
                 {
                     // convert sec based timestamp to millisecond precision
-
-                    java.sql.Timestamp tsVal = new java.sql.Timestamp(
-                            i32 * 1000);
+                    Timestamp tsVal = new java.sql.Timestamp(i32 * 1000);
                     if (logger.isDebugEnabled())
                         logger.debug("Setting value to " + tsVal);
 
                     value.setValue(tsVal);
-
                     secPartsLength = getSecondPartsLength(meta);
-
-                    switch (meta)
-                    {
-                        case 0 :
-                        default :
-                            secPartsLength = 0;
-                            // Default case : nothing to do
-                            break;
-                        // Skip the timestamp bytes (4) and read fractional
-                        // second parts
-                        case 1 :
-                        case 2 :
-                        case 3 :
-                        case 4 :
-                        case 5 :
-                        case 6 :
-                            int pow = (int) Math.pow(10, (9 - meta));
-                            int secVal = BigEndianConversion
-                                    .convertNBytesToInt(row, rowPos + 4,
-                                            secPartsLength)
-                                    * pow;
-                            if (logger.isDebugEnabled())
-                            {
-                                logger.debug("Reading second parts : "
-                                        + secPartsLength + " bytes.");
-                                logger.debug(hexdump(row, rowPos + 4,
-                                        secPartsLength));
-                                logger.debug("value = 0." + secVal);
-                            }
-                            tsVal.setNanos(secVal);
-
-                            break;
-                    }
+                    tsVal.setNanos(extractMicroseconds(row, rowPos, meta,
+                            secPartsLength));
                 }
 
                 if (spec != null)
@@ -764,7 +694,80 @@ public abstract class RowsLogEvent extends LogEvent
                     spec.setType(java.sql.Types.TIMESTAMP);
                 return 8;
             }
+            case MysqlBinlog.MYSQL_TYPE_DATETIME2 :
+            {
+                /**
+                 * 1 bit sign (used when on disk)<br>
+                 * 17 bits year*13+month (year 0-9999, month 0-12)<br>
+                 * 5 bits day (0-31)<br>
+                 * 5 bits hour (0-23)<br>
+                 * 6 bits minute (0-59)<br>
+                 * 6 bits second (0-59)<br>
+                 * 24 bits microseconds (0-999999)<br>
+                 * Total: 64 bits = 8 bytes SYYYYYYY.YYYYYYYY.YYdddddh
+                 * .hhhhmmmm.mmssssss.ffffffff.ffffffff.ffffffff
+                 */
+                long i64 = BigEndianConversion.convertNBytesToLong(row, rowPos,
+                        5) - 0x8000000000L;
 
+                // Let's check for zero date
+                if (i64 == 0)
+                {
+                    value.setValue(Integer.valueOf(0));
+                    if (spec != null)
+                        spec.setType(java.sql.Types.TIMESTAMP);
+                    return 8;
+                }
+
+                logger.warn("Datetime2 as int is : " + i64);
+                long currentValue = (i64 >> 22);
+                int year = (int) (currentValue / 13);
+                int month = (int) (currentValue % 13);
+
+                long previousValue = currentValue;
+                currentValue = i64 >> 17;
+                int day = (int) (currentValue - (previousValue << 5));
+                logger.warn("Date " + day + "/" + month + "/" + year);
+
+                previousValue = currentValue;
+                currentValue = (i64 >> 12);
+
+                int hour = (int) (currentValue - (previousValue << 5));
+
+                previousValue = currentValue;
+                currentValue = (i64 >> 6);
+
+                int minute = (int) (currentValue - (previousValue << 6));
+
+                previousValue = currentValue;
+                currentValue = i64;
+
+                int seconds = (int) (currentValue - (previousValue << 6));
+                logger.warn("Time " + hour + ":" + minute + ":" + seconds);
+
+                // construct timestamp from time components
+                java.sql.Timestamp ts = null;
+
+                Calendar cal = Calendar.getInstance();
+                logger.warn("Timezone is " + cal.getTimeZone().getDisplayName());
+
+                // Month value is 0-based. e.g., 0 for January.
+                cal.set(year, month - 1, day, hour, minute, seconds);
+
+                logger.warn("Time is : " + cal.getTime());
+
+                ts = new Timestamp(cal.getTimeInMillis());
+
+                value.setValue(ts);
+                if (spec != null)
+                    spec.setType(java.sql.Types.TIMESTAMP);
+
+                int secPartsLength = getSecondPartsLength(meta);
+                ts.setNanos(extractMicroseconds(row, rowPos, meta,
+                        secPartsLength));
+
+                return 5 + secPartsLength;
+            }
             case MysqlBinlog.MYSQL_TYPE_TIME :
             {
                 long i32 = LittleEndianConversion.convert3BytesToInt(row,
@@ -774,6 +777,47 @@ public abstract class RowsLogEvent extends LogEvent
                 if (spec != null)
                     spec.setType(java.sql.Types.TIME);
                 return 3;
+            }
+
+            case MysqlBinlog.MYSQL_TYPE_TIME2 :
+            {
+                /**
+                 * 1 bit sign (Used for sign, when on disk)<br>
+                 * 1 bit unused (Reserved for wider hour range, e.g. for
+                 * intervals)<br>
+                 * 10 bit hour (0-836)<br>
+                 * 6 bit minute (0-59)<br>
+                 * 6 bit second (0-59)<br>
+                 * 24 bits microseconds (0-999999)<br>
+                 * Total: 48 bits = 6 bytes
+                 * Suhhhhhh.hhhhmmmm.mmssssss.ffffffff.ffffffff.ffffffff
+                 */
+                long i32 = (BigEndianConversion.convert3BytesToInt(row, rowPos) - 0x800000L) & 0xBFFFFFL;
+
+                long currentValue = (i32 >> 12);
+                int hours = (int) currentValue;
+
+                long previousValue = currentValue;
+                currentValue = i32 >> 6;
+                int minutes = (int) (currentValue - (previousValue << 6));
+
+                previousValue = currentValue;
+                currentValue = i32;
+                int seconds = (int) (currentValue - (previousValue << 6));
+
+                Time time = java.sql.Time.valueOf(hours + ":" + minutes + ":"
+                        + seconds);
+
+                Timestamp tsVal = new java.sql.Timestamp(time.getTime());
+                value.setValue(tsVal);
+
+                int secPartsLength = getSecondPartsLength(meta);
+                tsVal.setNanos(extractMicroseconds(row, rowPos, meta,
+                        secPartsLength));
+
+                if (spec != null)
+                    spec.setType(java.sql.Types.TIME);
+                return 3 + secPartsLength;
             }
 
             case MysqlBinlog.MYSQL_TYPE_DATE :
@@ -970,6 +1014,28 @@ public abstract class RowsLogEvent extends LogEvent
                 throw new MySQLExtractException("unknown data type " + type);
             }
         }
+    }
+
+    private int extractMicroseconds(byte[] row, int rowPos, int meta,
+            int secPartsLength)
+    {
+        if (meta > 0)
+        {
+            // Extract second parts
+
+            int pow = (int) Math.pow(10, (9 - meta));
+            int secVal = BigEndianConversion.convertNBytesToInt(row,
+                    rowPos + 4, secPartsLength) * pow;
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Reading second parts : " + secPartsLength
+                        + " bytes.");
+                logger.debug(hexdump(row, rowPos + 4, secPartsLength));
+                logger.debug("value = 0." + secVal);
+            }
+            return secVal;
+        }
+        return 0;
     }
 
     private int getSecondPartsLength(int meta)

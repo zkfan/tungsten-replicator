@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2009-2010 Continuent Inc.
+ * Copyright (C) 2009-2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -196,7 +196,6 @@ public class QueryLogEvent extends LogEvent
 
         if (eventLength < commonHeaderLength + postHeaderLength)
         {
-            logger.warn("query event length is too short");
             throw new MySQLExtractException("too short query event");
         }
 
@@ -369,26 +368,7 @@ public class QueryLogEvent extends LogEvent
                     queryLength);
         }
 
-        if (descriptionEvent.useChecksum())
-        {
-            long checksum = MysqlBinlog.getChecksum(
-                    descriptionEvent.getChecksumAlgo(), buffer, 0, eventLength);
-            if (checksum > -1)
-                try
-                {
-                    if (checksum != LittleEndianConversion.convert4BytesToLong(
-                            buffer, eventLength))
-                    {
-                        logger.warn("QueryLogEvent : checksums do not match - event may be corrupted");
-                    }
-                    else if (logger.isDebugEnabled())
-                        logger.debug("QueryLogEvent : checksums match");
-
-                }
-                catch (IOException ignore)
-                {
-                }
-        }
+        doChecksum(buffer, eventLength, descriptionEvent);
 
     }
 
