@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2009 Continuent Inc.
+ * Copyright (C) 2009-2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,12 +22,9 @@
 
 package com.continuent.tungsten.replicator.extractor.mysql;
 
-import java.io.IOException;
-
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.extractor.mysql.conversion.LittleEndianConversion;
 
 /**
  * @author <a href="mailto:seppo.jaakola@continuent.com">Seppo Jaakola</a>
@@ -39,17 +36,16 @@ public class RotateLogEvent extends LogEvent
     /**
      * Fixed data part:
      * <ul>
-     * <li>8 bytes. The position of the first event in the next log file.
-     * Always contains the number 4 (meaning the next event starts at position 4
-     * in the next binary log). This field is not present in v1; presumably the
-     * value is assumed to be 4.</li>
+     * <li>8 bytes. The position of the first event in the next log file. Always
+     * contains the number 4 (meaning the next event starts at position 4 in the
+     * next binary log). This field is not present in v1; presumably the value
+     * is assumed to be 4.</li>
      * </ul>
      * <p>
      * Variable data part:
      * <ul>
-     * <li>The name of the next binary log. The filename is not
-     * null-terminated. Its length is the event size minus the size of the fixed
-     * parts. </li>
+     * <li>The name of the next binary log. The filename is not null-terminated.
+     * Its length is the event size minus the size of the fixed parts.</li>
      * </ul>
      * Source : http://forge.mysql.com/wiki/MySQL_Internals_Binary_Log
      */
@@ -66,16 +62,15 @@ public class RotateLogEvent extends LogEvent
     /**
      * Creates a new <code>Rotate_log_event</code> object read normally from
      * log.
-     * @throws ReplicatorException 
+     * 
+     * @throws ReplicatorException
      */
     public RotateLogEvent(byte[] buffer, int eventLength,
-            FormatDescriptionLogEvent descriptionEvent) throws ReplicatorException
+            FormatDescriptionLogEvent descriptionEvent)
+            throws ReplicatorException
     {
         super(buffer, descriptionEvent, MysqlBinlog.START_EVENT_V3);
-        
-        logger.warn("ROTATE EVENT extraction");
-        
-        
+
         type = MysqlBinlog.ROTATE_EVENT;
 
         int headerSize = descriptionEvent.commonHeaderLength;
@@ -87,49 +82,29 @@ public class RotateLogEvent extends LogEvent
             throw new MySQLExtractException("Rotate event length is too short");
         }
 
-
-        
         filenameLength = eventLength - filenameOffset;
 
-        if(descriptionEvent.useChecksum())
+        if (descriptionEvent.useChecksum())
         {
-            logger.warn("Using checksummed events");
             filenameLength -= 4;
         }
-        
+
         if (filenameLength > MysqlBinlog.FN_REFLEN - 1)
         {
             filenameLength = MysqlBinlog.FN_REFLEN - 1;
         }
         filename = new String(buffer, filenameOffset, filenameLength);
 
-        //if (logger.isDebugEnabled())
-            logger.warn("New binlog file is : " + filename);
+        if (logger.isDebugEnabled())
+            logger.debug("New binlog file is : " + filename);
 
-        if (descriptionEvent.useChecksum())
-        {
-            long checksum = MysqlBinlog.getChecksum(descriptionEvent.getChecksumAlgo(), buffer, 0, filenameOffset + filenameLength);
-            try
-            {
-                if (checksum != LittleEndianConversion.convert4BytesToLong(buffer, filenameOffset + filenameLength))
-                {
-                    logger.warn("RotateEvent : checksums do not match - event may be corrupted");
-                }
-                else
-                    logger.warn("RotateEvent : checksums match");
-                    
-            }
-            catch (IOException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        } 
+        doChecksum(buffer, filenameOffset + filenameLength, descriptionEvent);
+
     }
 
     /**
-     * Creates a new <code>Rotate_log_event</code> without log information.
-     * This is used to generate missing log rotation events.
+     * Creates a new <code>Rotate_log_event</code> without log information. This
+     * is used to generate missing log rotation events.
      */
     public RotateLogEvent(String newLogFilename)
     {

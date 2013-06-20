@@ -41,6 +41,13 @@ public class XidLogEvent extends LogEvent
             throws ReplicatorException
     {
         super(buffer, descriptionEvent, MysqlBinlog.XID_EVENT);
+
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         try
         {
             xid = LittleEndianConversion.convert8BytesToLong(buffer,
@@ -50,6 +57,8 @@ public class XidLogEvent extends LogEvent
         {
             throw new MySQLExtractException("could not extract trx id", e);
         }
+
+        doChecksum(buffer, eventLength, descriptionEvent);
     }
 
     public long getXid()

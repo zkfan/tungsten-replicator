@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2009-2010 Continuent Inc.
+ * Copyright (C) 2009-2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.conf.ReplicatorRuntime;
+import com.continuent.tungsten.replicator.extractor.ExtractorException;
 import com.continuent.tungsten.replicator.extractor.mysql.conversion.LittleEndianConversion;
 
 /**
@@ -40,17 +41,17 @@ import com.continuent.tungsten.replicator.extractor.mysql.conversion.LittleEndia
 
 public abstract class LogEvent
 {
-    static Logger       logger              = Logger.getLogger(LogEvent.class);
+    protected static Logger logger              = Logger.getLogger(LogEvent.class);
 
-    protected long      execTime;
-    protected int       type;
-    protected Timestamp when;
-    protected int       serverId;
+    protected long          execTime;
+    protected int           type;
+    protected Timestamp     when;
+    protected int           serverId;
 
-    protected int       logPos;
-    protected int       flags;
+    protected int           logPos;
+    protected int           flags;
 
-    protected boolean   threadSpecificEvent = false;
+    protected boolean       threadSpecificEvent = false;
 
     public LogEvent()
     {
@@ -518,9 +519,37 @@ public abstract class LogEvent
         return dump.toString();
     }
 
+    protected void doChecksum(byte[] buffer, int eventLength,
+            FormatDescriptionLogEvent descriptionEvent)
+            throws ExtractorException
+    {
+        if (descriptionEvent.useChecksum())
+        {
+            long checksum = MysqlBinlog.getChecksum(
+                    descriptionEvent.getChecksumAlgo(), buffer, 0, eventLength);
+            if (checksum > -1)
+                try
+                {
+                    if (checksum != LittleEndianConversion.convert4BytesToLong(
+                            buffer, eventLength))
+                    {
+                        // TODO: This should be a setting
+                        if (true)
+                            throw new ExtractorException(
+                                    "Corrupted event in binlog - checksum do not match");
+                        else
+                            logger.warn("Checksums do not match - event may be corrupted");
+
+                    }
+                }
+                catch (IOException ignore)
+                {
+                }
+        }
+    }
+
     public static String hexdump(byte[] buffer)
     {
-        // TODO Auto-generated method stub
         return hexdump(buffer, 0);
     }
 

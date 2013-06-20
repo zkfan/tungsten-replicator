@@ -57,6 +57,12 @@ public class DeleteFileLogEvent extends LogEvent
         /* Read the fixed data part */
         fixedPartIndex = commonHeaderLength;
 
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         try
         {
             /* 4 Bytes for file ID */
@@ -68,6 +74,9 @@ public class DeleteFileLogEvent extends LogEvent
         {
             logger.error("Rows log event parsing failed : ", e);
         }
+        
+        doChecksum(buffer, eventLength, descriptionEvent);
+
     }
 
     public int getFileID()

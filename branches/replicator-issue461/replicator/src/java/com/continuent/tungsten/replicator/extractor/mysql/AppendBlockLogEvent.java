@@ -55,6 +55,13 @@ public class AppendBlockLogEvent extends LogEvent
                     + " common header length: " + commonHeaderLength
                     + " post header length: " + postHeaderLength);
 
+        
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         /* Read the fixed data part */
         fixedPartIndex = commonHeaderLength;
 
@@ -69,9 +76,11 @@ public class AppendBlockLogEvent extends LogEvent
              * the remaining bytes represent the first bytes of the files to be
              * loaded
              */
-            int dataLength = buffer.length - fixedPartIndex;
+            int dataLength = eventLength - fixedPartIndex;
             fileData = new byte[dataLength];
             System.arraycopy(buffer, fixedPartIndex, fileData, 0, dataLength);
+
+            doChecksum(buffer, eventLength, descriptionEvent);
         }
         catch (IOException e)
         {

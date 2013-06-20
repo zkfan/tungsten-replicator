@@ -71,6 +71,12 @@ public class IntvarLogEvent extends LogEvent
         offset = commonHeaderLength + postHeaderLength
                 + MysqlBinlog.I_TYPE_OFFSET;
 
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         /*
          * Check that the event length is greater than the calculated offset
          */
@@ -91,7 +97,7 @@ public class IntvarLogEvent extends LogEvent
             throw new MySQLExtractException("Intvar extracting failed: " + e);
         }
 
-        return;
+        doChecksum(buffer, eventLength, descriptionEvent);
     }
 
     public int getType()

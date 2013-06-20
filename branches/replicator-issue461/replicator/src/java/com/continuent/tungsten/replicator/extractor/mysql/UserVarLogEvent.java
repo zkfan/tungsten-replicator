@@ -39,8 +39,8 @@ public class UserVarLogEvent extends LogEvent
      * <p>
      * Variable data part:
      * <ul>
-     * <li>4 bytes. the size of the user variable name. </li>
-     * <li>The user variable name. </li>
+     * <li>4 bytes. the size of the user variable name.</li>
+     * <li>The user variable name.</li>
      * <li>1 byte. Non-zero if the variable value is the SQL NULL value, 0
      * otherwise. If this byte is 0, the following parts exist in the event.</li>
      * <li>1 byte. The user variable type. The value corresponds to elements of
@@ -48,15 +48,14 @@ public class UserVarLogEvent extends LogEvent
      * <li>4 bytes. The number of the character set for the user variable
      * (needed for a string variable). The character set number is really a
      * collation number that indicates a character set/collation pair.</li>
-     * <li> 4 bytes. The size of the user variable value (corresponds to member
+     * <li>4 bytes. The size of the user variable value (corresponds to member
      * val_len of class Item_string).</li>
-     * <li> Variable-sized. For a string variable, this is the string. For a
+     * <li>Variable-sized. For a string variable, this is the string. For a
      * float or integer variable, this is its value in 8 bytes.</li>
      * </ul>
      * Source : http://forge.mysql.com/wiki/MySQL_Internals_Binary_Log
      */
-    static Logger            logger         = Logger
-                                                    .getLogger(MySQLExtractor.class);
+    static Logger            logger         = Logger.getLogger(MySQLExtractor.class);
 
     private String           query;
     private int              variableNameLength;
@@ -109,6 +108,12 @@ public class UserVarLogEvent extends LogEvent
                     "user var event length is too short");
         }
 
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         try
         {
             variableNameLength = (int) LittleEndianConversion
@@ -153,7 +158,8 @@ public class UserVarLogEvent extends LogEvent
                         // TODO: use charset info
                         value = "'"
                                 + new String(buffer, variableValueIndex,
-                                        variableValueLength).replaceAll("'", "''") + "'";
+                                        variableValueLength).replaceAll("'",
+                                        "''") + "'";
                         break;
                     case REAL_RESULT :
                         if (variableValueLength != 8)
@@ -172,10 +178,8 @@ public class UserVarLogEvent extends LogEvent
                                 buffer, variableValueIndex);
                         value = String.valueOf(Double.longBitsToDouble(l));
                         if (logger.isDebugEnabled())
-                            logger
-                                    .debug("Real value : long="
-                                            + Long.toHexString(l) + ", double="
-                                            + value);
+                            logger.debug("Real value : long="
+                                    + Long.toHexString(l) + ", double=" + value);
                         break;
                     case INT_RESULT :
                         if (variableValueLength == 8)
@@ -218,12 +222,12 @@ public class UserVarLogEvent extends LogEvent
             query = new String("SET @" + variableName + " := " + value);
             if (logger.isDebugEnabled())
                 logger.debug("USER_VAR_EVENT: " + query);
+
+            doChecksum(buffer, eventLength, descriptionEvent);
         }
         catch (Exception e)
         {
             throw new MySQLExtractException("Unable to read user var event", e);
         }
-
-        return;
     }
 }

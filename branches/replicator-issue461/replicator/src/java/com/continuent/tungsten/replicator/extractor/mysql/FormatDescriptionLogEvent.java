@@ -148,7 +148,8 @@ public class FormatDescriptionLogEvent extends StartLogEvent
 
     public FormatDescriptionLogEvent(int binlogVersion, int checksumAlgo)
     {
-        logger.warn("Using checksum algo :" + checksumAlgo);
+        if (logger.isDebugEnabled())
+            logger.debug("Using checksum algo :" + checksumAlgo);
         this.checksumAlgo = checksumAlgo;
         this.binlogVersion = binlogVersion;
         postHeaderLength = new short[MysqlBinlog.ENUM_END_EVENT_FROM_56];
@@ -232,7 +233,8 @@ public class FormatDescriptionLogEvent extends StartLogEvent
 
     public boolean useChecksum()
     {
-        logger.warn("Checking if checksum in use :" + checksumAlgo);
+        if (logger.isDebugEnabled())
+            logger.debug("Checking if checksum in use :" + checksumAlgo);
         return checksumAlgo > 0 && checksumAlgo < 0xff;
     }
 }

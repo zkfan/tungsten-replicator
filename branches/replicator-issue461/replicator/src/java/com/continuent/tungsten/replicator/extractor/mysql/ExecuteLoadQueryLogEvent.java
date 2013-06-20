@@ -82,6 +82,12 @@ public class ExecuteLoadQueryLogEvent extends QueryLogEvent
             throw new MySQLExtractException("too short query event");
         }
 
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         dataLength = eventLength - (commonHeaderLength + postHeaderLength);
 
         int index = commonHeaderLength;
@@ -174,7 +180,8 @@ public class ExecuteLoadQueryLogEvent extends QueryLogEvent
                 logger.error("failed to use character id: " + charset);
             }
         }
-
+        
+        doChecksum(buffer, eventLength, descriptionEvent);
     }
 
     public int getEndPos()

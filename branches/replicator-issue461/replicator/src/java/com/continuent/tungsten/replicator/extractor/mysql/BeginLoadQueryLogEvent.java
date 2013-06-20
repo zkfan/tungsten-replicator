@@ -58,6 +58,12 @@ public class BeginLoadQueryLogEvent extends LogEvent
         /* Read the fixed data part */
         fixedPartIndex = commonHeaderLength;
 
+        if (descriptionEvent.useChecksum())
+        {
+            // Removing the checksum from the size of the event
+            eventLength -= 4;
+        }
+
         try
         {
             /* 4 Bytes for file ID */
@@ -69,7 +75,7 @@ public class BeginLoadQueryLogEvent extends LogEvent
              * the remaining bytes represent the first bytes of the files to be
              * loaded
              */
-            int dataLength = buffer.length - fixedPartIndex;
+            int dataLength = eventLength - fixedPartIndex;
             fileData = new byte[dataLength];
             System.arraycopy(buffer, fixedPartIndex, fileData, 0, dataLength);
         }
@@ -77,6 +83,8 @@ public class BeginLoadQueryLogEvent extends LogEvent
         {
             logger.error("Rows log event parsing failed : ", e);
         }
+        
+        doChecksum(buffer, eventLength, descriptionEvent);
     }
 
     public int getFileID()
