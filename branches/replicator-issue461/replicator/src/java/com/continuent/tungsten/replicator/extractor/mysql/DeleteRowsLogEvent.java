@@ -93,5 +93,9 @@ public class DeleteRowsLogEvent extends RowsLogEvent
             i += length;
         }
         rowChanges.appendOneRowChange(oneRowChange);
+        
+        // Store options, if any
+        rowChanges.addOption("foreign_key_checks", getForeignKeyChecksFlag());
+        rowChanges.addOption("unique_checks", getUniqueChecksFlag());
     }
 }

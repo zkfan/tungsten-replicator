@@ -121,5 +121,9 @@ public class UpdateRowsLogEvent extends RowsLogEvent
             bufferIndex += length;
         }
         rowChanges.appendOneRowChange(oneRowChange);
+        
+        // Store options, if any
+        rowChanges.addOption("foreign_key_checks", getForeignKeyChecksFlag());
+        rowChanges.addOption("unique_checks", getUniqueChecksFlag());
     }
 }

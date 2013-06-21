@@ -23,10 +23,7 @@
 package com.continuent.tungsten.replicator.dbms;
 
 import java.io.UnsupportedEncodingException;
-import java.util.LinkedList;
-import java.util.List;
 
-import com.continuent.tungsten.replicator.event.ReplOption;
 import com.continuent.tungsten.replicator.event.ReplOptionParams;
 
 /**
@@ -54,7 +51,6 @@ public class StatementData extends DBMSData
     // Transient SQL parsing metata stored here to avoid later reparsing.
     private transient Object   metadata;
 
-    private List<ReplOption>   options           = null;
 
     private int                errorCode;
 
@@ -188,37 +184,6 @@ public class StatementData extends DBMSData
         }
     }
 
-    public void addOption(String name, String value)
-    {
-        if (options == null)
-            options = new LinkedList<ReplOption>();
-        options.add(new ReplOption(name, value));
-    }
-
-    public List<ReplOption> getOptions()
-    {
-        return options;
-    }
-
-    /**
-     * Returns an option value or null if not found.
-     * 
-     * @param name Option name
-     */
-    public String getOption(String name)
-    {
-        if (options == null)
-            return null;
-        else
-        {
-            for (ReplOption replOption : options)
-            {
-                if (name.equals(replOption.getOptionName()))
-                    return replOption.getOptionValue();
-            }
-            return null;
-        }
-    }
 
     /**
      * Returns the Java character set name of the statement as represented in

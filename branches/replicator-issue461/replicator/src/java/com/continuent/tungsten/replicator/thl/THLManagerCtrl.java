@@ -183,7 +183,8 @@ public class THLManagerCtrl
         long minSeqno = diskLog.getMinSeqno();
         long maxSeqno = diskLog.getMaxSeqno();
         String logDir = diskLog.getLogDir();
-        return new InfoHolder(logDir, minSeqno, maxSeqno, maxSeqno - minSeqno, -1);
+        return new InfoHolder(logDir, minSeqno, maxSeqno, maxSeqno - minSeqno,
+                -1);
     }
 
     /**
@@ -590,7 +591,7 @@ public class THLManagerCtrl
     {
         // Output schema name if needed.
         String schema = statement.getDefaultSchema();
-        printOptions(stringBuilder, statement, pureSQL);
+        printOptions(stringBuilder, statement.getOptions(), pureSQL);
         printSchema(stringBuilder, schema, lastSchema, pureSQL);
         String query = statement.getQuery();
 
@@ -610,10 +611,10 @@ public class THLManagerCtrl
     }
 
     private static void printOptions(StringBuilder stringBuilder,
-            StatementData statement, boolean pureSQL)
+            List<ReplOption> optionList, boolean pureSQL)
     {
-        if (statement.getOptions() != null && !pureSQL)
-            println(stringBuilder, "- OPTIONS = " + statement.getOptions());
+        if (optionList != null && !pureSQL)
+            println(stringBuilder, "- OPTIONS = " + optionList);
     }
 
     /**
@@ -631,6 +632,7 @@ public class THLManagerCtrl
             RowChangeData rowChange, String lastSchema, boolean pureSQL,
             int sqlIndex, String charset, boolean hex, long seqno)
     {
+        printOptions(stringBuilder, rowChange.getOptions(), pureSQL);
         if (!pureSQL)
             println(stringBuilder, "- SQL(" + sqlIndex + ") =");
         String schema = null;
@@ -683,7 +685,8 @@ public class THLManagerCtrl
                     {
                         // No values entered, but a list of column specs was
                         // provided (probably by a filter)
-                        StringBuffer buf = new StringBuffer("Column specs only found : ");
+                        StringBuffer buf = new StringBuffer(
+                                "Column specs only found : ");
                         for (int c = 0; c < columns.size(); c++)
                         {
                             OneRowChange.ColumnSpec colSpec = columns.get(c);
@@ -1169,11 +1172,11 @@ public class THLManagerCtrl
      */
     public static class InfoHolder
     {
-        private String logDir               = "";
-        private long minSeqNo               = -1;
-        private long maxSeqNo               = -1;
-        private long eventCount             = -1;
-        private long highestReplicatedEvent = -1;
+        private String logDir                 = "";
+        private long   minSeqNo               = -1;
+        private long   maxSeqNo               = -1;
+        private long   eventCount             = -1;
+        private long   highestReplicatedEvent = -1;
 
         public InfoHolder(String logDir, long minSeqNo, long maxSeqNo,
                 long eventCount, long highestReplicatedEvent)

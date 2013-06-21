@@ -83,10 +83,8 @@ public class WriteRowsLogEvent extends RowsLogEvent
             }
             catch (ReplicatorException e)
             {
-                logger
-                        .error(
-                                "Failure while processing extracted write row event",
-                                e);
+                logger.error(
+                        "Failure while processing extracted write row event", e);
                 throw (e);
             }
             rowIndex++;
@@ -96,6 +94,11 @@ public class WriteRowsLogEvent extends RowsLogEvent
             bufferIndex += length;
         }
         rowChanges.appendOneRowChange(oneRowChange);
+
+        // Store options, if any
+        rowChanges.addOption("foreign_key_checks", getForeignKeyChecksFlag());
+        rowChanges.addOption("unique_checks", getUniqueChecksFlag());
+
     }
 
 }

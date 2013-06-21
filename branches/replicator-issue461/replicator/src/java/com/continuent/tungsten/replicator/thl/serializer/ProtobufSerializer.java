@@ -378,6 +378,24 @@ public class ProtobufSerializer implements Serializer
         ProtobufRowValue.Builder rowBuilder;
         ProtobufColumnVal.Builder valueBuilder;
         ArrayList<OneRowChange> rowChanges = rowEv.getRowChanges();
+        
+        List<ReplOption> options = rowEv.getOptions();
+        if (options != null && !options.isEmpty())
+        {
+            logger.warn("Storing row event options");
+            ProtobufEventOption.Builder optionsBuilder;
+            for (ReplOption replOption : options)
+            {
+                optionsBuilder = ProtobufEventOption.newBuilder();
+                optionsBuilder.setName(replOption.getOptionName());
+                optionsBuilder.setValue(replOption.getOptionValue());
+                rowDataBuilder.addOptions(optionsBuilder);
+            }
+        }
+        else
+            logger.warn("No row event options to store");
+
+        
         trace = new StringBuffer();
         try
         {
@@ -653,6 +671,10 @@ public class ProtobufSerializer implements Serializer
                 {
                     valueBuilder.setIntValue(0);
                 }
+                else if (value instanceof Long)
+                {
+                    valueBuilder.setLongValue((Long) value);
+                }
                 else
                 {
                     long time = ((Timestamp) value).getTime();
@@ -666,7 +688,12 @@ public class ProtobufSerializer implements Serializer
                 valueBuilder.setType(Type.TIMESTAMP);
                 break;
             case Types.TIME :
-                long time = ((Time) value).getTime();
+                long time = 0;
+                if (value instanceof Time)
+                    time = ((Time) value).getTime();
+                else if (value instanceof Timestamp)
+                    time = ((Timestamp) value).getTime();
+
                 if (logger.isDebugEnabled())
                 {
                     trace.append(" / ");
@@ -747,7 +774,7 @@ public class ProtobufSerializer implements Serializer
                 // CLOB
                 if (value instanceof Clob)
                 {
-                    valueBuilder.setStringValue(((Clob) value).toString());                    
+                    valueBuilder.setStringValue(((Clob) value).toString());
                 }
                 else
                     valueBuilder.setStringValue((String) value);
@@ -844,6 +871,12 @@ public class ProtobufSerializer implements Serializer
             data.appendOneRowChange(rowChange);
         }
 
+        for (ProtobufEventOption rowsDataOption : rows.getOptionsList())
+        {
+            logger.warn("Reading row event options " + rowsDataOption.getName());
+            data.addOption(rowsDataOption.getName(), rowsDataOption.getValue());
+        }
+
         return data;
     }
 
@@ -870,7 +903,9 @@ public class ProtobufSerializer implements Serializer
                 return columnVal.getStringValue();
             case TIMESTAMP :
                 if (columnVal.hasLongValue())
+                {
                     return new Timestamp(columnVal.getLongValue());
+                }
                 else if (columnVal.hasIntValue())
                     return Integer.valueOf(0);
                 break;

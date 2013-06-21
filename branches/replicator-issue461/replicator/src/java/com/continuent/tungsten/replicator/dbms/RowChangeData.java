@@ -24,57 +24,58 @@ package com.continuent.tungsten.replicator.dbms;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.continuent.tungsten.replicator.event.ReplOption;
 
 /**
- * This class defines a set of one or more row changes. 
+ * This class defines a set of one or more row changes.
  * 
  * @author <a href="mailto:seppo.jaakola@continuent.com">Seppo Jaakola</a>
  * @version 1.0
  */
 public class RowChangeData extends DBMSData
 {
-	public enum ActionType {
-		INSERT, DELETE, UPDATE
-	}
+    public enum ActionType
+    {
+        INSERT, DELETE, UPDATE
+    }
 
-	private static final long serialVersionUID = 1L;
-	private ArrayList<OneRowChange> rowChanges;
-	private LinkedList<ReplOption> options = new LinkedList<ReplOption>();
-	
+    private static final long       serialVersionUID = 1L;
+    private ArrayList<OneRowChange> rowChanges;
+
     /**
-     * 
      * Creates a new <code>RowChangeData</code> object
-     * 
      */
     public RowChangeData()
     {
-    	super();
-    	rowChanges = new ArrayList<OneRowChange>();
+        super();
+        rowChanges = new ArrayList<OneRowChange>();
     }
 
-	public ArrayList<OneRowChange> getRowChanges() {
-		return rowChanges;
-	}
+    public ArrayList<OneRowChange> getRowChanges()
+    {
+        return rowChanges;
+    }
 
-	public void setRowChanges(ArrayList<OneRowChange> rowChanges) {
-		this.rowChanges = rowChanges;
-	}
+    public void setRowChanges(ArrayList<OneRowChange> rowChanges)
+    {
+        this.rowChanges = rowChanges;
+    }
 
-	public void appendOneRowChange(OneRowChange rowChange) {
-		this.rowChanges.add(rowChange);
-	}
+    public void appendOneRowChange(OneRowChange rowChange)
+    {
+        this.rowChanges.add(rowChange);
+    }
 
     public void addOptions(LinkedList<ReplOption> savedOptions)
     {
         this.options.addAll(savedOptions);
     }
 
-    public LinkedList<ReplOption> getOptions()
+    public List<ReplOption> getOptions()
     {
         return options;
     }
-    
 
 }

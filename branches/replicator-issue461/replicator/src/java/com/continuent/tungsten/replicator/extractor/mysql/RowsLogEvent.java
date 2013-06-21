@@ -90,7 +90,7 @@ public abstract class RowsLogEvent extends LogEvent
      * </ul>
      * Source : http://forge.mysql.com/wiki/MySQL_Internals_Binary_Log
      */
-    static Logger                       logger           = Logger.getLogger(RowsLogEvent.class);
+    static Logger                       logger               = Logger.getLogger(RowsLogEvent.class);
 
     private long                        tableId;
 
@@ -110,7 +110,10 @@ public abstract class RowsLogEvent extends LogEvent
 
     protected boolean                   useBytesForString;
 
-    protected FormatDescriptionLogEvent descriptionEvent = null;
+    protected FormatDescriptionLogEvent descriptionEvent     = null;
+
+    private boolean                     flagForeignKeyChecks = true;
+    private boolean                     flagUniqueChecks     = true;
 
     public RowsLogEvent(byte[] buffer, int eventLength,
             FormatDescriptionLogEvent descriptionEvent, int eventType,
@@ -166,6 +169,7 @@ public abstract class RowsLogEvent extends LogEvent
              * Next 2 bytes are reserved for future use : no need to process
              * them for now.
              */
+            readSessionVariables(buffer, fixedPartIndex);
 
             /* Read the variable data part of the event */
             int variableStartIndex = commonHeaderLength + postHeaderLength;
@@ -719,7 +723,6 @@ public abstract class RowsLogEvent extends LogEvent
                     return 8;
                 }
 
-                logger.warn("Datetime2 as int is : " + i64);
                 long currentValue = (i64 >> 22);
                 int year = (int) (currentValue / 13);
                 int month = (int) (currentValue % 13);
@@ -727,7 +730,6 @@ public abstract class RowsLogEvent extends LogEvent
                 long previousValue = currentValue;
                 currentValue = i64 >> 17;
                 int day = (int) (currentValue - (previousValue << 5));
-                logger.warn("Date " + day + "/" + month + "/" + year);
 
                 previousValue = currentValue;
                 currentValue = (i64 >> 12);
@@ -1190,4 +1192,47 @@ public abstract class RowsLogEvent extends LogEvent
         return rowPos - startIndex;
     }
 
+    private void readSessionVariables(byte[] buffer, int pos)
+            throws IOException
+    {
+        String sessionVariables;
+        int flags;
+
+        final int OPTION_NO_FOREIGN_KEY_CHECKS = 1 << 1;
+        final int OPTION_RELAXED_UNIQUE_CHECKS = 1 << 2;
+
+        flags = LittleEndianConversion.convert2BytesToInt(buffer, pos);
+
+        flagForeignKeyChecks = (flags & OPTION_NO_FOREIGN_KEY_CHECKS) != OPTION_NO_FOREIGN_KEY_CHECKS;
+        flagUniqueChecks = (flags & OPTION_RELAXED_UNIQUE_CHECKS) != OPTION_RELAXED_UNIQUE_CHECKS;
+
+        sessionVariables = "set @@session.foreign_key_checks="
+                + (flagForeignKeyChecks ? 1 : 0) + ", @@session.unique_checks="
+                + (flagUniqueChecks ? 1 : 0);
+
+        if (logger.isDebugEnabled())
+        {
+            logger.debug(sessionVariables);
+        }
+    }
+
+    /**
+     * Returns the flagForeignKeyChecks value.
+     * 
+     * @return Returns the flagForeignKeyChecks.
+     */
+    public String getForeignKeyChecksFlag()
+    {
+        return (flagForeignKeyChecks ? "1" : "0");
+    }
+
+    /**
+     * Returns the flagUniqueChecks value.
+     * 
+     * @return Returns the flagUniqueChecks.
+     */
+    public String getUniqueChecksFlag()
+    {
+        return (flagUniqueChecks ? "1" : "0");
+    }
 }
