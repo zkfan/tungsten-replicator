@@ -11,6 +11,7 @@ replicator.serviceRMIPortStart=10600
 
 # RMI port to use for advertising JMX services
 replicator.rmi_port=<%= ENV['OPENSHIFT_TUNGSTEN_REPL_RMI_PORT'] %>
+replicator.rmi_host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 
 # Comma-separate list of replicator service names.  Each replicator 
 # service must have a corresponding static-<hostname>.<svcname>.properties file.  
@@ -32,9 +33,9 @@ replicator.resourceJdbcDriver=com.mysql.jdbc.Driver
 replicator.resourceVendor=mysql
 replicator.resourceLogPattern=$serviceFacet.logPattern$
 replicator.resourceLogDir=$serviceFacet.logDir$
-replicator.resourcePort=@{APPLIER.REPL_DBPORT}
+replicator.resourcePort=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
 replicator.resourceDiskLogDir=$serviceFacet.diskLogDir$ 
-replicator.resourceDataServerHost=@{HOST.HOST}
+replicator.resourceDataServerHost=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 
 
 

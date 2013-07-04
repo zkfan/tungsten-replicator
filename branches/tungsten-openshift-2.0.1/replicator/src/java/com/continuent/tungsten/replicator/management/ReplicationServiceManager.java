@@ -714,6 +714,7 @@ public class ReplicationServiceManager
      * Returns the hostname to be used to bind ports for RMI use.
      */
     private static String getHostName(TungstenProperties properties)
+            throws ReplicatorException
     {
         String defaultHost = properties.getString(ReplicatorConf.RMI_HOST);
         String hostName = System.getProperty(ReplicatorConf.RMI_HOST,
@@ -721,17 +722,12 @@ public class ReplicationServiceManager
         // No value provided, retrieve from environment.
         if (hostName == null)
         {
-            try
-            {
-                // Get hostname.
-                InetAddress addr = InetAddress.getLocalHost();
-                hostName = addr.getHostName();
-            }
-            catch (UnknownHostException e)
-            {
-                logger.info("Exception when trying to get the host name from the environment, reason="
-                        + e);
-            }
+            throw new ReplicatorException(
+                    String.format(
+                            "Unable to determine the host name. "
+                                    + "\nYou must provide a value for the property %s in your replicator configuration"
+                                    + "\nor as a system property when starting the replicator.",
+                            ReplicatorConf.RMI_HOST));
         }
         return hostName;
     }

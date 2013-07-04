@@ -131,8 +131,8 @@ replicator.vipInterface=eth0:0
 replicator.vipAddress=192.168.0.1
 replicator.resourceLogPattern=mysql-bin
 replicator.resourceLogDir=<%= ENV['OPENSHIFT_TUNGSTEN_DIR'] %>/opt/continuent/log
-replicator.resourcePort=${replicator.global.db.port}
-replicator.resourceDataServerHost=${replicator.global.db.host}
+replicator.resourcePort=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
+replicator.resourceDataServerHost=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 
 ##########################
 # OPEN REPLICATOR PLUGIN #
