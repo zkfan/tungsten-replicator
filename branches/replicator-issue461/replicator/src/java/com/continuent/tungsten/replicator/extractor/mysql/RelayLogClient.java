@@ -32,7 +32,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
@@ -85,6 +87,7 @@ public class RelayLogClient
     private Connection                conn;
     private InputStream               input        = null;
     private OutputStream              output       = null;
+    private String                    checksum     = null;
 
     /** Create new relay log client instance. */
     public RelayLogClient()
@@ -367,7 +370,41 @@ public class RelayLogClient
             }
         }
 
-        // Ask for binlog data.  
+        Statement statement = null;
+        try
+        {
+            // Tell master we are checksum aware
+            statement = conn.createStatement();
+            statement
+                    .executeUpdate("SET @master_binlog_checksum= @@global.binlog_checksum");
+
+            // And check whether master is going to send checksum events
+            ResultSet rs = statement
+                    .executeQuery("SELECT @@binlog_checksum as checksum");
+
+            if (rs.next())
+            {
+                checksum = rs.getString("checksum");
+                logger.info("Master binlog is checksummed with : " + checksum);
+            }
+            rs.close();
+        }
+        catch (SQLException e1)
+        {
+        }
+        finally
+        {
+            if (statement != null)
+                try
+                {
+                    statement.close();
+                }
+                catch (SQLException e)
+                {
+                }
+        }
+
+        // Ask for binlog data.
         logger.info("Binlog read timeout set to " + readTimeout + " seconds");
         try
         {
@@ -541,7 +578,14 @@ public class RelayLogClient
         {
             // Store ROTATE_EVENT data so that we open up a new binlog event.
             offset = packet.getLong();
-            binlog = packet.getString();
+            if (checksum != null && !checksum.equalsIgnoreCase("NONE"))
+            {
+                binlog = packet.getString(packet.getRemainingBytes() - 4);
+            }
+            else
+            {
+                binlog = packet.getString();
+            }
 
             if (logger.isDebugEnabled())
             {
