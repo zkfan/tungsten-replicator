@@ -618,7 +618,8 @@ public class TungstenProperties implements Serializable
                 {
                     throw new PropertyException(
                             "Unable to translate property value: key=" + key
-                                    + " value = " + value, e);
+                                    + " value = " + value + " Exception is: "
+                                    + e.getLocalizedMessage(), e);
                 }
             }
             // Special storage methods:
