@@ -82,8 +82,7 @@ fi
 #fi
 
 # Uncomment to debug replicator VM. 
-#REPLICATOR_JVMDEBUG_PORT=54002
-#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$REPLICATOR_JVMDEBUG_PORT"
+#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${OPENSHIFT_TUNGSTEN_DB_HOST}:${OPENSHIFT_TUNGSTEN_DEBUG}"
 
 # Set JMX remote debugging. 
 if [ -f $RPHOME/conf/jmx.properties ]; then
@@ -91,9 +90,7 @@ if [ -f $RPHOME/conf/jmx.properties ]; then
 fi
 
 # Start nohup-ed Java process. 
-#nohup 
-$JAVA -cp $CP $JMX_OPTIONS -Dreplicator.home.dir=$RPHOME $JVM_OPTIONS $RP_MGR_NAME $* 
-#>> $REPLICATOR_LOG_DIR/trep.out 2>&1 &
+nohup $JAVA -cp $CP $JMX_OPTIONS -Dreplicator.home.dir=$RPHOME $JVM_OPTIONS $RP_MGR_NAME $* >> $REPLICATOR_LOG_DIR/trep.out 2>&1 &
 
 # Fill out PID file and print message. 
 echo $! > $RPHOME/var/trep.pid
