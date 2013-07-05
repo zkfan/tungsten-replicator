@@ -440,7 +440,7 @@ public abstract class RowsLogEvent extends LogEvent
         }
 
         if (logger.isDebugEnabled())
-            logger.debug("Handling type " + type);
+            logger.debug("Handling type " + type + " - meta = " + meta);
         switch (type)
         {
             case MysqlBinlog.MYSQL_TYPE_LONG :
@@ -649,6 +649,7 @@ public abstract class RowsLogEvent extends LogEvent
 
                     value.setValue(tsVal);
                     secPartsLength = getSecondPartsLength(meta);
+                    rowPos += 4;
                     tsVal.setNanos(extractMicroseconds(row, rowPos, meta,
                             secPartsLength));
                 }
@@ -765,6 +766,7 @@ public abstract class RowsLogEvent extends LogEvent
                     spec.setType(java.sql.Types.TIMESTAMP);
 
                 int secPartsLength = getSecondPartsLength(meta);
+                rowPos += 5;
                 ts.setNanos(extractMicroseconds(row, rowPos, meta,
                         secPartsLength));
 
@@ -794,6 +796,9 @@ public abstract class RowsLogEvent extends LogEvent
                  * Total: 48 bits = 6 bytes
                  * Suhhhhhh.hhhhmmmm.mmssssss.ffffffff.ffffffff.ffffffff
                  */
+                if (logger.isDebugEnabled())
+                    logger.debug("Extracting TIME2 from position " + rowPos
+                            + " : " + hexdump(row, rowPos, 3));
                 long i32 = (BigEndianConversion.convert3BytesToInt(row, rowPos) - 0x800000L) & 0xBFFFFFL;
 
                 long currentValue = (i32 >> 12);
@@ -814,8 +819,10 @@ public abstract class RowsLogEvent extends LogEvent
                 value.setValue(tsVal);
 
                 int secPartsLength = getSecondPartsLength(meta);
-                tsVal.setNanos(extractMicroseconds(row, rowPos, meta,
-                        secPartsLength));
+                rowPos += 3;
+                int microseconds = extractMicroseconds(row, rowPos, meta,
+                        secPartsLength);
+                tsVal.setNanos(microseconds);
 
                 if (spec != null)
                     spec.setType(java.sql.Types.TIME);
@@ -1025,14 +1032,15 @@ public abstract class RowsLogEvent extends LogEvent
         {
             // Extract second parts
 
-            int pow = (int) Math.pow(10, (9 - meta));
-            int secVal = BigEndianConversion.convertNBytesToInt(row,
-                    rowPos + 4, secPartsLength) * pow;
+            int pow = (int) Math.pow(10, (8 - meta));
+            int readValue = BigEndianConversion.convertNBytesToInt(row, rowPos,
+                    secPartsLength);
+            int secVal = readValue * pow;
             if (logger.isDebugEnabled())
             {
                 logger.debug("Reading second parts : " + secPartsLength
                         + " bytes.");
-                logger.debug(hexdump(row, rowPos + 4, secPartsLength));
+                logger.debug(hexdump(row, rowPos, secPartsLength));
                 logger.debug("value = 0." + secVal);
             }
             return secVal;
