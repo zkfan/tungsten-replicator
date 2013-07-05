@@ -49,8 +49,7 @@ import com.continuent.tungsten.replicator.util.AtomicCounter;
  */
 public class Server implements Runnable
 {
-    private static Logger                         logger      = Logger
-                                                                      .getLogger(Server.class);
+    private static Logger                         logger      = Logger.getLogger(Server.class);
     private PluginContext                         context;
     private Thread                                thd;
     private THL                                   thl;
@@ -82,8 +81,10 @@ public class Server implements Runnable
         }
         catch (URISyntaxException e)
         {
-            throw new THLException("Malformed URI: " + uriString);
+            throw new THLException("Malformed URI: \'" + uriString + "\' : "
+                    + e.getLocalizedMessage());
         }
+
         String protocol = uri.getScheme();
         if (protocol.equals(THL.URI_SCHEME) == false)
         {
@@ -153,8 +154,7 @@ public class Server implements Runnable
                 }
                 catch (InterruptedException e)
                 {
-                    logger
-                            .warn("Connector handler close interrupted unexpectedly");
+                    logger.warn("Connector handler close interrupted unexpectedly");
                 }
                 catch (Throwable t)
                 {
@@ -268,5 +268,4 @@ public class Server implements Runnable
         }
     }
 
-} 
-
+}
