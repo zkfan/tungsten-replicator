@@ -22,6 +22,7 @@
 package com.continuent.tungsten.common.security;
 
 import java.io.File;
+import java.io.Serializable;
 import java.text.MessageFormat;
 
 import org.apache.log4j.Logger;
@@ -39,8 +40,12 @@ import com.continuent.tungsten.common.utils.FileUtils;
  * @author <a href="mailto:ludovic.launer@continuent.com">Ludovic Launer</a>
  * @version 1.0
  */
-public final class AuthenticationInfo
+public final class AuthenticationInfo implements Serializable
 {
+    /**
+     * 
+     */
+    private static final long   serialVersionUID               = 1L;
     private static final Logger logger                         = Logger.getLogger(AuthenticationInfo.class);
     private final AUTH_USAGE    authUsage;
     private String              parentPropertiesFileLocation    = null;    // Location of the file from which this was built

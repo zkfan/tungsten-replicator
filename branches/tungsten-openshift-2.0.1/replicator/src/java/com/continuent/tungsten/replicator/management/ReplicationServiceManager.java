@@ -52,6 +52,7 @@ import com.continuent.tungsten.common.security.AuthenticationInfo;
 import com.continuent.tungsten.common.security.SecurityHelper;
 import com.continuent.tungsten.common.utils.CLUtils;
 import com.continuent.tungsten.common.utils.ManifestParser;
+import com.continuent.tungsten.common.utils.SerializationDebuggingUtils;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.conf.PropertiesManager;
 import com.continuent.tungsten.replicator.conf.ReplicatorConf;
@@ -79,6 +80,8 @@ public class ReplicationServiceManager
     private int                                         masterListenPortMax   = masterListenPortStart;
 
     private int                                         managerRMIPort        = -1;
+
+    private JmxManager                                  jmxManager            = null;
 
     private static final String                         CONFIG_FILE_PREFIX    = "static-";
     private static final String                         CONFIG_FILE_SUFFIX    = ".properties";
@@ -127,8 +130,9 @@ public class ReplicationServiceManager
                 ReplicatorConf.RMI_DEFAULT_PORT, false);
         String rmiHost = getHostName(serviceProps);
 
-        JmxManager jmxManager = new JmxManager(rmiHost, managerRMIPort,
+        jmxManager = new JmxManager(rmiHost, managerRMIPort,
                 ReplicatorConf.RMI_DEFAULT_SERVICE_NAME, jmxProperties);
+
         jmxManager.start();
 
         // Make sure we have configurations for the replicators to work with.
@@ -868,7 +872,7 @@ public class ReplicationServiceManager
             String serviceName, int rmiPort) throws Exception
     {
 
-        JMXConnector connection = JmxManager.getRMIConnector(
+        JMXConnector connection = jmxManager.getRMIConnector(
                 JmxManager.getHostName(), rmiPort, serviceName);
 
         // Fetch MBean with service name.

@@ -89,6 +89,7 @@ public class OpenReplicatorManagerCtrl
     private boolean                        verbose                        = false;
     private boolean                        expectLostConnection           = false;
     private ArgvIterator                   argvIterator;
+    private JmxManager                     jmxManager                     = null;
     private JMXConnector                   conn                           = null;
     private ReplicationServiceManagerMBean serviceManagerMBean            = null;
     private OpenReplicatorManagerMBean     openReplicatorMBean            = null;
@@ -188,7 +189,8 @@ public class OpenReplicatorManagerCtrl
     public void go()
     {
         // Set defaults for properties.
-        rmiHost = ReplicatorConf.RMI_DEFAULT_HOST;
+        rmiHost = new String(System.getProperty(ReplicatorConf.RMI_HOST,
+                ReplicatorConf.RMI_DEFAULT_HOST)).toString();
         rmiPort = new Integer(System.getProperty(ReplicatorConf.RMI_PORT,
                 ReplicatorConf.RMI_DEFAULT_PORT)).intValue();
         service = null;
@@ -423,7 +425,14 @@ public class OpenReplicatorManagerCtrl
                         ? authenticationInfo.getAsTungstenProperties()
                         : null;
 
-                conn = JmxManager.getRMIConnector(rmiHost, rmiPort,
+                if (jmxManager == null)
+                {
+                    jmxManager = new JmxManager(rmiHost, rmiPort,
+                            ReplicatorConf.RMI_DEFAULT_SERVICE_NAME,
+                            securityProperties);
+                }
+
+                conn = jmxManager.getRMIConnector(rmiHost, rmiPort,
                         ReplicatorConf.RMI_DEFAULT_SERVICE_NAME,
                         securityProperties);
             }
