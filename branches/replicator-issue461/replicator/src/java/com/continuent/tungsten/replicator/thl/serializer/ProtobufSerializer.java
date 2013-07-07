@@ -382,7 +382,6 @@ public class ProtobufSerializer implements Serializer
         List<ReplOption> options = rowEv.getOptions();
         if (options != null && !options.isEmpty())
         {
-            logger.warn("Storing row event options");
             ProtobufEventOption.Builder optionsBuilder;
             for (ReplOption replOption : options)
             {
@@ -392,8 +391,6 @@ public class ProtobufSerializer implements Serializer
                 rowDataBuilder.addOptions(optionsBuilder);
             }
         }
-        else
-            logger.warn("No row event options to store");
 
         
         trace = new StringBuffer();
@@ -873,7 +870,6 @@ public class ProtobufSerializer implements Serializer
 
         for (ProtobufEventOption rowsDataOption : rows.getOptionsList())
         {
-            logger.warn("Reading row event options " + rowsDataOption.getName());
             data.addOption(rowsDataOption.getName(), rowsDataOption.getValue());
         }
 
