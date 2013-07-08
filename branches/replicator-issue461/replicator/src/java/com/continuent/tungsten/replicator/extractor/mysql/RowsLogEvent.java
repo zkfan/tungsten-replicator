@@ -650,7 +650,7 @@ public abstract class RowsLogEvent extends LogEvent
                     value.setValue(tsVal);
                     secPartsLength = getSecondPartsLength(meta);
                     rowPos += 4;
-                    tsVal.setNanos(extractMicroseconds(row, rowPos, meta,
+                    tsVal.setNanos(extractNanoseconds(row, rowPos, meta,
                             secPartsLength));
                 }
 
@@ -757,8 +757,6 @@ public abstract class RowsLogEvent extends LogEvent
                 // Month value is 0-based. e.g., 0 for January.
                 cal.set(year, month - 1, day, hour, minute, seconds);
 
-                logger.warn("Time is : " + cal.getTime());
-
                 ts = new Timestamp(cal.getTimeInMillis());
 
                 value.setValue(ts);
@@ -767,7 +765,7 @@ public abstract class RowsLogEvent extends LogEvent
 
                 int secPartsLength = getSecondPartsLength(meta);
                 rowPos += 5;
-                ts.setNanos(extractMicroseconds(row, rowPos, meta,
+                ts.setNanos(extractNanoseconds(row, rowPos, meta,
                         secPartsLength));
 
                 return 5 + secPartsLength;
@@ -820,9 +818,9 @@ public abstract class RowsLogEvent extends LogEvent
 
                 int secPartsLength = getSecondPartsLength(meta);
                 rowPos += 3;
-                int microseconds = extractMicroseconds(row, rowPos, meta,
+                int nanoseconds = extractNanoseconds(row, rowPos, meta,
                         secPartsLength);
-                tsVal.setNanos(microseconds);
+                tsVal.setNanos(nanoseconds);
 
                 if (spec != null)
                     spec.setType(java.sql.Types.TIME);
@@ -1025,25 +1023,34 @@ public abstract class RowsLogEvent extends LogEvent
         }
     }
 
-    private int extractMicroseconds(byte[] row, int rowPos, int meta,
+    private int extractNanoseconds(byte[] row, int rowPos, int meta,
             int secPartsLength)
     {
         if (meta > 0)
         {
             // Extract second parts
-
-            int pow = (int) Math.pow(10, (8 - meta));
             int readValue = BigEndianConversion.convertNBytesToInt(row, rowPos,
                     secPartsLength);
-            int secVal = readValue * pow;
-            if (logger.isDebugEnabled())
+
+            int i = readValue * 1000;
+            switch (meta)
             {
-                logger.debug("Reading second parts : " + secPartsLength
-                        + " bytes.");
-                logger.debug(hexdump(row, rowPos, secPartsLength));
-                logger.debug("value = 0." + secVal);
+                case 1 :
+                case 2 :
+                    i *= 10000;
+                    break;
+                case 3 :
+                case 4 :
+                    i *= 100;
+                    break;
+                case 5 :
+                case 6 :
+                    break;
+                default :
+                    break;
             }
-            return secVal;
+
+            return i;
         }
         return 0;
     }

@@ -378,7 +378,7 @@ public class ProtobufSerializer implements Serializer
         ProtobufRowValue.Builder rowBuilder;
         ProtobufColumnVal.Builder valueBuilder;
         ArrayList<OneRowChange> rowChanges = rowEv.getRowChanges();
-        
+
         List<ReplOption> options = rowEv.getOptions();
         if (options != null && !options.isEmpty())
         {
@@ -392,7 +392,6 @@ public class ProtobufSerializer implements Serializer
             }
         }
 
-        
         trace = new StringBuffer();
         try
         {
@@ -668,19 +667,20 @@ public class ProtobufSerializer implements Serializer
                 {
                     valueBuilder.setIntValue(0);
                 }
-                else if (value instanceof Long)
-                {
-                    valueBuilder.setLongValue((Long) value);
-                }
                 else
                 {
                     long time = ((Timestamp) value).getTime();
+
+                    int nanos = ((Timestamp) value).getNanos()
+                            - ((int) (time % 1000L) * 1000000);
+
                     if (logger.isDebugEnabled())
                     {
                         trace.append(" / ");
                         trace.append(time);
                     }
                     valueBuilder.setLongValue(time);
+                    valueBuilder.setIntValue(nanos);
                 }
                 valueBuilder.setType(Type.TIMESTAMP);
                 break;
@@ -689,8 +689,13 @@ public class ProtobufSerializer implements Serializer
                 if (value instanceof Time)
                     time = ((Time) value).getTime();
                 else if (value instanceof Timestamp)
+                {
                     time = ((Timestamp) value).getTime();
+                    int nanos = ((Timestamp) value).getNanos()
+                            - ((int) (time % 1000L) * 1000000);
+                    valueBuilder.setIntValue(nanos);
 
+                }
                 if (logger.isDebugEnabled())
                 {
                     trace.append(" / ");
@@ -900,7 +905,12 @@ public class ProtobufSerializer implements Serializer
             case TIMESTAMP :
                 if (columnVal.hasLongValue())
                 {
-                    return new Timestamp(columnVal.getLongValue());
+                    Timestamp timestamp = new Timestamp(
+                            columnVal.getLongValue());
+                    if (columnVal.hasIntValue())
+                        timestamp.setNanos(timestamp.getNanos()
+                                + columnVal.getIntValue());
+                    return timestamp;
                 }
                 else if (columnVal.hasIntValue())
                     return Integer.valueOf(0);
@@ -927,7 +937,10 @@ public class ProtobufSerializer implements Serializer
                 }
                 break;
             case TIME :
-                return new Time(columnVal.getLongValue());
+                Timestamp time = new Timestamp(columnVal.getLongValue());
+                if (columnVal.hasIntValue())
+                    time.setNanos(time.getNanos() + columnVal.getIntValue());
+                return time;
             case FLOAT :
                 return Float.valueOf(columnVal.getFloatValue());
             case DOUBLE :
