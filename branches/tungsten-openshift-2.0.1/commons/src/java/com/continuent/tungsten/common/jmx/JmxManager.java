@@ -34,6 +34,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -162,6 +163,31 @@ public class JmxManager implements NotificationListener, Serializable
                             null, false);
         }
 
+        try
+        {
+            RMISocketFactory currentFactory = RMISocketFactory
+                    .getSocketFactory();
+
+            if (currentFactory != null)
+            {
+                logger.info(String.format("Default RMI Socket Factory is %s",
+                        currentFactory.getClass().getName()));
+            }
+            else
+            {
+                RMISocketFactory.setSocketFactory(new TungstenRMISocketFactory(
+                        host, 9000, 20000));
+            }
+        }
+        catch (IOException io)
+        {
+            logger.warn(
+                    String.format(
+                            "Unable to set the RMISocketFactory: %s\n"
+                                    + "This may lead to an inability for this component to run at all.",
+                            io.getMessage()), io);
+        }
+
     }
 
     /**
@@ -217,28 +243,15 @@ public class JmxManager implements NotificationListener, Serializable
                 logger.info(String.format("Starting RMI registry on %s:%d",
                         host, port));
 
-                RMIClientSocketFactory clientSocketFactory = null;
-                RMIServerSocketFactory serverSocketFactory = null;
 
-                clientSocketFactory = new TungstenClientSocketFactory(host,
-                        port);
-                serverSocketFactory = new TungstenServerSocketFactory(host,
-                        port);
-
-                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
-                        clientSocketFactory);
-                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
-                        serverSocketFactory);
-
-                rmiRegistry = LocateRegistry.createRegistry(port,
-                        clientSocketFactory, serverSocketFactory);
+                rmiRegistry = LocateRegistry.createRegistry(port);
 
             }
             catch (Throwable e)
             {
                 throw new ServerRuntimeException(String.format(
                         "Unable to start RMI registry on %s:%d\n%s", host,
-                        port, e), e);
+                        port, e.toString()), e);
             }
 
         }
@@ -300,6 +313,11 @@ public class JmxManager implements NotificationListener, Serializable
             RMIClientSocketFactory clientSocketFactory = null;
             RMIServerSocketFactory serverSocketFactory = null;
 
+            logger.info(String.format("Starting the connector at %s:%d", host,
+                    beanPort));
+
+            JMXConnectorServer connector = null;
+
             // --- SSL encryption ---
             if (authenticationInfo != null
                     && authenticationInfo.isEncryptionNeeded())
@@ -312,42 +330,48 @@ public class JmxManager implements NotificationListener, Serializable
 
                 clientSocketFactory = new SslRMIClientSocketFactory();
                 serverSocketFactory = new SslRMIServerSocketFactory();
+
+                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
+                        clientSocketFactory);
+                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
+                        serverSocketFactory);
+
+                connector = JMXConnectorServerFactory.newJMXConnectorServer(
+                        address, env, mbs);
+
+                connector.start();
+
             }
             else
             {
-                clientSocketFactory = new TungstenClientSocketFactory(host,
-                        beanPort);
-                serverSocketFactory = new TungstenServerSocketFactory(host,
-                        beanPort);
+                env.put(RMIConnectorServer.JNDI_REBIND_ATTRIBUTE, "true");
+
+                connector = JMXConnectorServerFactory.newJMXConnectorServer(
+                        address, env, mbs);
+
+                connector.start();
             }
 
-            env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
-                    clientSocketFactory);
-            env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
-                    serverSocketFactory);
-
-            env.put(RMIConnectorServer.JNDI_REBIND_ATTRIBUTE, "true");
-
-            logger.info(String.format("Starting the connector at %s:%d", host,
-                    beanPort));
-
-            JMXConnectorServer connector = JMXConnectorServerFactory
-                    .newJMXConnectorServer(address, env, mbs);
-
-            connector.start();
-
-            logger.info(MessageFormat
-                    .format("JMXConnector: security.propoerties={0} \n\t use.authentication={1} \n\t use.tungsten.authenticationRealm.encrypted.password={2} \n\t use.encryption={3}",
-                            (authenticationInfo != null)
-                                    ? authenticationInfo
-                                            .getParentPropertiesFileLocation()
-                                    : "No security.propoerties file found !...",
-                            (authenticationInfo != null) ? authenticationInfo
-                                    .isAuthenticationNeeded() : false,
-                            (authenticationInfo != null) ? authenticationInfo
-                                    .isUseEncryptedPasswords() : false,
-                            (authenticationInfo != null) ? authenticationInfo
-                                    .isEncryptionNeeded() : false));
+            if (logger.isDebugEnabled())
+            {
+                logger.debug(MessageFormat
+                        .format("JMXConnector: security.propoerties={0} \n\t use.authentication={1} \n\t use.tungsten.authenticationRealm.encrypted.password={2} \n\t use.encryption={3}",
+                                (authenticationInfo != null)
+                                        ? authenticationInfo
+                                                .getParentPropertiesFileLocation()
+                                        : "No security.propoerties file found !...",
+                                (authenticationInfo != null)
+                                        ? authenticationInfo
+                                                .isAuthenticationNeeded()
+                                        : false,
+                                (authenticationInfo != null)
+                                        ? authenticationInfo
+                                                .isUseEncryptedPasswords()
+                                        : false,
+                                (authenticationInfo != null)
+                                        ? authenticationInfo
+                                                .isEncryptionNeeded() : false));
+            }
             logger.info(String.format("JMXConnector started at address %s",
                     serviceAddress));
 
@@ -598,19 +622,12 @@ public class JmxManager implements NotificationListener, Serializable
 
                 clientSocketFactory = new SslRMIClientSocketFactory();
                 serverSocketFactory = new SslRMIServerSocketFactory();
-            }
-            else
-            {
-                clientSocketFactory = new TungstenClientSocketFactory(host,
-                        registryPort);
-                serverSocketFactory = new TungstenServerSocketFactory(host,
-                        registryPort);
-            }
 
-            env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
-                    clientSocketFactory);
-            env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
-                    serverSocketFactory);
+                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
+                        clientSocketFactory);
+                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
+                        serverSocketFactory);
+            }
 
             env.put(RMIConnectorServer.JNDI_REBIND_ATTRIBUTE, "true");
 
