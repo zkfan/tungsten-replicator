@@ -90,7 +90,7 @@ if [ -f $RPHOME/conf/jmx.properties ]; then
 fi
 
 # Start nohup-ed Java process. 
-nohup $JAVA -cp $CP $JMX_OPTIONS -Dreplicator.home.dir=$RPHOME $JVM_OPTIONS $RP_MGR_NAME $* >> $REPLICATOR_LOG_DIR/trep.out 2>&1 &
+nohup $JAVA -cp $CP $JMX_OPTIONS -Dreplicator.home.dir=$RPHOME $JVM_OPTIONS $RP_MGR_NAME $* >> $REPLICATOR_LOG_DIR/trepsvc.log 2>&1 &
 
 # Fill out PID file and print message. 
 echo $! > $RPHOME/var/trep.pid

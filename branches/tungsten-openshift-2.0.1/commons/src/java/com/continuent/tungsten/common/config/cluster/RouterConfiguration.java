@@ -107,7 +107,7 @@ public class RouterConfiguration extends ClusterConfiguration
      * If the property is non-null, this is a class that will be loaded tonull;
      * listen for router notifications
      */
-    private String            routerListenerClass               = "com.continuent.tungsten.common.patterns.notification.adaptor.ResourceNotificationListenerStub";
+    private String            routerListenerClass               = null;
 
     private int               notifyPort                        = 10121;
     private String            notifierMonitorClass              = "com.continuent.tungsten.common.patterns.notification.adaptor.ResourceNotifierStub";

@@ -22,13 +22,13 @@ replicator.rmi_host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 # Database connection information. 
 replicator.global.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 replicator.global.db.port=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
-replicator.global.db.user=<%= ENV['OPENSHIFT_TUNGSTEN_DB_USERNAME'] %>
+replicator.global.db.user=<%= ENV['OPENSHIFT_MYSQL_DB_USERNAME'] %>
 replicator.global.db.password=<%= ENV['OPENSHIFT_TUNGSTEN_SYS_PASSWORD'] %>
 
 # Properties for extractors only.  This supports direct piplines.
 replicator.global.extract.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
 replicator.global.extract.db.port=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
-replicator.global.extract.db.user=<%= ENV['OPENSHIFT_TUNGSTEN_DB_USERNAME'] %>
+replicator.global.extract.db.user=<%= ENV['OPENSHIFT_MYSQL_DB_USERNAME'] %>
 replicator.global.extract.db.password=<%= ENV['OPENSHIFT_TUNGSTEN_SYS_PASSWORD'] %>
 
 # Replicator role.  You must specify a value that corresponds to a 
