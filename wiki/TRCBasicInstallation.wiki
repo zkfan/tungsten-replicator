@@ -49,12 +49,12 @@ For example:
 To check if a cluster meets the requirements without installing, after you have set the values for the cookbook (previous section), you can run the following:
 
 {{{
-   $ VALIDATE_ONLY=1  ./cookbook/install_master_slave
+   $  ./cookbook/validate_cluster
 }}}
 If no message is shown after the execution, your cluster is clear. If you want to see all the gory details of the validation, you can run:
 
 {{{
-   $   ./cookbook/validate_cluster
+   $   ./cookbook/install_master_slave
 }}}
 
 == Install a master / slave cluster ==
