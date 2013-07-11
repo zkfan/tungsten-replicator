@@ -39,22 +39,22 @@ The following topologies are supported
   # edit ./cookbook/USER_VALUES.sh
   # Run the command corresponding to the topology you want to install. The command must run from the directory above the cookbook, i.e the directory from where you can access ./tools/tungsten-replicator.
 For example:
-   ./cookbook/install_master_slave.sh
-   ./cookbook/install_all_masters.sh
-   ./cookbook/install_fan_in.sh
-   ./cookbook/install_star.sh
+   ./cookbook/install_master_slave
+   ./cookbook/install_all_masters
+   ./cookbook/install_fan_in
+   ./cookbook/install_star
 
 == Checking if a cluster meets the requirements ==
 
 To check if a cluster meets the requirements without installing, after you have set the values for the cookbook (previous section), you can run the following:
 
 {{{
-   $ VALIDATE_ONLY=1  ./cookbook/install_master_slave.sh
+   $ VALIDATE_ONLY=1  ./cookbook/install_master_slave
 }}}
 If no message is shown after the execution, your cluster is clear. If you want to see all the gory details of the validation, you can run:
 
 {{{
-   $ VERBOSE=1 VALIDATE_ONLY=1  ./cookbook/install_master_slave.sh
+   $   ./cookbook/validate_cluster
 }}}
 
 == Install a master / slave cluster ==
@@ -62,7 +62,7 @@ If no message is shown after the execution, your cluster is clear. If you want t
 [https://lh5.googleusercontent.com/-jgCZbwwB4WE/TfC6Ksv2LiI/AAAAAAAABIQ/Ygpazw8EvEQ/s640/master_slave.png]
 
   # make sure that all the hosts meet the [http://code.google.com/p/tungsten-replicator/wiki/InstallationPreRequisites requirements]
-  # run {{{ $ ./cookbook/install_master_slave.sh}}}
+  # run {{{ $ ./cookbook/install_master_slave}}}
 
  
 This command takes several defaults into account.
