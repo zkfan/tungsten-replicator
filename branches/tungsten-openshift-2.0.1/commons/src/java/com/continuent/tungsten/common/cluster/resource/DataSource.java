@@ -26,7 +26,7 @@ import com.continuent.tungsten.common.patterns.order.Sequence;
 
 @XmlRootElement
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonPropertyOrder(alphabetic=true)
+@JsonPropertyOrder(alphabetic = true)
 public class DataSource extends Resource implements Serializable
 {
     private static final long       serialVersionUID               = 8153881753668230575L;
@@ -271,7 +271,13 @@ public class DataSource extends Resource implements Serializable
                 .trim());
         newDs.setDriver(replicatorProps.getString(
                 Replicator.RESOURCE_JDBC_DRIVER).trim());
-        newDs.setRole(replicatorProps.getString(Replicator.ROLE).toLowerCase());
+
+        String role = replicatorProps.getString(Replicator.ROLE).toLowerCase();
+
+        newDs.setRole(role);
+
+        boolean roleIsDefined = !role.equals(DataSourceRole.undefined
+                .toString());
 
         boolean isStandby = replicatorProps
                 .getBoolean(Replicator.RESOURCE_IS_STANDBY_DATASOURCE);
@@ -282,6 +288,13 @@ public class DataSource extends Resource implements Serializable
             newDs.setIsAvailable(false);
             newDs.setState(ResourceState.OFFLINE);
             newDs.setStandby(true);
+        }
+        else if (!roleIsDefined)
+        {
+            // If the role is undefined, then set it up as offline.
+            newDs.setIsAvailable(false);
+            newDs.setState(ResourceState.OFFLINE);
+            newDs.setStandby(false);
         }
         else
         {

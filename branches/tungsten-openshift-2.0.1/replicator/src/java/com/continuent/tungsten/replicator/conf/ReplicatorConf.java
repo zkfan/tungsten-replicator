@@ -37,6 +37,7 @@ public class ReplicatorConf
     static public final String   ROLE                                  = "replicator.role";
     static public final String   ROLE_MASTER                           = "master";
     static public final String   ROLE_SLAVE                            = "slave";
+    static public final String   ROLE_UNDEFINED                        = "undefined";
 
     /** Whether we are operating normally or in slave takeover mode. */
     static public final String   NATIVE_SLAVE_TAKEOVER                 = "replicator.nativeSlaveTakeover";

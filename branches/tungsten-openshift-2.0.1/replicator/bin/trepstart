@@ -15,11 +15,7 @@
 # Replicator manager class.
 RP_MGR_NAME=com.continuent.tungsten.replicator.management.ReplicationServiceManager
 
-# Find home. 
-cd `dirname $0`
-RPHOME=`cd ..; pwd`
-
-rm -f $RPHOME/var/trep.pid
+RPHOME=${OPENSHIFT_TUNGSTEN_DIR}/opt/continuent/tungsten/tungsten-replicator
 
 # Make sure we don't have a PID file. 
 if [ -f $RPHOME/var/trep.pid ]; then

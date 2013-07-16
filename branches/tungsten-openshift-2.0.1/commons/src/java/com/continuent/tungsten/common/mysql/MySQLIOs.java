@@ -1247,6 +1247,7 @@ public class MySQLIOs
         switch (status)
         {
             case OK :
+            case QUERY_RESULT_FAILED :
                 return ResourceState.ONLINE;
 
             case SOCKET_CONNECT_TIMEOUT :
@@ -1264,7 +1265,6 @@ public class MySQLIOs
             case QUERY_TOO_LARGE :
             case OPEN_FILE_LIMIT_ERROR :
             case SOCKET_NO_IO :
-            case QUERY_RESULT_FAILED :
             case QUERY_EXECUTION_FAILED :
             case MYSQL_ERROR :
             case UNEXPECTED_EXCEPTION :

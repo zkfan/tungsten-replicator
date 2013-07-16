@@ -2682,8 +2682,13 @@ public class OpenReplicatorManager extends NotificationBroadcasterSupport
         // Determine the replicator role, providing a proper exception if the
         // role is not correctly set.
         String roleName = properties.getString(ReplicatorConf.ROLE);
+
+        boolean roleIsUndefined = ReplicatorConf.ROLE_UNDEFINED
+                .equals(roleName);
+
         if (ReplicatorConf.ROLE_MASTER.equals(roleName)
-                || ReplicatorConf.ROLE_SLAVE.equals(roleName))
+                || ReplicatorConf.ROLE_SLAVE.equals(roleName)
+                || roleIsUndefined)
         {
             // OK, do nothing
         }
@@ -2696,7 +2701,7 @@ public class OpenReplicatorManager extends NotificationBroadcasterSupport
             }
             else
             {
-                logger.warn("Setting role to a value other than master or slave: "
+                logger.warn("Setting role to a value other than master, slave or undefined: "
                         + roleName);
             }
         }
@@ -2727,8 +2732,28 @@ public class OpenReplicatorManager extends NotificationBroadcasterSupport
         openReplicator = loadAndConfigurePlugin(ReplicatorConf.OPEN_REPLICATOR,
                 replicatorName);
 
-        // Call configure method.
-        openReplicator.configure(properties);
+        try
+        {
+            // Call configure method.
+            openReplicator.configure(properties);
+        }
+        catch (ReplicatorException r)
+        {
+            /*
+             * We expect to get an exception in the case where the role is
+             * undefined, and if we were asked not to go online automatically,
+             * it's safe to ignore this exception.
+             */
+            if (roleIsUndefined
+                    && properties.getBoolean(ReplicatorConf.AUTO_ENABLE) == false)
+            {
+                logger.warn("Expected exception during configuration: role is currently undefined.  Going offline.");
+            }
+            else
+            {
+                throw r;
+            }
+        }
     }
 
     // Ensure backup manager is initialized.
