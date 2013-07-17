@@ -78,7 +78,7 @@ fi
 #fi
 
 # Uncomment to debug replicator VM. 
-#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${OPENSHIFT_TUNGSTEN_DB_HOST}:${OPENSHIFT_TUNGSTEN_DEBUG}"
+#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${OPENSHIFT_TUNGSTEN_IP}:${OPENSHIFT_TUNGSTEN_DEBUG}"
 
 # Set JMX remote debugging. 
 if [ -f $RPHOME/conf/jmx.properties ]; then

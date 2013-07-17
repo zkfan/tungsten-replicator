@@ -17,19 +17,19 @@
 
 # RMI port to use for advertising JMX services
 replicator.rmi_port=<%= ENV['OPENSHIFT_TUNGSTEN_REPL_RMI_PORT'] %>
-replicator.rmi_host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
+replicator.rmi_host=<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>
 
 # Database connection information. 
-replicator.global.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
+replicator.global.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>
 replicator.global.db.port=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
 replicator.global.db.user=<%= ENV['OPENSHIFT_MYSQL_DB_USERNAME'] %>
-replicator.global.db.password=<%= ENV['OPENSHIFT_TUNGSTEN_SYS_PASSWORD'] %>
+replicator.global.db.password=<%= ENV['OPENSHIFT_MYSQL_DB_PASSWORD'] %>
 
 # Properties for extractors only.  This supports direct piplines.
-replicator.global.extract.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
+replicator.global.extract.db.host=<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>
 replicator.global.extract.db.port=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
 replicator.global.extract.db.user=<%= ENV['OPENSHIFT_MYSQL_DB_USERNAME'] %>
-replicator.global.extract.db.password=<%= ENV['OPENSHIFT_TUNGSTEN_SYS_PASSWORD'] %>
+replicator.global.extract.db.password=<%= ENV['OPENSHIFT_MYSQL_DB_PASSWORD'] %>
 
 # Replicator role.  You must specify a value that corresponds to a 
 # pipeline name like master, slave, direct, etc.  There is no default 
@@ -43,11 +43,11 @@ replicator.role=<%= ENV['TUNGSTEN_REPL_ROLE'] %>
 replicator.nativeSlaveTakeover=<%= ENV['TUNGSTEN_REPL_SVC_NATIVE_SLAVE_TAKEOVER'] %>
 
 # URI to which we connect when this replicator is a slave.   
-replicator.master.connect.uri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>/
+replicator.master.connect.uri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>/
 
 # URI for our listener when we are acting as a master.  Slaves 
 # use this as their connect URI.
-replicator.master.listen.uri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>:<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_LISTEN_PORT'] %>/
+replicator.master.listen.uri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>:<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_LISTEN_PORT'] %>/
 
 # Force replicator to check if THL is in sync with database. 
 # This check is enabled by default. Set the following property 
@@ -65,7 +65,7 @@ replicator.detached=false
 
 # Source ID. This required parameter is used to identify replication
 # event source.  It must be unique for each replicator node.
-replicator.source_id=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
+replicator.source_id=<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>
 
 # Site to which the replicator belongs.
 site.name=default
@@ -136,7 +136,7 @@ replicator.vipAddress=192.168.0.1
 replicator.resourceLogPattern=mysql-bin
 replicator.resourceLogDir=<%= ENV['OPENSHIFT_TUNGSTEN_DIR'] %>/opt/continuent/log
 replicator.resourcePort=<%= ENV['OPENSHIFT_TUNGSTEN_DB_PORT'] %>
-replicator.resourceDataServerHost=<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>
+replicator.resourceDataServerHost=<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>
 
 ##########################
 # OPEN REPLICATOR PLUGIN #
@@ -280,7 +280,7 @@ replicator.thl.protocol.buffer_size=10
 # port for Tungsten configurations.)  Note that this URI must provide
 # a listener that corresponds to the URL in replicator.master.listen.uri, or 
 # slaves may connect to the wrong port. 
-replicator.store.thl.storageListenerUri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_DB_HOST'] %>:<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_LISTEN_PORT'] %>/
+replicator.store.thl.storageListenerUri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>:<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_LISTEN_PORT'] %>/
 
 # The transfer rate between the master and the slave can be improved
 # by setting the following setting to a value greater than 1, which
