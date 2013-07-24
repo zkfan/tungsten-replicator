@@ -1620,6 +1620,13 @@ public class OpenReplicatorManager extends NotificationBroadcasterSupport
         return properties.getString(ReplicatorConf.MASTER_LISTEN_URI);
     }
 
+    @MethodDesc(description = "Gets the current proxy port for the THL listener", usage = "getMasterListenProxyPort")
+    public int getMasterListenProxyPort()
+    {
+        return properties.getInt(ReplicatorConf.MASTER_LISTEN_PROXY_PORT, "-1",
+                false);
+    }
+
     @MethodDesc(description = "Gets the replicator's current role.", usage = "getRole")
     public String getRole()
     {
@@ -1918,6 +1925,9 @@ public class OpenReplicatorManager extends NotificationBroadcasterSupport
                             ReplicatorConf.RESOURCE_PRECEDENCE_DEFAULT, true));
             pluginStatus.put(Replicator.CURRENT_TIME_MILLIS,
                     Long.toString(System.currentTimeMillis()));
+
+            pluginStatus.put(Replicator.MASTER_LISTEN_PROXY_PORT,
+                    String.valueOf(getMasterListenProxyPort()));
 
             if (logger.isDebugEnabled())
                 logger.debug("plugin status: " + pluginStatus.toString());

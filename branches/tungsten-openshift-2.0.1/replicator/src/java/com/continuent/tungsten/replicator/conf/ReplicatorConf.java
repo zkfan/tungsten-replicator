@@ -56,6 +56,13 @@ public class ReplicatorConf
     static public final String   MASTER_LISTEN_URI                     = "replicator.master.listen.uri";
 
     /**
+     * Port that we must connect to in order to get to the replicator behind a
+     * firewall. The replicator will be listening on a local port and external
+     * processes can then connect to that port via this proxy.
+     */
+    static public final String   MASTER_LISTEN_PROXY_PORT              = "replicator.master.listen.proxy.port";
+
+    /**
      * Should the master checks that its THL is in sync with its database before
      * starting. By default, it is turned on
      */

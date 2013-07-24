@@ -88,6 +88,8 @@ public class Replicator extends Resource implements Serializable
     /** URI that slaves should use when connecting to this master. */
     public static final String MASTER_LISTEN_URI              = "masterListenUri";
 
+    public static final String MASTER_LISTEN_PROXY_PORT       = "masterListenProxyPort";
+
     /** Name of the cluster to which this replicator belongs. */
     public static final String CLUSTERNAME                    = "clusterName";
 

@@ -44,6 +44,7 @@ replicator.master.connect.uri=@{REPL_MASTER_URI}
 # URI for our listener when we are acting as a master.  Slaves 
 # use this as their connect URI.
 replicator.master.listen.uri=thl://@{HOST.HOST}:@{REPL_SVC_THL_PORT}/
+replicator.master.listen.proxy.port=-1
 
 # Force replicator to check if THL is in sync with database. 
 # This check is enabled by default. Set the following property 

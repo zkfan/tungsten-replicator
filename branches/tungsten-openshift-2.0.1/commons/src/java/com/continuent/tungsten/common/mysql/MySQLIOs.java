@@ -831,7 +831,7 @@ public class MySQLIOs
 
                     statusAndResult
                             .setObject(STATUS_MESSAGE_KEY, statusMessage);
-                    logger.warn(formatExecStatus(statusAndResult));
+                    //logger.warn(formatExecStatus(statusAndResult));
                     return logAndReturnProperties(statusAndResult);
                 }
 

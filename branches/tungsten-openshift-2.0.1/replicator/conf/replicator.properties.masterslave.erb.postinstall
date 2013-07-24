@@ -49,7 +49,7 @@ replicator.master.connect.uri=
 # URI for our listener when we are acting as a master.  Slaves 
 # use this as their connect URI.
 replicator.master.listen.uri=thl://<%= ENV['OPENSHIFT_TUNGSTEN_IP'] %>:<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_LISTEN_PORT'] %>/
-replicator.master.listen.proxy.port=-1
+replicator.master.listen.proxy.port=<%= ENV['OPENSHIFT_TUNGSTEN_REPL_MASTER_PROXY_PORT'] %>
     
 
 # Force replicator to check if THL is in sync with database. 

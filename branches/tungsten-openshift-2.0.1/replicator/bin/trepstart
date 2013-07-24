@@ -12,16 +12,20 @@
 #   REPLICATOR_PROPERTIES_FILE - Location of replicator properties file
 #   REPLICATOR_RMI_PORT - Replicator RMI port
 
+
 # Replicator manager class.
 RP_MGR_NAME=com.continuent.tungsten.replicator.management.ReplicationServiceManager
 
 RPHOME=${OPENSHIFT_TUNGSTEN_DIR}/opt/continuent/tungsten/tungsten-replicator
 
-# Make sure we don't have a PID file. 
-if [ -f $RPHOME/var/trep.pid ]; then
-  echo "PID file found; is a replicator process already running?"
+PID=`ps aux | grep OpenReplicatorManager | grep -v grep | awk '{print $2}'`
+
+# Make sure we don't have a runnint replicator. 
+if [ "$PID" != "" ]; then
+  echo "Tungsten replicator is currently running"
   exit 1
 fi
+
 
 # Add jars from all directories to class path.
 for jar in $RPHOME/lib/*.jar $RPHOME/lib/lib-ext/*.jar; do
@@ -78,7 +82,7 @@ fi
 #fi
 
 # Uncomment to debug replicator VM. 
-#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${OPENSHIFT_TUNGSTEN_IP}:${OPENSHIFT_TUNGSTEN_DEBUG}"
+#JVM_OPTIONS="${JVM_OPTIONS} -enableassertions -Xdebug -Xnoagent -Djava.compiler=none -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=${OPENSHIFT_TUNGSTEN_IP}:${OPENSHIFT_TUNGSTEN_DEBUG_PORT}"
 
 # Set JMX remote debugging. 
 if [ -f $RPHOME/conf/jmx.properties ]; then
@@ -89,6 +93,5 @@ fi
 nohup $JAVA -cp $CP $JMX_OPTIONS -Dreplicator.home.dir=$RPHOME $JVM_OPTIONS $RP_MGR_NAME $* >> $REPLICATOR_LOG_DIR/trepsvc.log 2>&1 &
 
 # Fill out PID file and print message. 
-echo $! > $RPHOME/var/trep.pid
-PID=`cat $RPHOME/var/trep.pid`
+PID=$!
 echo "Replicator process started [PID=$PID]"
