@@ -69,6 +69,7 @@ public class DataSource extends Resource implements Serializable
      */
     private String                  dataServiceName                = "";
     private String                  host                           = "";
+    private int                     port                           = -1;
     private DataSourceRole          role                           = DataSourceRole.undefined;
     private String                  vendor                         = "";
     private String                  driver                         = "";
@@ -1030,5 +1031,15 @@ public class DataSource extends Resource implements Serializable
                     + (slashIdx != -1 ? slashIdx : remainder.length())
                     + ". Found colonIdx=" + colonIdx + " slashIdx=" + slashIdx);
         }
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(int port)
+    {
+        this.port = port;
     }
 }

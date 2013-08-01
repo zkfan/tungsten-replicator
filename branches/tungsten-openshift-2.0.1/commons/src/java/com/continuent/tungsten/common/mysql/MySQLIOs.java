@@ -831,7 +831,7 @@ public class MySQLIOs
 
                     statusAndResult
                             .setObject(STATUS_MESSAGE_KEY, statusMessage);
-                    //logger.warn(formatExecStatus(statusAndResult));
+                    // logger.warn(formatExecStatus(statusAndResult));
                     return logAndReturnProperties(statusAndResult);
                 }
 
@@ -1036,8 +1036,8 @@ public class MySQLIOs
              * exception here.
              */
             statusMessage = String
-                    .format("Exception while attempting to execute a query on %s:%d\nException=%s",
-                            hostname, port, e);
+                    .format("Exception while attempting to execute a query on %s:%d\nException=%s\nQuery=%s\n",
+                            hostname, port, e, query);
             statusAndResult.setObject(STATUS_KEY,
                     ExecuteQueryStatus.UNEXPECTED_EXCEPTION);
             statusAndResult.setString(STATUS_MESSAGE_KEY, statusMessage);
