@@ -32,7 +32,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import jline.ArgumentCompletor;
@@ -63,6 +65,18 @@ public class CLUtils implements Serializable
     private static final String NEWLINE          = "\n";
 
     private static CLLogLevel   logLevel         = CLLogLevel.normal;
+
+    private static boolean      noAlias          = false;
+
+    public static void setNoAlias(boolean noAlias)
+    {
+        CLUtils.noAlias = noAlias;
+    }
+
+    public static boolean isNoAlias()
+    {
+        return noAlias;
+    }
 
     public static CLLogLevel getLogLevel()
     {
@@ -449,15 +463,17 @@ public class CLUtils implements Serializable
         boolean isComposite = dsProps.getBoolean(DataSource.ISCOMPOSITE,
                 "false", false);
 
-        String fullState = String.format("%s%s", dsProps
-                .getString(DataSource.STATE), (dsProps
-                .getInt(DataSource.PRECEDENCE) == -1 ? ":ARCHIVE " : ""));
+        String fullState = String
+                .format("%s%s", dsProps.getString(DataSource.STATE),
+                        (dsProps.getInt(DataSource.PRECEDENCE) == -1
+                                ? ":ARCHIVE "
+                                : ""));
 
-        String dsHeader = String.format("%s%s(%s:%s%s%s) %s", dsProps
-                .getString("name"), modifiedSign(wasModified), String.format(
-                "%s%s", (isComposite ? "composite " : ""),
-                dsProps.getString(DataSource.ROLE)), fullState, failureInfo,
-                additionalInfo, connectionStats);
+        String dsHeader = String.format("%s%s(%s:%s%s%s) %s",
+                getDataSourceDisplayName(dsProps), modifiedSign(wasModified),
+                String.format("%s%s", (isComposite ? "composite " : ""),
+                        dsProps.getString(DataSource.ROLE)), fullState,
+                failureInfo, additionalInfo, connectionStats);
 
         String alertMessage = dsProps.getString(DataSource.ALERT_MESSAGE, "",
                 false);
@@ -470,7 +486,7 @@ public class CLUtils implements Serializable
 
         if (!printDetails)
         {
-            int indentToUse = dsProps.getString(DataSource.NAME).length() + 1;
+            int indentToUse = getDataSourceDisplayName(dsProps).length() + 1;
             indentToUse = 4;
             builder.append(
                     ResultFormatter.makeSeparator(
@@ -1062,5 +1078,98 @@ public class CLUtils implements Serializable
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Given a map of data sources, returns a datasource if the name matches
+     * either the actual name or alias.
+     * 
+     * @param dataServiceProps
+     * @param dataServiceName
+     * @return
+     */
+    public static TungstenProperties dataSourceGetByNameOrAlias(
+            Map<String, TungstenProperties> dataServiceProps,
+            String dataServiceName, String dataSourceName) throws Exception
+    {
+        for (TungstenProperties dsProps : dataServiceProps.values())
+        {
+            String name = dsProps.getString(DataSource.NAME);
+            String alias = dsProps.getString(DataSource.ALIAS);
+
+            if (name.equals(dataSourceName))
+            {
+                return dsProps;
+            }
+
+            if (!noAlias && alias != null && alias.length() > 0)
+            {
+                if (alias.equals(dataSourceName))
+                {
+                    return dsProps;
+                }
+            }
+        }
+
+        throw new Exception(
+                String.format(
+                        "Could not find a data source with name or alias '%s' in service '%s'",
+                        dataSourceName, dataServiceName));
+
+    }
+
+    /**
+     * Return a keyset for a given data service which is composed of, at least,
+     * the names of the data sources but can also include, either exclusively or
+     * as an aggregated value, the alias as well.
+     * 
+     * @param dataServiceProps
+     * @param dataServiceName
+     * @param includeAliases
+     * @param aggregateKeys
+     * @return
+     */
+    public static Set<String> dataServiceKeySet(
+            Map<String, TungstenProperties> dataServiceProps,
+            String dataServiceName, boolean includeAliases,
+            boolean aggregateKeys)
+    {
+        TreeSet<String> keySet = new TreeSet<String>();
+
+        for (TungstenProperties dsProps : dataServiceProps.values())
+        {
+            String name = dsProps.getString(DataSource.NAME);
+            String alias = dsProps.getString(DataSource.ALIAS);
+            boolean addedAlias = false;
+
+            if (!noAlias && includeAliases && alias != null
+                    && alias.length() > 0 && !keySet.contains(alias))
+            {
+                keySet.add(alias);
+                addedAlias = true;
+            }
+
+            if ((!addedAlias || aggregateKeys) && !keySet.contains(name))
+            {
+                keySet.add(name);
+            }
+
+        }
+
+        return keySet;
+
+    }
+
+    public static String getDataSourceDisplayName(TungstenProperties dsProps)
+    {
+        String name = dsProps.getString(DataSource.NAME);
+        String alias = dsProps.getString(DataSource.ALIAS);
+
+        if (!noAlias && alias != null && alias.length() > 0)
+        {
+            return alias;
+        }
+
+        return name;
     }
 }

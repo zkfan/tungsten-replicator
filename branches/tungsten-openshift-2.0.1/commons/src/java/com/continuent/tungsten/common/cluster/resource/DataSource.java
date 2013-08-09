@@ -33,6 +33,7 @@ public class DataSource extends Resource implements Serializable
     private static final Logger     logger                         = Logger.getLogger(DataSource.class);
 
     public static final String      NAME                           = "name";
+    public static final String      ALIAS                          = "alias";
     public static final String      CLUSTERNAME                    = "dataServiceName";
     public static final String      PRECEDENCE                     = "precedence";
     public static final String      ISAVAILABLE                    = "isAvailable";
@@ -69,6 +70,7 @@ public class DataSource extends Resource implements Serializable
      */
     private String                  dataServiceName                = "";
     private String                  host                           = "";
+    private String                  alias                          = "";
     private int                     port                           = -1;
     private DataSourceRole          role                           = DataSourceRole.undefined;
     private String                  vendor                         = "";
@@ -138,7 +140,7 @@ public class DataSource extends Resource implements Serializable
 
     public DataSource(TungstenProperties props)
     {
-        super(ResourceType.DATASOURCE, props.getString(DataSource.NAME,
+        super(ResourceType.DATASOURCE, props.getString(DataSource.HOST,
                 "unknown", true));
         props.applyProperties(this, true);
         String state = props.getString(DataSource.STATE);
@@ -470,6 +472,7 @@ public class DataSource extends Resource implements Serializable
         {
             sequence.next();
             this.setName(ds.getName());
+            this.setAlias(ds.getAlias());
             this.setVendor(ds.getVendor());
             this.setDataServiceName(ds.getDataServiceName());
             this.setDriver(ds.getDriver());
@@ -497,6 +500,7 @@ public class DataSource extends Resource implements Serializable
         TungstenProperties props = new TungstenProperties();
 
         props.setString(NAME, getName());
+        props.setString(ALIAS, (getAlias() == null ? "" : getAlias()));
         props.setString(VENDOR, getVendor());
         props.setString(CLUSTERNAME, getDataServiceName());
         props.setString(HOST, getHost());
@@ -1041,5 +1045,40 @@ public class DataSource extends Resource implements Serializable
     public void setPort(int port)
     {
         this.port = port;
+    }
+
+    /**
+     * Explicitly set the alias for this data source. The default alias is null.
+     * 
+     * @param alias
+     */
+    public void setAlias(String alias)
+    {
+        this.alias = alias;
+    }
+
+    /**
+     * Implicitly get an alias if useAliasIfExists == true. This method is a
+     * means for selective code to use a logical name instead of the host name.
+     * Generally, when a datasource is first created, 'name' == 'host'. But this
+     * can be overridden and code that uses this method can see both the host
+     * and the logical name.
+     * 
+     * @param useAliasIfExists
+     * @return
+     */
+    public String getName(boolean useAliasIfExists)
+    {
+        if (useAliasIfExists && alias != null)
+        {
+            return alias;
+        }
+
+        return getName();
+    }
+
+    public String getAlias()
+    {
+        return alias;
     }
 }

@@ -62,6 +62,8 @@ public class HostAddressService
     /** Ping method using operating system ping command. */
     public static String                  PING          = "ping";
 
+    public static String                  PROXY_PING    = "proxyPing";
+
     // Ping methods are stored in a list as well as a hash index. The names list
     // contains only enabled methods. Access to these *must* be synchronized to
     // preserve thread safety.
@@ -82,6 +84,7 @@ public class HostAddressService
         // Add known ping methods.
         addMethod(DEFAULT, InetAddressPing.class.getName(), autoEnable);
         addMethod(PING, OsUtilityPing.class.getName(), autoEnable);
+        addMethod(PROXY_PING, PortProxyPing.class.getName(), autoEnable);
     }
 
     /**
@@ -365,7 +368,8 @@ public class HostAddressService
                 method = instantiatePingMethod(methodClass);
 
                 // Make the call.
-                boolean status = method.ping(host, timeoutMillis);
+                boolean status = method.ping(host, host.getPort(),
+                        timeoutMillis);
 
                 // Fill in missing ping information.
                 notification.setReachable(status);
@@ -407,7 +411,7 @@ public class HostAddressService
         }
 
     }
-    
+
     /**
      * This method returns a prefix for a given internet address. It will only
      * work on the host for which the address is bound.
