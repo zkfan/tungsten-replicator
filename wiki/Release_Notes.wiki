@@ -7,6 +7,98 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.1.1 ==
+
+
+* <font color="red">Behavior Changes</font> *
+
+The following changes have been made to Tungsten Replicator and may affect existing scripts and integration tools. Any scripts or environment which make use of these tools should check and update for the new configuration:
+
+  * There has been a significant change in the THL format used for storing timestamp information, as a result of changes to the processing required for supporting MySQL 5.6.When upgrading to the latest version, slaves must be upgraded before the master to ensure that they are able to cope with the timestamp storage format change before the information is written to the THL on the master.Once slaves have been updated, the masters can be updated. _Issues_:
+  * The internal CRC check used by MySQL 5.6 was incompatible with the binary log extractor. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=461 461]
+  * When operating using ROW-based replication, `DATETIME` columns would show time differences during a daylight savings time (DST) change.In addition, timestamps may have replicated with different values if the master and slave were configured with different timezones.
+    * To address these issue the configuration of Tungsten Replicator installations must be updated
+    * The issues occurs because a valid date/time replicated to the slave creates a an invalid time due to daylight savings time when applied to the MySQL database. In the process of trying to fix the incorrect date/time, the time is updated before it is applied into the database. This is due to inconsistent timezone configurations in MySQL and the system timezone used by the Java VM used by Tungsten Replicator.The inconsistent date/time information has been fixed, but requires configuration changes to ensure that information is not replicated incorrectly:
+    * The MySQL and Java JVM timezone configurations must be the same. Ideally, the system timezone should also be the same. Differences in the timezone configuration of Java and MySQL will cause differences in the stored `DATETIME` values on the slave.To set the timezone for MySQL:
+{{{
+    mysql> SET GLOBAL time_zone = timezone;
+}}}
+     To set the timezone for your operating system, on Ubuntu/Debian, update the value in the file `/etc/timzezone`. On CentOS/RedHat, create a symbolic link from the right file within `/usr/share/zoneinfo` to `/etc/localtime`.To set the timezone for the JVM for Tungsten Replicator, use the `--timezone` configuration option to *tpm* to update your configuration.
+    * Timezone configurations on all hosts within a cluster must be set to the same timezone to prevent values drifting between hosts.
+    * Individual changes to the timezone configuration of the system or MySQL may introduce differences.
+    * Values inserted during daylight savings time changes should be correct during a time change; ensure your timezone is configured properly and your servers are synchronized.In addition to the configuration requirements, the format of the THL files has been changed. When upgrading:
+    * Slaves should be upgraded first, this will ensure that the slaves can read the new THL format
+    * Once the slaves have been upgraded, upgrade the master..Once upgraded and reconfigured, the information output by *thl* may indicate a different date/time value than either extracted from the master, or that will be applied to the slave, due to the way the information is stored within the THL. Time differences may show a multiple-hour difference compared to the applied value. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=542 542] _See also_: [#release-notes-2-1-1-behavior-_none_-542 596].
+  * Support for MySQL 5.6 row-based replication has been added to Tungsten Replicator. Replication is now supported for the following MySQL releases:
+    * MySQL 5.0, 5.1, 5.5, 5.6
+    * Percona 5.5
+    * MariaDB 5.5 
+    _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=558 558]
+
+* Improvements, new features and functionality *
+
+  * * Installation and Deployment *
+    * The replicator has been updated to support secure communication between replicators and between administrative tools (*trepctl*) and the replicator processes. Security operates at two separate levels within the configuration:
+      * SSL support for the THL transfer between replicator instances. This feature enables full SSL certificate encrypted transmission of the THL data.
+      * SSL and authentication support for administration. Administration, both local and remote, through *trepctl* and other tools can be encrypted and secured through an authorized user for the Java RMI channel.Security can be enabled for either or both components, and existing installations can be updated to use the secure installation.Secure installation is only supported when using *tpm* to perform installations and updates. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=508 508], [https://code.google.com/p/tungsten-replicator/issues/detail?id=638 638], [https://code.google.com/p/tungsten-replicator/issues/detail?id=656 656], [https://code.google.com/p/tungsten-replicator/issues/detail?id=664 664], [https://code.google.com/p/tungsten-replicator/issues/detail?id=665 665], [https://code.google.com/p/tungsten-replicator/issues/detail?id=666 666], [https://code.google.com/p/tungsten-replicator/issues/detail?id=667 667], [https://code.google.com/p/tungsten-replicator/issues/detail?id=668 668].
+    * To provide better interaction with complex environments, including those created by the Cookbook system, *tpm* supports the setting of additional `PATH` locations to be searched before the standard path. The `--preferred-path` option specifies one or more directories to be prepended to the `PATH` by Tungsten Replicator, including backup/restore tools, Ruby, Java and other utilities. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=582 582]; _Tags_: tpm:preferred-path
+    * The *tpm* command has been updated to support the option `--timezone`, which sets the corresponding JVM timezones. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=596 596]
+    * The *tpm* tool has been updated to make the installation of different complex topologies easier. The improvements involve the following major changes:
+      * The `--topology` option now supports explicit settings for `all-masters` (multi-master topology), `fan-in`, and `star`.
+      * A list of services can be supplied where multiple services are created, for example during multi-master, fan-in, or star configurations. The list of services to be created is specified by the `--master-services` option, accepting a comma-separated list of service names. For example, when creating a multi-master configuration with four hosts, `--master-services=alpha,beta,gamma,delta` will create four services for the corresponding list of masters, i.e. `--masters=host1,host2,host3,host4` would create a service on `host1` called `alpha`, on `host2` called `beta` and so on.
+      * The specification of hosts has been simplified:
+        * The list of master hosts (comma-separated) can be specified using the `--masters` or `--master` option.
+        * The list of slave hosts (comma-separated) can be specified using the `--slaves` option.
+        * The list of members (i.e. masters and slaves) can continue to be specified using the `--members` option.*tpm* will calculate the appropriate list of slaves, masters, and services from this information and create the corresponding configurations during deployment. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=623 623]
+    * Use of *tungsten-installer* for performing installations will be deprecated in a future release. The *tpm* command will be used instead. *tpm* has been updated to support reading, and updating from an existing configuration, migrating a service installed using *tungsten-installer* to use *tpm* . _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=641 641], [https://code.google.com/p/tungsten-replicator/issues/detail?id=669 669].
+  * * Command-lines Tools *
+    * The *trepctl* has been improved to support the output of a list of connected slaves (clients) to a running master service. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=635 635].
+  * * Cookbook Utility *
+    * Cookbook scripts have been updated to use the *tpm* command for installation of a cluster, in place of *tungsten-installer*. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=620 620]
+    * The cookbook toolset has been expanded to include explicit tools that integrate more effectively with MySQL Sandbox. Specifically:
+      * *deploy_to_sandboxes* has been renamed to *deploy_sandboxes*.
+      * A *remove_sandboxes* command has been added to remove existing sandboxes. A corresponding tool, *restore_user_values* saves back the contents of the `USER_VALUES.sh` and `USER_VALUES.local.sh` scripts to versions that do not use the sandbox infrastructure.
+      * The *db_use* tool has been created and provides a direct route into a MySQL command-line tool for a specific host. Use the `-h` command-line option to specify the host. For example:{{{
+      shell> db_use -h host1
+      }}} _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=640 640]
+    * When uninstalling an installation using the cookbook through *clear_cluster*, the process would run sequentially. The process has now been updated to run concurrently. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=653 653]
+    * The cookbook has been updated to check and warn if an installation is started and `USE_TPM` has not been enabled. A warning is generated in the event of executing the installer without the `USE_TPM` variable being enabled and set to 1. The warning and delay can be disabled by setting `INSTALLATION_DELAY=0` before executing the cookbook installation scripts. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=675 675]
+  * * Backup and Restore *
+    * The backup scripts that work in combination with *trepctl* have been documented. The documentation includes details on how the backup process works, and how custom backup scripts can be created, including sample scripts. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=590 590].
+    * During a restore operation, a replicator is not automatically placed into _`ONLINE`_ mode, instead the replicator is placed in _`OFFLINE`_ mode. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=609 609].
+  * * Oracle Replication *
+    * The `CDCMetadataFilter` and *ddlscan* has been updated to support placing the CDC columns at the start of a row, instead of at the end of the row. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=628 628].
+
+* Bug Fixes *
+
+  * * Installation and Deployment *
+    * * tungsten-installer* would fail ungracefully when required applications were missing. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=280 280]
+    * When running the *configure-service* tool from an incorrect location could result in the error message Unable to run configure-service because this directory has not been setup . Advisory text has now been added to the error message. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=288 288]
+    * Tungsten Replicator has been updated to compile correctly against Java 1.7. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=619 619]
+    * Installation of a fan-in cluster using *tungsten-installer* would fail when the fan-in slave is not last host in the list of hosts. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=652 652]
+  * * Command-lines Tools *
+    * When using the *thl* command with the `-headers` option, the entire THL content, including the full event and transaction data would be deserialized, which was inefficient. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=645 645]
+    * The inline help within *trepctl* contained some duplication and inconsistencies. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=646 646]
+  * * Cookbook Utility *
+    * The *test_cluster* script within the cookbook did not check for the online state within deployed services. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=626 626]
+    * Cookbook deployments used relayed binary logs in place of directly reading binary logs. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=627 627]
+    * The cookbook tool would fail to delete and clear an existing installation if `LOCAL_USER_VALUES` had been used during installation. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=637 637]
+    * When configuring a new installation, the IP detection procedure would fail when a host has multiple IP addresses configured. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=654 654]
+  * * Backup and Restore *
+    * When starting a backup through *trepctl* when the backup directory was empty (for example, after a move), the process would fail instead of recreating the required directory structure and contents. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=552 552]
+    * When performing a backup on the master and restoring this backup to a slave, the backup contents would be inconsistent with the replication state, causing intermittent replication errors. This was due to the asynchronous nature of the backup process. The backup process has been updated to correctly clear the status information during restore. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=556 556]
+    * Due to changes in the operating method, Tungsten Replicator was not compatible with Percona Xtrabackup 2.1. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=629 629]
+  * * Oracle Replication *
+    * Running the *setupCDC.sh* command without specifying a correct service name would cause ongoing failures in the replication setup. The tool has been updated to report an error if the service name has not been set. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=622 622]
+  * * Core Replicator *
+    * Due to a minor change in the binlog format used by MySQL, session variables were not replicated correctly for ROW-based events. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=624 624]
+    * In some situations, parallel replication threads responsible for reading THL fail silently, resulting in badly lagging channels. The issue was due to a fault in the way failing channels and pipelines were identified and reported. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=636 636]
+    * When replicating ROW-based events, null values for keys could incorrectly be handled. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=659 659]
+  * * Filters *
+    * The `RenameFilter` file has been documented. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=612 612].
+  * *Unclassified*
+    * Due to a previous change to allow selection of `SQL_MODE` variable settings to be ignored when processing events. The supported setting of enabling `ALLOW_INVALID_DATES` would be identified incorrectly as `INVALID_DATES`. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=642 642]
+
 == Tungsten Replicator 2.1.0 ==
 
 This release is the first to include both extraction and applier support for Oracle within the open-source product. Other new features include an updated and re-certified MongoDB applier; improved support for replication to Vertica 6; improvements to the command-line tools to provide JSON output to allow for easier third-party processing; significant improvements and expansion of the Cookbook system for building different cluster topologies (see enclosed README); support for archive hosts; a new filter for renaming schemas, databases and tables, and other improvements and bug fixes.
