@@ -9,6 +9,7 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.1.1 ==
 
+For information on upgrading, see [https://docs.continuent.com/wiki/display/TEDOC/Upgrading+Tungsten+Replicator Upgrading Tungsten Replicator]
 
 * <font color="red">Behavior Changes</font> *
 
