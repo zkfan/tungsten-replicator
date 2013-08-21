@@ -58,9 +58,10 @@ The following changes have been made to Tungsten Replicator and may affect exist
     * The cookbook toolset has been expanded to include explicit tools that integrate more effectively with MySQL Sandbox. Specifically:
       * *deploy_to_sandboxes* has been renamed to *deploy_sandboxes*.
       * A *remove_sandboxes* command has been added to remove existing sandboxes. A corresponding tool, *restore_user_values* saves back the contents of the `USER_VALUES.sh` and `USER_VALUES.local.sh` scripts to versions that do not use the sandbox infrastructure.
-      * The *db_use* tool has been created and provides a direct route into a MySQL command-line tool for a specific host. Use the `-h` command-line option to specify the host. For example:{{{
+      * The *db_use* tool has been created and provides a direct route into a MySQL command-line tool for a specific host. Use the `-h` command-line option to specify the host. For example:
+{{{
       shell> db_use -h host1
-      }}}
+}}}
       _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=640 640]
     * When uninstalling an installation using the cookbook through *clear_cluster*, the process would run sequentially. The process has now been updated to run concurrently. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=653 653]
     * The cookbook has been updated to check and warn if an installation is started and `USE_TPM` has not been enabled. A warning is generated in the event of executing the installer without the `USE_TPM` variable being enabled and set to 1. The warning and delay can be disabled by setting `INSTALLATION_DELAY=0` before executing the cookbook installation scripts. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=675 675]
