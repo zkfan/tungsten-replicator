@@ -106,9 +106,7 @@ To set the timezone for your operating system, on Ubuntu/Debian, update the valu
 
 == Tungsten Replicator 2.1.1 ==
 
-<font color="red">*WARNING* (2013-08-23): Build 2.1.1 was removed because of a serious bug found in the treatment of DATETIME. We will publish a bugfix release in a few days.</font>
-
-For information on upgrading, see [https://docs.continuent.com/wiki/display/TEDOC/Upgrading+Tungsten+Replicator Upgrading Tungsten Replicator]
+<font color="red">Tungsten Replicator 2.1.1 was recalled and is no longer available.</font>
 
 == Tungsten Replicator 2.1.0 ==
 
