@@ -9,7 +9,7 @@ This page contains release notes for Tungsten Replicator open source releases.
 
 == Tungsten Replicator 2.1.2 ==
 
-Tungsten Replicator 2.1.2 is a bugfix release that fixes specific bugs affected by `DATETIME`, as identified in 2.1.1. Tungsten Replicator therefore includes these fixes in addition to all the features and functionality that originally appeared in Tungsten Replicator 2.1.1.
+Tungsten Replicator 2.1.2 is a bugfix release that fixes specific bugs affected by `DATETIME`, that were identified in 2.1.1. Tungsten Replicator therefore includes these fixes in addition to all the features and functionality that originally appeared in Tungsten Replicator 2.1.1.
 
 * <font color="red">Behavior Changes</font> *
 
