@@ -7,7 +7,7 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
-== Tungsten Replicator 2.1.2-43 Maintenance Release (27 November 2013) ==
+== Tungsten Replicator 2.1.2-44 Maintenance Release (27 November 2013) ==
 
 This is a maintenance release that provides fixes for some specific issues related to Oracle and reset operations within a multimaster deployment.
 
