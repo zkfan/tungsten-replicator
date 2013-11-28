@@ -14,9 +14,9 @@ This is a maintenance release that provides fixes for some specific issues relat
 * Bug Fixes *
 
   * * Oracle Replication *
-    * `DATETIME` values would not be correctly translated to the Oracle `DATE` type during replication._Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=704 704]
+    * `DATETIME` values would not be correctly translated to the Oracle `DATE` type during replication. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=704 704]
   * * Core Replicator *
-    * Running *trepctl reset* on a service deployed in an multimaster (all master) configuration would not correctly remove the schema from the database._Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=758 758]
+    * Running *trepctl reset* on a service deployed in an multimaster (all master) configuration would not correctly remove the schema from the database. _Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=758 758]
 
 == Tungsten Replicator 2.1.2 ==
 
