@@ -7,6 +7,17 @@
 
 This page contains release notes for Tungsten Replicator open source releases. 
 
+== Tungsten Replicator 2.1.2-43 Maintenance Release (27 November 2013) ==
+
+This is a maintenance release that provides fixes for some specific issues related to Oracle and reset operations within a multimaster deployment.
+
+* Bug Fixes *
+
+  * * Oracle Replication *
+    * `DATETIME` values would not be correctly translated to the Oracle `DATE` type during replication._Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=704 704]
+  * * Core Replicator *
+    * Running *trepctl reset* on a service deployed in an multimaster (all master) configuration would not correctly remove the schema from the database._Issues_: [https://code.google.com/p/tungsten-replicator/issues/detail?id=758 758]
+
 == Tungsten Replicator 2.1.2 ==
 
 Tungsten Replicator 2.1.2 is a bugfix release that fixes specific bugs affected by `DATETIME`, that were identified in 2.1.1. Tungsten Replicator therefore includes these fixes in addition to all the features and functionality that originally appeared in Tungsten Replicator 2.1.1.
