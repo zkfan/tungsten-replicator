@@ -75,6 +75,9 @@ public class DerbyDatabase extends AbstractDatabase
             case Types.BIGINT :
                 return "BIGINT";
 
+            case Types.SMALLINT :
+                return "SMALLINT";
+
             case Types.CHAR :
                 return "CHAR(" + c.getLength() + ")";
 
@@ -92,6 +95,9 @@ public class DerbyDatabase extends AbstractDatabase
 
             case Types.BLOB :
                 return "BLOB";
+
+            case Types.BOOLEAN :
+                return "BOOLEAN";
 
             default :
                 return "UNKNOWN";

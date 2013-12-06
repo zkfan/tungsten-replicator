@@ -52,6 +52,10 @@ import com.continuent.tungsten.common.csv.CsvException;
 import com.continuent.tungsten.common.csv.CsvWriter;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.applier.RawApplier;
+import com.continuent.tungsten.replicator.catalog.Catalog;
+import com.continuent.tungsten.replicator.catalog.CatalogManager;
+import com.continuent.tungsten.replicator.catalog.CommitSeqno;
+import com.continuent.tungsten.replicator.catalog.CommitSeqnoAccessor;
 import com.continuent.tungsten.replicator.consistency.ConsistencyException;
 import com.continuent.tungsten.replicator.consistency.ConsistencyTable;
 import com.continuent.tungsten.replicator.database.Column;
@@ -76,7 +80,6 @@ import com.continuent.tungsten.replicator.event.ReplOptionParams;
 import com.continuent.tungsten.replicator.extractor.mysql.SerialBlob;
 import com.continuent.tungsten.replicator.heartbeat.HeartbeatTable;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
-import com.continuent.tungsten.replicator.thl.CommitSeqnoTable;
 
 /**
  * Implements an applier that bulk loads data into a SQL database via CSV files.
@@ -102,6 +105,7 @@ public class SimpleBatchApplier implements RawApplier
     private int                         taskId;
 
     // Properties.
+    protected String                    catalog;
     protected String                    driver;
     protected String                    url;
     protected String                    user;
@@ -145,12 +149,20 @@ public class SimpleBatchApplier implements RawApplier
     protected Statement                 statement            = null;
     protected Pattern                   ignoreSessionPattern = null;
 
-    // Catalog tables.
-    protected CommitSeqnoTable          commitSeqnoTable     = null;
+    // Catalog.
+    protected Catalog                   tungstenCatalog      = null;
+    protected CommitSeqnoAccessor       commitSeqnoAccessor  = null;
+
+    // Old catalog tables.
     protected HeartbeatTable            heartbeatTable       = null;
 
     // Data formatter.
     protected volatile SimpleDateFormat dateFormatter;
+
+    public void setCatalog(String catalog)
+    {
+        this.catalog = catalog;
+    }
 
     public void setDriver(String driver)
     {
@@ -444,15 +456,7 @@ public class SimpleBatchApplier implements RawApplier
         }
 
         // Update trep_commit_seqno.
-        try
-        {
-            commitSeqnoTable
-                    .updateLastCommitSeqno(taskId, this.latestHeader, 0);
-        }
-        catch (SQLException e)
-        {
-            throw new ReplicatorException("Unable to update commit position", e);
-        }
+        commitSeqnoAccessor.updateLastCommitSeqno(this.latestHeader, 0);
 
         // SQL commit here.
         try
@@ -658,15 +662,19 @@ public class SimpleBatchApplier implements RawApplier
                     .getConsistencyTableDefinition(metadataSchema);
             conn.createTable(consistency, false, tableType);
 
-            // Set up commit seqno table and fetch the last processed event.
-            commitSeqnoTable = new CommitSeqnoTable(conn,
-                    context.getReplicatorSchemaName(), tableType, false);
-            commitSeqnoTable.prepare(taskId);
-            latestHeader = commitSeqnoTable.lastCommitSeqno(taskId);
+            // Fetch catalog instance and ensure tables are initialized.
+            CatalogManager cm = new CatalogManager();
+            tungstenCatalog = cm.find(catalog);
+            tungstenCatalog.initialize();
+
+            // Fetch the last processed event.
+            CommitSeqno commitSeqno = tungstenCatalog.getCommitSeqno();
+            CommitSeqnoAccessor commitSeqnoAccessor = commitSeqno.createAccessor(
+                    taskId, conn);
+            latestHeader = commitSeqnoAccessor.lastCommitSeqno();
 
             // Ensure we are not in auto-commit mode.
             conn.setAutoCommit(false);
-
         }
         catch (SQLException e)
         {
