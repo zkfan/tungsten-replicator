@@ -44,6 +44,7 @@ public class DataSource extends Resource implements Serializable
     public static final String      ALERT_TIME                     = "alertTime";
     public static final String      APPLIED_LATENCY                = "appliedLatency";
     public static final String      HOST                           = "host";
+    public static final String      PORT                           = "port";
     public static final String      ROLE                           = "role";
     public static final String      VENDOR                         = "vendor";
     public static final String      DRIVER                         = "driver";
@@ -272,6 +273,16 @@ public class DataSource extends Resource implements Serializable
         newDs.setVendor(replicatorProps.getString(Replicator.RESOURCE_VENDOR));
         newDs.setUrl(replicatorProps.getString(Replicator.RESOURCE_JDBC_URL)
                 .trim());
+        newDs.setDriver(replicatorProps.getString(
+                Replicator.RESOURCE_JDBC_DRIVER).trim());
+
+        String port = replicatorProps.getString(Replicator.RESOURCE_PORT);
+
+        if (port != null)
+        {
+            newDs.setPort(Integer.parseInt(port));
+        }
+
         newDs.setDriver(replicatorProps.getString(
                 Replicator.RESOURCE_JDBC_DRIVER).trim());
 
@@ -504,6 +515,7 @@ public class DataSource extends Resource implements Serializable
         props.setString(VENDOR, getVendor());
         props.setString(CLUSTERNAME, getDataServiceName());
         props.setString(HOST, getHost());
+        props.setInt(PORT, getPort());
         props.setString(DRIVER, getDriver());
         props.setString(URL, getUrl());
         props.setString(ROLE, getRole().toString());

@@ -23,8 +23,6 @@
 package com.continuent.tungsten.common.network;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -35,10 +33,6 @@ import java.net.UnknownHostException;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import com.continuent.tungsten.common.config.TungstenProperties;
-import com.continuent.tungsten.common.mysql.MySQLPacket;
-import com.continuent.tungsten.common.mysql.MySQLIOs.ExecuteQueryStatus;
 
 /**
  * Tests for reachability using the Java InetAddress.isReachable() method.

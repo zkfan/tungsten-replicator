@@ -557,7 +557,7 @@ public class JmxManager implements NotificationListener, Serializable
      * @param serviceName the JMX service name
      * @return a connection to the server
      */
-    public JMXConnector getRMIConnector(String host, int registryPort,
+    public static JMXConnector getRMIConnector(String host, int registryPort,
             String serviceName)
     {
         return getRMIConnector(host, registryPort, serviceName, null);
@@ -574,7 +574,7 @@ public class JmxManager implements NotificationListener, Serializable
      *            instance.
      * @return a connection to the server
      */
-    public JMXConnector getRMIConnector(String host, int registryPort,
+    public static JMXConnector getRMIConnector(String host, int registryPort,
             String serviceName, TungstenProperties jmxProperties)
     {
         String serviceAddress = null;
