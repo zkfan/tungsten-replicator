@@ -187,7 +187,7 @@ class Configurator
     
     if @log
       begin
-        @log.chmod(0666)
+        @log.chmod(0660)
       rescue
       end
       
@@ -682,7 +682,7 @@ class Configurator
   def initialize_log
     unless @log
       begin
-        @log = File.open(get_log_filename(), "a")
+        @log = File.open(get_log_filename(), "a", 0660)
       rescue => e
         raise e
       end
@@ -1749,6 +1749,19 @@ def scp_result(local_file, remote_file, host, user)
     raise MessageError.new(connection_error)
   rescue Exception => e
     raise RemoteCommandError.new(user, host, "scp #{local_file} #{ssh_user}@#{host}:#{remote_file}", nil, '')
+  end
+end
+
+def remote_file_exists?(remote_file, host, user)
+  begin
+    exists = ssh_result("if [ -f #{remote_file} ]; then echo 0; else echo 1; fi", host, user)
+    if exists == "1"
+      return false
+    else
+      return true
+    end
+  rescue CommandError
+    raise MessageError.new("Unable to check if '#{remote_file}' exists on #{host}")
   end
 end
 

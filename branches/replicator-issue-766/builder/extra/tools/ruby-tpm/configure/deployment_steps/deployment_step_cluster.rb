@@ -184,9 +184,14 @@ module ConfigureDeploymentStepDeployment
           dsids[ds_name] = "configure $COMPOSITE_DS"
         else
           ds_name=@config.getProperty([DATASERVICES, ds_alias, DATASERVICENAME])
+          master=@config.getProperty([DATASERVICES, ds_alias, DATASERVICE_MASTER_MEMBER])
+          slaves=@config.getProperty([DATASERVICES, ds_alias, DATASERVICE_REPLICATION_MEMBERS]).split(",")-[master]
+          connectors=@config.getProperty([DATASERVICES, ds_alias, DATASERVICE_CONNECTORS])
+          
           transformer << "export DS_NAME#{dsid}=#{ds_name}"
-          transformer << "export MASTER#{dsid}=#{@config.getProperty([DATASERVICES, ds_alias, DATASERVICE_MASTER_MEMBER])}"
-          transformer << "export CONNECTORS#{dsid}=#{@config.getProperty([DATASERVICES, ds_alias, DATASERVICE_CONNECTORS])}"
+          transformer << "export MASTER#{dsid}=#{master}"
+          transformer << "export SLAVES#{dsid}=#{slaves.join(",")}"
+          transformer << "export CONNECTORS#{dsid}=#{connectors}"
           
           dsids[ds_name] = "configure $DS_NAME#{dsid}"
           dsid = dsid+1
@@ -423,11 +428,33 @@ host=#{ds_alias}"
     FileUtils.touch(target_dir)
     
     FileUtils.cp(current_release_directory + '/' + Configurator::HOST_CONFIG, current_release_directory + '/.' + Configurator::HOST_CONFIG + '.orig')
+    cmd_result("chmod o-rwx #{current_release_directory + '/' + Configurator::HOST_CONFIG}")
+    cmd_result("chmod o-rwx #{current_release_directory + '/.' + Configurator::HOST_CONFIG + '.orig'}")
     
     if is_manager?() || is_connector?()
       write_dataservices_properties()
       write_router_properties()
       write_policymgr_properties()
+    end
+    
+    if is_replicator?()
+      @config.getPropertyOr(REPL_SERVICES, {}).keys().each{
+        |rs_alias|
+
+        if rs_alias == DEFAULTS
+          next
+        end
+        
+        # Update the THL URI in dynamic properties so it uses the correct protocol
+        dynamic_properties = @config.getProperty([REPL_SERVICES, rs_alias,REPL_SVC_DYNAMIC_CONFIG])
+        if File.exists?(dynamic_properties)
+          if @config.getProperty([REPL_SERVICES, rs_alias, REPL_ENABLE_THL_SSL]) == "true"
+            cmd_result("sed -i 's/uri=thl\\\\/uri=thls\\\\/' #{dynamic_properties}")
+          else
+            cmd_result("sed -i 's/uri=thls\\\\/uri=thl\\\\/' #{dynamic_properties}")
+          end
+        end
+      }
     end
   end
   

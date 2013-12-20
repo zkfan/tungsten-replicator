@@ -446,6 +446,12 @@ module SingleServiceScript
   
     if @options[:service] == nil
       TU.error("You must specify a dataservice for this command with the --service argument")
+    else
+      if TI
+        unless TI.replication_services().include?(@options[:service])
+          TU.error("The #{@options[:service]} service was not found in the replicator at #{TI.hostname()}:#{TI.root()}")
+        end
+      end
     end
   end
 end
@@ -687,6 +693,10 @@ module MySQLServiceScript
       return
     end
     
+    unless TI.replication_services().include?(@options[:service])
+      return
+    end
+    
     if @options[:mysqlhost] == nil
       @options[:mysqlhost] = TI.setting(TI.setting_key(REPL_SERVICES, @options[:service], "repl_datasource_host"))
     end
@@ -761,6 +771,16 @@ module MySQLServiceScript
     end
     
     "innobackupex-1.5.1 --defaults-file=#{defaults_file} --host=#{@options[:mysqlhost]} --port=#{@options[:mysqlport]}"
+  end
+  
+  def xtrabackup_supports_argument(arg)
+    arg = arg.tr("-", "\\-")
+    supports_argument = TU.cmd_result("#{get_xtrabackup_command()} --help /tmp | grep -e\"#{arg}\" | wc -l")
+    if supports_argument == "1"
+      return true
+    else
+      return false
+    end
   end
   
   def get_mysql_result(command, timeout = 30)

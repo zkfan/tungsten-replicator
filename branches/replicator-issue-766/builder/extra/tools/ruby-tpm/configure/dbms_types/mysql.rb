@@ -350,6 +350,10 @@ class MySQLDatabasePlatform < ConfigureDatabasePlatform
   def drop_tungsten_schema(schema_name)
     self.run("SET SQL_LOG_BIN=0; DROP SCHEMA IF EXISTS #{schema_name};")
   end
+  
+  def applier_supports_parallel_apply?()
+    true
+  end
 end
 
 #
@@ -1256,6 +1260,26 @@ class MySQLApplierLogsCheck < ConfigureValidationCheck
   end
 end
 
+class MySQLVersionCheck < ConfigureValidationCheck
+  include ReplicationServiceValidationCheck
+  include MySQLApplierCheck
+
+  def set_vars
+    @title = "MySQL version check"
+  end
+  
+  def validate
+    info("Checking MySQL version")
+    version = get_applier_datasource.get_value("show variables like 'version'", "Value")
+    comment = get_applier_datasource.get_value("show variables like 'version_comment'", "Value")
+    if comment == "MariaDB Server"
+      if version =~ /10\..*/
+        error("Support for MariaDB 10.0 is not available at this time")
+      end
+    end
+  end
+end
+
 class MySQLSettingsCheck < ConfigureValidationCheck
   include ReplicationServiceValidationCheck
   include MySQLApplierCheck
@@ -1621,7 +1645,7 @@ module ConfigureDeploymentStepMySQL
     	  transformer.transform_values(method(:transform_replication_dataservice_values))
         transformer.output
         watch_file(transformer.get_filename())
-        File.chmod(0755, "#{get_deployment_basedir()}/cluster-home/bin/mysql_readonly")
+        File.chmod(0750, "#{get_deployment_basedir()}/cluster-home/bin/mysql_readonly")
       else
         FileUtils.rm_f("#{get_deployment_basedir()}/cluster-home/conf/cluster/#{@config.getProperty(DATASERVICENAME)}/service/mysql_readonly.properties")
         FileUtils.rm_f("#{get_deployment_basedir()}/cluster-home/bin/mysql_readonly")

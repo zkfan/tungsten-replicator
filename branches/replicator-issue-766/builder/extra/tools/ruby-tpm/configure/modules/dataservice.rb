@@ -465,7 +465,7 @@ class ReplicationServiceAutoEnable < ConfigurePrompt
   include AdvancedPromptModule
   
   def initialize
-    super(REPL_AUTOENABLE, "Auto-enable services after start-up", 
+    super(REPL_AUTOENABLE, "Put replication services ONLINE after the replicator starts", 
       PV_BOOLEAN, "true")
   end
 end
@@ -504,6 +504,19 @@ class ReplicationServiceParallelizationType < ConfigurePrompt
     super(REPL_SVC_PARALLELIZATION_TYPE, "Method for implementing parallel apply (disk|memory|none)",
       PropertyValidator.new("disk|memory|none", 
         "Value must be disk, memory, or none"), "none")
+  end
+  
+  def validate_value(value)
+    if value != "none"
+      ds = get_datasource()
+      unless ds.applier_supports_parallel_apply?()
+        error("Parallelization type must be set to 'none' when applying to #{ds.get_uri_scheme()}")
+      end
+    end
+    
+    if is_valid?()
+      super(value)
+    end
   end
 end
 
@@ -624,7 +637,7 @@ class BackupMethod < ConfigurePrompt
   include ReplicationServicePrompt
 
   def initialize
-    super(REPL_BACKUP_METHOD, "Database backup method", nil)
+    super(REPL_BACKUP_METHOD, "The default backup method", nil)
   end
   
   def load_default_value
@@ -659,7 +672,7 @@ class ReplicationServiceBackupStorageDirectory < BackupConfigurePrompt
   include ConstantValueModule
   
   def initialize
-    super(REPL_BACKUP_STORAGE_DIR, "Backup permanent shared storage", PV_FILENAME)
+    super(REPL_BACKUP_STORAGE_DIR, "Permanent backup storage directory", PV_FILENAME)
     self.extend(NotTungstenInstallerPrompt)
   end
   
@@ -676,7 +689,7 @@ class BackupStorageTempDirectory < BackupConfigurePrompt
   include ReplicationServicePrompt
   
   def initialize
-    super(REPL_BACKUP_DUMP_DIR, "Backup temporary dump directory", PV_FILENAME, "/tmp")
+    super(REPL_BACKUP_DUMP_DIR, "Temporary backup storage directory", PV_FILENAME, "/tmp")
   end
   
   def update_deprecated_keys()
@@ -1066,9 +1079,19 @@ class ReplicationServiceApplierConfig < ConfigurePrompt
   end
   
   def get_template_value(transform_values_method)
-    transformer = Transformer.new(@config.getProperty(PREPARE_DIRECTORY) + "/" + 
-      get_applier_datasource().get_applier_template())
-    transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
+    if @config.getProperty(PREFETCH_ENABLED) == "true"
+      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
+        "tungsten-replicator/samples/conf/appliers/prefetch.tpl"
+    elsif @config.getProperty(BATCH_ENABLED) == "true"
+      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
+        "tungsten-replicator/samples/conf/appliers/batch.tpl"
+    else
+      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
+        get_applier_datasource().get_applier_template()
+    end
+    
+    transformer = Transformer.new(template)
+    transformer.set_fixed_properties(@config.getProperty(get_member_key(FIXED_PROPERTY_STRINGS)))
     transformer.transform_values(transform_values_method)
     
     return transformer.to_s
@@ -1362,6 +1385,14 @@ class ReplicationHeterogenousSlave < ConfigurePrompt
     else
       super()
     end
+  end
+end
+
+class ReplicationServiceRepositionOnSourceIDChange < ConfigurePrompt
+  include ReplicationServicePrompt
+  
+  def initialize
+    super(REPL_SVC_REPOSITION_ON_SOURCE_ID_CHANGE, "The master will come ONLINE from the current position if the stored source_id does not match the value in the static properties.", PV_BOOLEAN, "true")
   end
 end
 
