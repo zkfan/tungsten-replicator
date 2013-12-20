@@ -29,12 +29,12 @@ public class FileIOException extends RuntimeException
 {
     private static final long serialVersionUID = 1L;
 
-    FileIOException(String msg)
+    public FileIOException(String msg)
     {
         super(msg);
     }
 
-    FileIOException(String msg, Throwable cause)
+    public FileIOException(String msg, Throwable cause)
     {
         super(msg, cause);
     }

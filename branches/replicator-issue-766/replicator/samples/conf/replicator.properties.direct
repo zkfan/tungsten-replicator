@@ -47,9 +47,17 @@ replicator.auto_enable=@{REPL_AUTOENABLE}
 # whether it runs in a separate, detached JVM.
 replicator.detached=false
 
-# Source ID. This required parameter is used to identify replication
-# event source.  It must be unique for each replicator node.
+# Source ID.  Identifies the replication event source.  It must be 
+# unique for each replicator node and normally is the host name.
+# Do not use values like localhost or 127.0.0.1. 
 replicator.source_id=@{EXTRACTOR.REPL_DBHOST}
+
+# Whether to reposition extraction when the source ID changes.  In Tungsten 
+# clusters this should be set to true so that extraction starts at the 
+# current log position after a Tungsten cluster failover to a new master.  
+# In standalone replication it should be set to false or you may encounter
+# data loss if the source ID changes unexpectedly. 
+replicator.repositionOnSourceIdChange=@{REPL_SVC_REPOSITION_ON_SOURCE_ID_CHANGE}
 
 # Site to which the replicator belongs.
 site.name=default
@@ -136,6 +144,18 @@ replicator.plugin=tungsten
 #################################
 # REPLICATOR PIPELINES          #
 #################################
+
+# Pipeline stages use block commit to commit multiple source transactions
+# simultaneously.  Block commit is controlled by the following settings on 
+# stages:
+#   blockCommitRowCount -- Commit when this number of transactions is 
+#   reached or stage runs out of in-coming transactions
+#   blockCommitInterval -- Commit when time interval elapses *or* number of 
+#   transactions for blockCommitRowCount is reached. 
+# If neither setting is in effect, replicators commit each transaciton 
+# individually.  Interval settings are milliseconds by default.  You can also
+# apply settings in seconds, minutes, hours, and days, as in 10s, 30m, 2h, 
+# or 1d respectively. 
 
 # Generic pipelines.
 replicator.pipelines=direct

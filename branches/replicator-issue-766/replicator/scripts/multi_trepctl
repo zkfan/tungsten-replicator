@@ -203,6 +203,7 @@ class TungstenMultipleTrepctl
         if matches_filters?(svc, filters) == true
           services << svc.merge({
             :loc_id => loc_id,
+            "host" => @trepctl_locations[loc_id][:host],
             "directory" => @trepctl_locations[loc_id][:directory]
           })
         end
@@ -388,12 +389,20 @@ class TungstenMultipleTrepctl
       
       sort_values = []
       sort_keys.each{|key|
-        sort_values << get_record_value(rec, key)
+        sort_values << get_record_value(rec, key).to_s()
       }
       rec[:sort] = sort_values
     }
     
-    records.sort { |a, b| a[:sort] <=> b[:sort] }
+    records.sort { |a, b|
+      unless a[:sort].is_a?(Array)
+        a[:sort] = []
+      end
+      unless b[:sort].is_a?(Array)
+        b[:sort] = []
+      end
+      (a[:sort] <=> b[:sort])
+    }
   end
   
   def get_record_value(rec, key)
@@ -518,6 +527,11 @@ $> multi_trepctl -- online -skip-seqno 5<br>")
   end
   
   def validate
+    if TI && TI.use_tpm?() != true
+      TU.error("Unable to run the multi_trepctl script in a directory installed with tungsten-installer")
+      return
+    end
+    
     super()
     
     check_directories = []
@@ -542,12 +556,20 @@ $> multi_trepctl -- online -skip-seqno 5<br>")
       running_replicators = TU.cmd_result("ps -eo args | grep \"Tungsten Replicator\"").split("\n")
       running_replicators.each{
         |ps|
-        match = ps.match(/^([a-zA-Z\/]*)\/releases/)
+        match = ps.match(/^([a-zA-Z\-_\.\/]*)\/releases/)
         unless match == nil
           check_directories << {
             :directory => match[1]
           }
         end
+      }
+    else
+      check_directories.collect!{|dir|
+        if dir[:directory] == "self"
+          dir[:directory] = TI.root()
+        end
+        
+        dir
       }
     end
     
@@ -574,6 +596,14 @@ $> multi_trepctl -- online -skip-seqno 5<br>")
           end
         }
         check_hosts.uniq!()
+      }
+    else
+      check_hosts.collect!{|host|
+        if host == "self"
+          TI.hostname()
+        else
+          host
+        end
       }
     end
     

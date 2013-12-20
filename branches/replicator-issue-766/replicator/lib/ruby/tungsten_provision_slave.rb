@@ -21,12 +21,7 @@ class TungstenReplicatorProvisionSlave
     begin
       # Does this version of innobackupex-1.5.1 support the faster 
       # --move-back instead of --copy-back
-      supports_move_back = TU.cmd_result("#{get_xtrabackup_command()} --help | grep -e\"\-\-move\-back\" | wc -l")
-      if supports_move_back == "1"
-        supports_move_back = true
-      else
-        supports_move_back = false
-      end
+      supports_move_back = xtrabackup_supports_argument("--move-back")
 
       # Prepare the staging directory for the data
       # If we are restoring directly to the data directory then MySQL
@@ -153,12 +148,36 @@ class TungstenReplicatorProvisionSlave
   end
   
   def validate
-    super()
-    
     # All replication must be OFFLINE
     unless TI.is_replicator?()
       TU.error("This server is not configured for replication")
     end
+    
+    # This section evaluates :mysqldump and :xtrabackup to determine the best
+    # mechanism to use. This will need to be more generic as we support
+    # more platforms
+    if opt(:mysqldump) == true && opt(:xtrabackup) == true
+      TU.warning("You have specified --mysqldump and --xtrabackup, the script will use xtrabackup")
+    end
+    
+    # Make sure to unset the :mysqldump value if :xtrabackup has been given
+    if opt(:xtrabackup) == true
+      opt(:mysqldump, false)
+    end
+    
+    # Inspect the default value for the replication service to identify the 
+    # preferred method
+    if opt(:mysqldump) == nil && opt(:xtrabackup) == nil
+      if TI.trepctl_property(opt(:service), "replicator.backup.default") == "mysqldump"
+        opt(:mysqldump, true)
+      else
+        opt(:mysqldump, false)
+      end
+    end
+    
+    # Run validation for super classes after we have determined the backup
+    # type. This makes sure that the needed options are loaded
+    super()
     
     if @options[:mysqldump] == false
       if sudo_prefix() != ""
@@ -244,8 +263,12 @@ class TungstenReplicatorProvisionSlave
     
     add_option(:mysqldump, {
       :on => "--mysqldump",
-      :default => false,
       :help => "Use mysqldump instead of xtrabackup"
+    })
+    
+    add_option(:xtrabackup, {
+      :on => "--xtrabackup",
+      :help => "Use xtrabackup instead of mysqldump"
     })
     
     add_option(:source, {
