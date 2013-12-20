@@ -20,7 +20,7 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,14 +30,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
+import com.continuent.tungsten.replicator.datasource.SqlDataSource;
 
 /**
- * Runs tests on the catalog manager to ensure we can add, find, and remove
- * catalogs.
+ * Runs tests on the data source manager to ensure we can add, find, and remove
+ * data sources.
  */
-public class SqlCatalogTest extends AbstractCatalogTest
+public class SqlDataSourceTest extends AbstractDataSourceTest
 {
-    private static Logger      logger         = Logger.getLogger(SqlCatalogTest.class);
+    private static Logger      logger         = Logger.getLogger(SqlDataSourceTest.class);
 
     // Properties used in SQL access.
     private static String      driver;
@@ -87,21 +88,21 @@ public class SqlCatalogTest extends AbstractCatalogTest
     }
 
     /**
-     * Set up properties used to configure the catalog.
+     * Set up properties used to configure the data source.
      */
     @Before
     public void setUp() throws Exception
     {
-        // Create the catalog definition.
-        catalogProps = new TungstenProperties();
-        catalogProps.setString("serviceName", "sqlcatalog");
-        catalogProps.setLong("channels", 10);
-        catalogProps.setString("url", url);
-        catalogProps.setString("user", user);
-        catalogProps.setString("password", password);
-        catalogProps.setString("schema", schema);
+        // Create the data source definition.
+        datasourceProps = new TungstenProperties();
+        datasourceProps.setString("serviceName", "sqlcatalog");
+        datasourceProps.setLong("channels", 10);
+        datasourceProps.setString("url", url);
+        datasourceProps.setString("user", user);
+        datasourceProps.setString("password", password);
+        datasourceProps.setString("schema", schema);
 
-        // Set the catalog class.
-        catalogClass = SqlCatalog.class.getName();
+        // Set the data source class.
+        datasourceClass = SqlDataSource.class.getName();
     }
 }

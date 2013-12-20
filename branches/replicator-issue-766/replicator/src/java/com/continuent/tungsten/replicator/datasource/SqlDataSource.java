@@ -20,7 +20,7 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import org.apache.log4j.Logger;
 
@@ -28,12 +28,12 @@ import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.database.Database;
 
 /**
- * Implements a catalog based on a relational DBMS. This supersedes class
+ * Implements a data source based on a relational DBMS. This supersedes class
  * com.continuent.tungsten.replicator.thl.CatalogManager.
  */
-public class SqlCatalog implements Catalog
+public class SqlDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(SqlCatalog.class);
+    private static Logger logger   = Logger.getLogger(SqlDataSource.class);
 
     // Properties.
     private String        serviceName;
@@ -41,6 +41,8 @@ public class SqlCatalog implements Catalog
     private String        url;
     private String        user;
     private String        password;
+    private String        host;
+    private int           port;
     private String        tableType;
     private boolean       privilegedSlaveUpdate;
     private String        schema;
@@ -52,7 +54,7 @@ public class SqlCatalog implements Catalog
     SqlConnectionManager  connectionManager;
 
     /** Create new instance. */
-    public SqlCatalog()
+    public SqlDataSource()
     {
     }
 
@@ -84,6 +86,26 @@ public class SqlCatalog implements Catalog
     public void setPassword(String password)
     {
         this.password = password;
+    }
+
+    public String getHost()
+    {
+        return host;
+    }
+
+    public void setHost(String host)
+    {
+        this.host = host;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(int port)
+    {
+        this.port = port;
     }
 
     public String getTableType()
@@ -126,12 +148,10 @@ public class SqlCatalog implements Catalog
         return channels;
     }
 
-    // CATALOG API
-
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setServiceName(java.lang.String)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setServiceName(java.lang.String)
      */
     public void setServiceName(String serviceName)
     {
@@ -141,7 +161,7 @@ public class SqlCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setChannels(int)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setChannels(int)
      */
     public void setChannels(int channels)
     {
@@ -149,7 +169,7 @@ public class SqlCatalog implements Catalog
     }
 
     /**
-     * Instantiate and configure all catalog tables.
+     * Instantiate and configure all data source tables.
      */
     @Override
     public void configure() throws ReplicatorException, InterruptedException
@@ -168,7 +188,7 @@ public class SqlCatalog implements Catalog
     }
 
     /**
-     * Prepare all catalog tables for use.
+     * Prepare all data source tables for use.
      */
     @Override
     public void prepare() throws ReplicatorException, InterruptedException
@@ -181,7 +201,7 @@ public class SqlCatalog implements Catalog
     }
 
     /**
-     * Release all catalog tables.
+     * Release all data source tables.
      */
     @Override
     public void release() throws ReplicatorException, InterruptedException
@@ -199,7 +219,7 @@ public class SqlCatalog implements Catalog
     @Override
     public void initialize() throws ReplicatorException, InterruptedException
     {
-        logger.info("Initializing catalog tables: service=" + serviceName
+        logger.info("Initializing data source tables: service=" + serviceName
                 + " schema=" + schema);
         commitSeqno.initialize();
     }
@@ -213,7 +233,7 @@ public class SqlCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getCommitSeqno()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getCommitSeqno()
      */
     @Override
     public CommitSeqno getCommitSeqno()
@@ -224,9 +244,9 @@ public class SqlCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getConnection()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getConnection()
      */
-    public Database getConnection() throws ReplicatorException
+    public UniversalConnection getConnection() throws ReplicatorException
     {
         return connectionManager.getWrappedConnection();
     }
@@ -234,10 +254,10 @@ public class SqlCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#releaseConnection(com.continuent.tungsten.replicator.database.Database)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#releaseConnection(com.continuent.tungsten.replicator.datasource.UniversalConnection)
      */
-    public void releaseConnection(Database conn)
+    public void releaseConnection(UniversalConnection conn)
     {
-        connectionManager.releaseWrappedConnection(conn);
+        connectionManager.releaseWrappedConnection((Database) conn);
     }
 }

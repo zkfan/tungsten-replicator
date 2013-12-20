@@ -20,19 +20,18 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 
 /**
- * Implements a dummy catalog type for testing.
+ * Implements a dummy data source type for testing.
  */
-public class SampleCatalog implements Catalog
+public class SampleDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(SampleCatalog.class);
+    private static Logger logger   = Logger.getLogger(SampleDataSource.class);
 
     // Properties.
     private String        serviceName;
@@ -40,7 +39,7 @@ public class SampleCatalog implements Catalog
     private String        myParameter;
 
     /** Create new instance. */
-    public SampleCatalog()
+    public SampleDataSource()
     {
     }
 
@@ -69,7 +68,7 @@ public class SampleCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setServiceName(java.lang.String)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setServiceName(java.lang.String)
      */
     public void setServiceName(String serviceName)
     {
@@ -79,7 +78,7 @@ public class SampleCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setChannels(int)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setChannels(int)
      */
     public void setChannels(int channels)
     {
@@ -87,30 +86,30 @@ public class SampleCatalog implements Catalog
     }
 
     /**
-     * Instantiate and configure all catalog tables.
+     * Instantiate and configure all data source tables.
      */
     @Override
     public void configure() throws ReplicatorException, InterruptedException
     {
-        logger.info("Configuring catalog: service=" + serviceName);
+        logger.info("Configuring data source: service=" + serviceName);
     }
 
     /**
-     * Prepare all catalog tables for use.
+     * Prepare all data source tables for use.
      */
     @Override
     public void prepare() throws ReplicatorException, InterruptedException
     {
-        logger.info("Preparing catalog: service=" + serviceName);
+        logger.info("Preparing data source: service=" + serviceName);
     }
 
     /**
-     * Release all catalog tables.
+     * Release all data source tables.
      */
     @Override
     public void release() throws ReplicatorException, InterruptedException
     {
-        logger.info("Releasing catalog: service=" + serviceName);
+        logger.info("Releasing data source: service=" + serviceName);
     }
 
     /**
@@ -119,19 +118,19 @@ public class SampleCatalog implements Catalog
     @Override
     public void initialize() throws ReplicatorException, InterruptedException
     {
-        logger.info("Initializing catalog tables: service=" + serviceName);
+        logger.info("Initializing data source tables: service=" + serviceName);
     }
 
     @Override
     public void clear() throws ReplicatorException, InterruptedException
     {
-        logger.info("Clearing catalog tables: service=" + serviceName);
+        logger.info("Clearing data source tables: service=" + serviceName);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getCommitSeqno()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getCommitSeqno()
      */
     @Override
     public CommitSeqno getCommitSeqno()
@@ -142,9 +141,9 @@ public class SampleCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getConnection()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getConnection()
      */
-    public Database getConnection() throws ReplicatorException
+    public UniversalConnection getConnection() throws ReplicatorException
     {
         // Not implemented for now.
         return null;
@@ -153,9 +152,9 @@ public class SampleCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#releaseConnection(com.continuent.tungsten.replicator.database.Database)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#releaseConnection(com.continuent.tungsten.replicator.datasource.UniversalConnection)
      */
-    public void releaseConnection(Database conn)
+    public void releaseConnection(UniversalConnection conn)
     {
         // Not implemented for now.
     }

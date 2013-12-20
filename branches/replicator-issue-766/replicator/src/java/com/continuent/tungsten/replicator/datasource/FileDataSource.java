@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2011-2013 Continuent Inc.
+ * Copyright (C) 2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,21 +20,20 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.common.file.FileIO;
 import com.continuent.tungsten.common.file.FilePath;
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 
 /**
- * Implements a catalog that uses a file system to store catalog information.
+ * Implements a data source that stores data on a file system.
  */
-public class FileCatalog implements Catalog
+public class FileDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(FileCatalog.class);
+    private static Logger logger   = Logger.getLogger(FileDataSource.class);
 
     // Properties.
     private String        serviceName;
@@ -49,7 +48,7 @@ public class FileCatalog implements Catalog
     FilePath              serviceDir;
 
     /** Create new instance. */
-    public FileCatalog()
+    public FileDataSource()
     {
     }
 
@@ -63,12 +62,10 @@ public class FileCatalog implements Catalog
         this.directory = directory;
     }
 
-    // CATALOG API
-
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setServiceName(java.lang.String)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setServiceName(java.lang.String)
      */
     public void setServiceName(String serviceName)
     {
@@ -78,7 +75,7 @@ public class FileCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getServiceName()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getServiceName()
      */
     public String getServiceName()
     {
@@ -88,7 +85,7 @@ public class FileCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#setChannels(int)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#setChannels(int)
      */
     public void setChannels(int channels)
     {
@@ -98,7 +95,7 @@ public class FileCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getChannels()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getChannels()
      */
     public int getChannels()
     {
@@ -106,7 +103,7 @@ public class FileCatalog implements Catalog
     }
 
     /**
-     * Instantiate and configure all catalog tables.
+     * Instantiate and configure all data source tables.
      */
     @Override
     public void configure() throws ReplicatorException, InterruptedException
@@ -123,7 +120,7 @@ public class FileCatalog implements Catalog
     }
 
     /**
-     * Prepare all catalog tables for use.
+     * Prepare all data source tables for use.
      */
     @Override
     public void prepare() throws ReplicatorException, InterruptedException
@@ -155,7 +152,7 @@ public class FileCatalog implements Catalog
     }
 
     /**
-     * Release all catalog tables.
+     * Release all data source tables.
      */
     @Override
     public void release() throws ReplicatorException, InterruptedException
@@ -169,7 +166,7 @@ public class FileCatalog implements Catalog
     @Override
     public void initialize() throws ReplicatorException, InterruptedException
     {
-        logger.info("Initializing catalog files: service=" + serviceName
+        logger.info("Initializing data source files: service=" + serviceName
                 + " directory=" + directory);
         commitSeqno.initialize();
     }
@@ -183,7 +180,7 @@ public class FileCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getCommitSeqno()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getCommitSeqno()
      */
     @Override
     public CommitSeqno getCommitSeqno()
@@ -194,19 +191,20 @@ public class FileCatalog implements Catalog
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#getConnection()
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#getConnection()
      */
-    public Database getConnection() throws ReplicatorException
+    public UniversalConnection getConnection() throws ReplicatorException
     {
-        return null;
+        return new FileConnection();
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.Catalog#releaseConnection(com.continuent.tungsten.replicator.database.Database)
+     * @see com.continuent.tungsten.replicator.datasource.UniversalDataSource#releaseConnection(com.continuent.tungsten.replicator.datasource.UniversalConnection)
      */
-    public void releaseConnection(Database conn)
+    public void releaseConnection(UniversalConnection conn)
     {
+        conn.close();
     }
 }

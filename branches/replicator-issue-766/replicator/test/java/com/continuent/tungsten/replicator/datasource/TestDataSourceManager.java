@@ -20,7 +20,7 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import junit.framework.Assert;
 
@@ -28,12 +28,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
+import com.continuent.tungsten.replicator.datasource.DataSourceManager;
 
 /**
- * Runs tests on the catalog manager to ensure we can add, find, and remove
+ * Runs tests on the data source manager to ensure we can add, find, and remove
  * catalogs.
  */
-public class TestCatalogManager
+public class TestDataSourceManager
 {
     /**
      * Make sure we have expected test properties.
@@ -53,20 +54,20 @@ public class TestCatalogManager
     {
         // Create the catalog definition.
         TungstenProperties props = new TungstenProperties();
-        props.setString("catalogs.test", SampleCatalog.class.getName());
+        props.setString("catalogs.test", SampleDataSource.class.getName());
         props.setString("catalogs.test.serviceName", "mytest");
         props.setLong("catalogs.test.channels", 3);
         props.setString("catalogs.test.myParameter", "some value");
 
         // Ensure that catalog does not already exist.
-        CatalogManager cm = new CatalogManager();
+        DataSourceManager cm = new DataSourceManager();
         cm.remove("test");
         Assert.assertNull("Ensuring catalog does not exist prior to test",
                 cm.find("test"));
 
         // Add new catalog, then fetch it back and confirm field values.
         cm.add("test", props, "catalogs");
-        SampleCatalog c = (SampleCatalog) cm.find("test");
+        SampleDataSource c = (SampleDataSource) cm.find("test");
         Assert.assertNotNull("Catalog should be available", c);
         Assert.assertEquals("Comparing channels", 3, c.getChannels());
         Assert.assertEquals("Comparing service name", "mytest",
@@ -94,13 +95,13 @@ public class TestCatalogManager
     {
         // Create the catalog definitions using a single properties file.
         TungstenProperties props = new TungstenProperties();
-        props.setString("catalogs.test1", SampleCatalog.class.getName());
+        props.setString("catalogs.test1", SampleDataSource.class.getName());
         props.setString("catalogs.test1.serviceName", "mytest1");
-        props.setString("catalogs.test2", SampleCatalog.class.getName());
+        props.setString("catalogs.test2", SampleDataSource.class.getName());
         props.setString("catalogs.test2.serviceName", "mytest2");
 
         // Ensure that catalogs do not already exist.
-        CatalogManager cm = new CatalogManager();
+        DataSourceManager cm = new DataSourceManager();
         Assert.assertNull("Ensuring catalog does not exist prior to test",
                 cm.find("test1"));
         Assert.assertNull("Ensuring catalog does not exist prior to test",
@@ -112,12 +113,12 @@ public class TestCatalogManager
         cm.add("test2", props, "catalogs");
         Assert.assertEquals("Checking number of names", 2, cm.names().size());
 
-        SampleCatalog c1 = (SampleCatalog) cm.find("test1");
+        SampleDataSource c1 = (SampleDataSource) cm.find("test1");
         Assert.assertNotNull("Catalog should be available", c1);
         Assert.assertEquals("Comparing service name", "mytest1",
                 c1.getServiceName());
 
-        SampleCatalog c2 = (SampleCatalog) cm.find("test2");
+        SampleDataSource c2 = (SampleDataSource) cm.find("test2");
         Assert.assertNotNull("Catalog should be available", c2);
         Assert.assertEquals("Comparing service name", "mytest2",
                 c2.getServiceName());

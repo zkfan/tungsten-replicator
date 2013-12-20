@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
  * Initial developer(s): Robert Hodges
- * Contributor(s): Stephane Giron
+ * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,8 +31,8 @@ import com.continuent.tungsten.replicator.database.Database;
 import com.continuent.tungsten.replicator.database.DatabaseFactory;
 
 /**
- * Encapsulates connection creation and release for SQL catalog processes and
- * adds convenience method for management of various
+ * Encapsulates connection creation and release for SQL data sources and adds
+ * convenience method for management of various JDBC objects.
  */
 public class SqlConnectionManager
 {

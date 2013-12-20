@@ -20,40 +20,43 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 
 /**
- * Denotes an implementation of the replicator catalog data, which consists of a
- * set of "tables" that hold metadata used to control replication. Catalogs may
- * implement such tables using relational tables, files, or any other suitable
- * means.
- * <p/>
+ * Denotes a generic data source that a replicator may connect at either end of
+ * a pipeline. Data source implementions encapsulate the following data:
+ * <ul>
+ * <li>Replicator catalogs, which consist of a set of "tables" that hold
+ * metadata used to control replication. Data sources may implement such tables
+ * using relational tables, files, or any other suitable means.</li>
+ * <li>Connection manager, which parcels out connections to the data source, be
+ * this a JDBC connection, a MongoDB connection, a connection to HDFS, etc.</li>
+ * </ul>
  * All data required for operation must be provided through property setters.
- * Catalogs do not implement the ReplicatorPlugin lifecycle or access the
+ * Data sources do not implement the ReplicatorPlugin lifecycle or access the
  * PluginContext implementation as this introduces dependencies that prevent
- * easy testing and hurt portability between DBMS store types.
+ * easy testing and hurt portability between store types.
  * 
  * @see com.continuent.tungsten.replicator.plugin.ReplicatorPlugin
  * @see com.continuent.tungsten.replicator.plugin.PluginContext
  */
-public interface Catalog extends CatalogEntity
+public interface UniversalDataSource extends CatalogEntity
 {
     /**
-     * Set the name of the replicator service that is using this catalog.
+     * Set the name of the replicator service that is using this data source.
      */
     public void setServiceName(String serviceName);
 
     /**
-     * Return the name of the replicator service that is using this catalog.
+     * Return the name of the replicator service that is using this data source.
      */
     public String getServiceName();
 
     /**
-     * Set the number of channels to track. This is the basic mechanism to
-     * support parallel replication.
+     * Set the number of channels to use when extracting from or applying to the
+     * data source. This is the basic mechanism to support parallel replication.
      */
     public void setChannels(int channels);
 
@@ -69,12 +72,13 @@ public interface Catalog extends CatalogEntity
     public CommitSeqno getCommitSeqno();
 
     /**
-     * Returns a ready-to-use wrapped connection for operations on a database.
+     * Returns a ready-to-use wrapped connection for operations on the data
+     * source.
      */
-    public Database getConnection() throws ReplicatorException;
+    public UniversalConnection getConnection() throws ReplicatorException;
 
     /**
      * Releases a wrapped connection.
      */
-    public void releaseConnection(Database conn);
+    public void releaseConnection(UniversalConnection conn);
 }

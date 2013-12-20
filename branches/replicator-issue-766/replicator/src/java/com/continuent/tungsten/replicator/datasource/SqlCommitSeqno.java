@@ -20,7 +20,7 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -89,7 +89,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#setChannels(int)
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#setChannels(int)
      */
     public void setChannels(int channels)
     {
@@ -99,7 +99,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogEntity#configure()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#configure()
      */
     public void configure() throws ReplicatorException, InterruptedException
     {
@@ -114,7 +114,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogEntity#prepare()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#prepare()
      */
     public void prepare() throws ReplicatorException, InterruptedException
     {
@@ -175,7 +175,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogTable#release()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#release()
      */
     public void release() throws ReplicatorException, InterruptedException
     {
@@ -185,7 +185,7 @@ public class SqlCommitSeqno implements CommitSeqno
      * Create the trep_commit_seqno table, if necessary, and ensure the number
      * of channels matches the number of channels.
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#initialize()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoData#initialize()
      */
     public void initialize() throws ReplicatorException, InterruptedException
     {
@@ -271,7 +271,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogEntity#clear()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#clear()
      */
     public void clear()
     {
@@ -303,7 +303,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#minCommitSeqno()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#minCommitSeqno()
      */
     public ReplDBMSHeader minCommitSeqno() throws ReplicatorException,
             InterruptedException
@@ -346,16 +346,16 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqno#createAccessor(int,
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#createAccessor(int,
      *      com.continuent.tungsten.replicator.database.Database)
      */
-    public CommitSeqnoAccessor createAccessor(int taskId, Database conn)
-            throws ReplicatorException
+    public CommitSeqnoAccessor createAccessor(int taskId,
+            UniversalConnection conn) throws ReplicatorException
     {
         SqlCommitSeqnoAccessor accessor = new SqlCommitSeqnoAccessor(
                 commitSeqnoTable, connectionManager);
         accessor.setTaskId(taskId);
-        accessor.setConnection(conn);
+        accessor.setConnection((Database) conn);
         accessor.prepare();
         return accessor;
     }
@@ -364,7 +364,7 @@ public class SqlCommitSeqno implements CommitSeqno
      * {@inheritDoc}
      * 
      * @throws InterruptedException
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqno#expandTasks()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#expandTasks()
      */
     public void expandTasks() throws ReplicatorException, InterruptedException
     {
@@ -422,7 +422,7 @@ public class SqlCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqno#reduceTasks()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#reduceTasks()
      */
     public boolean reduceTasks() throws ReplicatorException
     {

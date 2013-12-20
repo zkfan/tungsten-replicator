@@ -20,31 +20,31 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import org.junit.Before;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
+import com.continuent.tungsten.replicator.datasource.FileDataSource;
 
 /**
- * Runs tests on the catalog manager to ensure we can add, find, and remove
- * catalogs.
+ * Implements a test on file data source operations.
  */
-public class FileCatalogTest extends AbstractCatalogTest
+public class FileDataSourceTest extends AbstractDataSourceTest
 {
     /**
-     * Set up properties used to configure the catalog.
+     * Set up properties used to configure the data source.
      */
     @Before
     public void setUp() throws Exception
     {
-        // Create the catalog definition.
-        catalogProps = new TungstenProperties();
-        catalogProps.setString("serviceName", "sqlcatalog");
-        catalogProps.setLong("channels", 10);
-        catalogProps.setString("directory", "fileCatalogTest");
+        // Create the data source definition.
+        datasourceProps = new TungstenProperties();
+        datasourceProps.setString("serviceName", "sqlcatalog");
+        datasourceProps.setLong("channels", 10);
+        datasourceProps.setString("directory", "fileCatalogTest");
 
-        // Set the catalog class.
-        catalogClass = FileCatalog.class.getName();
+        // Set the data source class.
+        datasourceClass = FileDataSource.class.getName();
     }
 }

@@ -20,7 +20,7 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -78,7 +78,7 @@ public class SqlCommitSeqnoAccessor implements CommitSeqnoAccessor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoTaskAccessor#prepare()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor#prepare()
      */
     public void prepare() throws ReplicatorException
     {
@@ -122,7 +122,7 @@ public class SqlCommitSeqnoAccessor implements CommitSeqnoAccessor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoTaskAccessor#close()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor#close()
      */
     public void close()
     {

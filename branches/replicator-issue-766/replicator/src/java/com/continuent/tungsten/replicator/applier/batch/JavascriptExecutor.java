@@ -39,6 +39,7 @@ import org.mozilla.javascript.Undefined;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.database.Database;
+import com.continuent.tungsten.replicator.datasource.UniversalConnection;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 
 /**
@@ -50,24 +51,24 @@ import com.continuent.tungsten.replicator.plugin.PluginContext;
  */
 public class JavascriptExecutor implements ScriptExecutor
 {
-    private static Logger logger        = Logger.getLogger(JavascriptExecutor.class);
+    private static Logger       logger        = Logger.getLogger(JavascriptExecutor.class);
 
     // Location of script.
-    private String        scriptFile    = null;
+    private String              scriptFile    = null;
 
     // DBMS connection and statement.
-    private Database      connection;
-    private SqlWrapper    connectionWrapper;
+    private UniversalConnection connection;
+    private SqlWrapper          connectionWrapper;
 
     // Compiled user's script.
-    private Script        script        = null;
+    private Script              script        = null;
 
     // JavaScript scope containing all objects including functions of the user's
     // script and our exported objects.
-    private Scriptable    scope         = null;
+    private Scriptable          scope         = null;
 
     // Pointer to the script's apply function.
-    private Function      applyFunction = null;
+    private Function            applyFunction = null;
 
     /**
      * {@inheritDoc}
@@ -75,7 +76,7 @@ public class JavascriptExecutor implements ScriptExecutor
      * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#setConnection(com.continuent.tungsten.replicator.database.Database)
      */
     @Override
-    public void setConnection(Database connection)
+    public void setConnection(UniversalConnection connection)
     {
         this.connection = connection;
     }
@@ -124,16 +125,20 @@ public class JavascriptExecutor implements ScriptExecutor
     @Override
     public void prepare(PluginContext context) throws ReplicatorException
     {
-        // Create a connection wrapper to provide SQL capabilities.
-        try
+        // Create a connection wrapper to provide SQL capabilities if we have
+        // a SQL connection.
+        if (connection instanceof Database)
         {
-            connectionWrapper = new SqlWrapper(connection);
-        }
-        catch (SQLException e)
-        {
-            throw new ReplicatorException(
-                    "Unable to initialize JDBC connection for load script: script="
-                            + script + " message=" + e.getMessage(), e);
+            try
+            {
+                connectionWrapper = new SqlWrapper((Database) connection);
+            }
+            catch (SQLException e)
+            {
+                throw new ReplicatorException(
+                        "Unable to initialize JDBC connection for load script: script="
+                                + script + " message=" + e.getMessage(), e);
+            }
         }
 
         // Create JavaScript context which will be used for preparing script.
@@ -157,16 +162,22 @@ public class JavascriptExecutor implements ScriptExecutor
             // Provide access to the logger object.
             ScriptableObject.putProperty(scope, "logger", logger);
 
-            // Provide access to the SQL connection wrapper.
-            ScriptableObject.putProperty(scope, "sql", connectionWrapper);
-            
-            // Provide access to a runtime to help run processes and other useful things. 
-            ScriptableObject.putProperty(scope, "runtime", new JavascriptRuntime());
+            // Provide access to the SQL connection wrapper if defined.
+            if (connectionWrapper != null)
+            {
+                ScriptableObject.putProperty(scope, "sql", connectionWrapper);
+            }
 
-            // Get a pointer to function "apply(info)".
+            // Provide access to a runtime to help run processes and other
+            // useful things.
+            ScriptableObject.putProperty(scope, "runtime",
+                    new JavascriptRuntime());
+
+            // Get a pointer to function "apply()", which may accept an optional
+            // argument to an info object.
             Object filterObj = scope.get("apply", scope);
             if (!(filterObj instanceof Function))
-                logger.error("apply(info) is undefined in " + scriptFile);
+                logger.error("apply() function is undefined in " + scriptFile);
             else
                 applyFunction = (Function) filterObj;
 
@@ -228,6 +239,36 @@ public class JavascriptExecutor implements ScriptExecutor
             // Call function "filter(event)" and log its result if one was
             // returned.
             Object functionArgs[] = {info};
+            applyFunction.call(jsContext, scope, scope, functionArgs);
+
+            // Exit JavaScript context.
+            Context.exit();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#execute()
+     */
+    @Override
+    public void execute() throws ReplicatorException
+    {
+        // Call script if it was successfully prepared.
+        if (applyFunction != null)
+        {
+            // We are in a method which might be called from a different thread
+            // than the one that called the prepare() method. Thus we need to
+            // enter JavaScript context.
+            Context jsContext = ContextFactory.getGlobal().enterContext();
+
+            // Provide access to current thread object.
+            ScriptableObject.putProperty(scope, "thread",
+                    Thread.currentThread());
+
+            // Call function "filter(event)" and log its result if one was
+            // returned.
+            Object functionArgs[] = {};
             applyFunction.call(jsContext, scope, scope, functionArgs);
 
             // Exit JavaScript context.

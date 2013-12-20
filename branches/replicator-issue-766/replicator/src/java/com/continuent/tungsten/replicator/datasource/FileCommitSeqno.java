@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2007-2013 Continuent Inc.
+ * Copyright (C) 2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.sql.Timestamp;
 import java.util.LinkedList;
@@ -32,7 +32,6 @@ import com.continuent.tungsten.common.config.TungstenProperties;
 import com.continuent.tungsten.common.file.FileIO;
 import com.continuent.tungsten.common.file.FilePath;
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeaderData;
 
@@ -60,7 +59,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#setChannels(int)
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoData#setChannels(int)
      */
     public void setChannels(int channels)
     {
@@ -114,7 +113,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogTable#prepare()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#prepare()
      */
     public void prepare() throws ReplicatorException, InterruptedException
     {
@@ -137,7 +136,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogTable#release()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#release()
      */
     public void release() throws ReplicatorException, InterruptedException
     {
@@ -146,7 +145,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#initialize()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#initialize()
      */
     public void initialize() throws ReplicatorException, InterruptedException
     {
@@ -167,7 +166,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogEntity#clear()
+     * @see com.continuent.tungsten.replicator.datasource.CatalogEntity#clear()
      */
     public void clear()
     {
@@ -185,7 +184,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#expandTasks()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#expandTasks()
      */
     public void expandTasks() throws ReplicatorException
     {
@@ -226,7 +225,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#reduceTasks()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#reduceTasks()
      */
     public boolean reduceTasks() throws ReplicatorException
     {
@@ -296,7 +295,7 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoData#minCommitSeqno()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#minCommitSeqno()
      */
     public ReplDBMSHeader minCommitSeqno() throws ReplicatorException
     {
@@ -313,10 +312,11 @@ public class FileCommitSeqno implements CommitSeqno
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqno#createAccessor(int,
-     *      com.continuent.tungsten.replicator.database.Database)
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqno#createAccessor(int,
+     *      com.continuent.tungsten.replicator.datasource.UniversalConnection)
      */
-    public CommitSeqnoAccessor createAccessor(int taskId, Database conn)
+    public CommitSeqnoAccessor createAccessor(int taskId,
+            UniversalConnection conn)
     {
         FileCommitSeqnoAccessor accessor = new FileCommitSeqnoAccessor(this);
         accessor.setTaskId(taskId);

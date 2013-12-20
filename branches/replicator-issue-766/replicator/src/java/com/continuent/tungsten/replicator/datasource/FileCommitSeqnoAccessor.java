@@ -20,7 +20,7 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
@@ -43,7 +43,7 @@ public class FileCommitSeqnoAccessor implements CommitSeqnoAccessor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoAccessor#setTaskId(int)
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor#setTaskId(int)
      */
     public void setTaskId(int taskId)
     {
@@ -53,7 +53,7 @@ public class FileCommitSeqnoAccessor implements CommitSeqnoAccessor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoAccessor#prepare()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor#prepare()
      */
     public void prepare() throws ReplicatorException, InterruptedException
     {
@@ -62,16 +62,7 @@ public class FileCommitSeqnoAccessor implements CommitSeqnoAccessor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.catalog.CatalogTable#release()
-     */
-    public void release() throws ReplicatorException, InterruptedException
-    {
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see com.continuent.tungsten.replicator.catalog.CommitSeqnoAccessor#close()
+     * @see com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor#close()
      */
     public void close()
     {

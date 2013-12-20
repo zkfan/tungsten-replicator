@@ -20,10 +20,9 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 
 /**
@@ -76,10 +75,9 @@ public interface CommitSeqno extends CatalogEntity
      * task ID.
      * 
      * @param taskId The stage task ID
-     * @param conn A database connection or null if this is (a) not an RDBMS
-     *            catalog or (b) does not support transactionally consistent
-     *            operations
+     * @param conn A connection to the data source
      */
-    public CommitSeqnoAccessor createAccessor(int taskId, Database conn)
-            throws ReplicatorException, InterruptedException;
+    public CommitSeqnoAccessor createAccessor(int taskId,
+            UniversalConnection conn) throws ReplicatorException,
+            InterruptedException;
 }

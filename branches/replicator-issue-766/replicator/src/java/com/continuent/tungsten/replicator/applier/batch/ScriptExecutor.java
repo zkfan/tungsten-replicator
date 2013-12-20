@@ -23,17 +23,17 @@
 package com.continuent.tungsten.replicator.applier.batch;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
+import com.continuent.tungsten.replicator.datasource.UniversalConnection;
 import com.continuent.tungsten.replicator.plugin.ReplicatorPlugin;
 
 /**
- * Denotes a class capable of executing a batch load script.  This interface
- * conforms to conventions for replicator plugins.  
+ * Denotes a class capable of executing a batch load script. This interface
+ * conforms to conventions for replicator plugins.
  */
 public interface ScriptExecutor extends ReplicatorPlugin
 {
-    /** Sets the DBMS connection. */
-    public abstract void setConnection(Database connection);
+    /** Sets the data source connection. */
+    public abstract void setConnection(UniversalConnection connection);
 
     /** Sets the script name. */
     public abstract void setScript(String script);
@@ -42,11 +42,17 @@ public interface ScriptExecutor extends ReplicatorPlugin
     public abstract void setShowCommands(boolean showCommands);
 
     /**
+     * Executes a script that is not specific to any table.
+     * 
+     * @throws ReplicatorException Thrown if load operation fails
+     */
+    public abstract void execute() throws ReplicatorException;
+
+    /**
      * Executes the script for a specific table.
      * 
      * @param info Information about the table to be loaded and source CSV file
      * @throws ReplicatorException Thrown if load operation fails
      */
     public abstract void execute(CsvInfo info) throws ReplicatorException;
-
 }

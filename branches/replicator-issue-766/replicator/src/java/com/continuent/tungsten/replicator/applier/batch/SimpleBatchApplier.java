@@ -24,19 +24,14 @@ package com.continuent.tungsten.replicator.applier.batch;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,19 +47,17 @@ import com.continuent.tungsten.common.csv.CsvException;
 import com.continuent.tungsten.common.csv.CsvWriter;
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.applier.RawApplier;
-import com.continuent.tungsten.replicator.catalog.Catalog;
-import com.continuent.tungsten.replicator.catalog.CatalogManager;
-import com.continuent.tungsten.replicator.catalog.CommitSeqno;
-import com.continuent.tungsten.replicator.catalog.CommitSeqnoAccessor;
 import com.continuent.tungsten.replicator.consistency.ConsistencyException;
 import com.continuent.tungsten.replicator.consistency.ConsistencyTable;
 import com.continuent.tungsten.replicator.database.Column;
-import com.continuent.tungsten.replicator.database.Database;
-import com.continuent.tungsten.replicator.database.DatabaseFactory;
 import com.continuent.tungsten.replicator.database.Key;
-import com.continuent.tungsten.replicator.database.SqlScriptGenerator;
 import com.continuent.tungsten.replicator.database.Table;
 import com.continuent.tungsten.replicator.database.TableMetadataCache;
+import com.continuent.tungsten.replicator.datasource.CommitSeqno;
+import com.continuent.tungsten.replicator.datasource.CommitSeqnoAccessor;
+import com.continuent.tungsten.replicator.datasource.DataSourceService;
+import com.continuent.tungsten.replicator.datasource.UniversalConnection;
+import com.continuent.tungsten.replicator.datasource.UniversalDataSource;
 import com.continuent.tungsten.replicator.dbms.DBMSData;
 import com.continuent.tungsten.replicator.dbms.LoadDataFileFragment;
 import com.continuent.tungsten.replicator.dbms.OneRowChange;
@@ -105,11 +98,7 @@ public class SimpleBatchApplier implements RawApplier
     private int                         taskId;
 
     // Properties.
-    protected String                    catalog;
-    protected String                    driver;
-    protected String                    url;
-    protected String                    user;
-    protected String                    password;
+    protected String                    dataSource;
     protected String                    stageDirectory;
     protected String                    startupScript;
     protected String                    stageMergeScript;
@@ -123,6 +112,9 @@ public class SimpleBatchApplier implements RawApplier
     protected LoadMismatch              onLoadMismatch       = LoadMismatch.fail;
     protected boolean                   showCommands;
 
+    // Replication context
+    PluginContext                       context;
+
     // Load file directory for this task.
     private File                        stageDir;
 
@@ -133,7 +125,7 @@ public class SimpleBatchApplier implements RawApplier
     private Map<String, CsvInfo>        openCsvFiles         = new TreeMap<String, CsvInfo>();
 
     // Script executor.
-    private ScriptExecutor              scriptExec;
+    private ScriptExecutor              mergeScriptExec;
 
     // Latest event.
     private ReplDBMSHeader              latestHeader;
@@ -145,12 +137,11 @@ public class SimpleBatchApplier implements RawApplier
     protected String                    metadataSchema       = null;
     protected String                    consistencyTable     = null;
     protected String                    consistencySelect    = null;
-    protected Database                  conn                 = null;
-    protected Statement                 statement            = null;
     protected Pattern                   ignoreSessionPattern = null;
 
     // Catalog.
-    protected Catalog                   tungstenCatalog      = null;
+    protected UniversalDataSource       dataSourceImpl       = null;
+    protected UniversalConnection       conn                 = null;
     protected CommitSeqnoAccessor       commitSeqnoAccessor  = null;
 
     // Old catalog tables.
@@ -159,29 +150,9 @@ public class SimpleBatchApplier implements RawApplier
     // Data formatter.
     protected volatile SimpleDateFormat dateFormatter;
 
-    public void setCatalog(String catalog)
+    public void setDataSource(String dataSource)
     {
-        this.catalog = catalog;
-    }
-
-    public void setDriver(String driver)
-    {
-        this.driver = driver;
-    }
-
-    public void setUrl(String url)
-    {
-        this.url = url;
-    }
-
-    public void setUser(String user)
-    {
-        this.user = user;
-    }
-
-    public void setPassword(String password)
-    {
-        this.password = password;
+        this.dataSource = dataSource;
     }
 
     /** Set the name of the connect script. */
@@ -278,16 +249,20 @@ public class SimpleBatchApplier implements RawApplier
         {
             try
             {
-                heartbeatTable.applyHeartbeat(conn, event.getSourceTstamp(),
-                        hbName);
-                heartbeatTable.completeHeartbeat(conn, header.getSeqno(),
-                        event.getEventId());
+                // heartbeatTable.applyHeartbeat(conn, event.getSourceTstamp(),
+                // hbName);
+                // heartbeatTable.completeHeartbeat(conn, header.getSeqno(),
+                // event.getEventId());
                 if (doCommit)
                 {
                     conn.commit();
                 }
             }
-            catch (SQLException e)
+            catch (ReplicatorException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
             {
                 throw new ReplicatorException("Error updating heartbeat table",
                         e);
@@ -442,8 +417,7 @@ public class SimpleBatchApplier implements RawApplier
         int loadCount = 0;
         for (CsvInfo info : openCsvFiles.values())
         {
-            clearStageTable(info);
-            scriptExec.execute(info);
+            mergeScriptExec.execute(info);
             loadCount++;
         }
 
@@ -464,7 +438,7 @@ public class SimpleBatchApplier implements RawApplier
             conn.commit();
             conn.setAutoCommit(false);
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             throw new ReplicatorException("Unable to commit transaction", e);
         }
@@ -502,7 +476,7 @@ public class SimpleBatchApplier implements RawApplier
         {
             rollbackTransaction();
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             logger.info("Unable to roll back transaction");
             if (logger.isDebugEnabled())
@@ -548,10 +522,11 @@ public class SimpleBatchApplier implements RawApplier
     public void configure(PluginContext context) throws ReplicatorException,
             InterruptedException
     {
+        // Store the context for future reference.
+        this.context = context;
+
         // Ensure basic properties are not null.
-        assertNotNull(url, "url");
-        assertNotNull(user, "user");
-        assertNotNull(password, "password");
+        assertNotNull(dataSource, "dataSource");
         assertNotNull(stageDirectory, "stageDirectory");
         assertNotNull(stageTablePrefix, "stageTablePrefix");
         assertNotNull(stageColumnPrefix, "stageRowIdColumn");
@@ -622,159 +597,72 @@ public class SimpleBatchApplier implements RawApplier
         // Initialize table metadata cache.
         fullMetadataCache = new TableMetadataCache(5000);
 
-        // Connect to DBMS.
+        // Connect to data source.
+        DataSourceService datasourceService = (DataSourceService) context
+                .getService("datasource");
+        if (datasourceService == null)
+        {
+            throw new ReplicatorException(
+                    "Unable to locate service for data source configuration; "
+                            + "check replicator configuration files: service name=datasource");
+        }
+        dataSourceImpl = datasourceService.find(dataSource);
+        conn = dataSourceImpl.getConnection();
+
+        // Prepare accessor(s) to data. 
+        CommitSeqno commitSeqno = dataSourceImpl.getCommitSeqno();
+        commitSeqnoAccessor = commitSeqno.createAccessor(taskId, conn);
+        
+        // Fetch the last event. 
+        latestHeader = commitSeqnoAccessor.lastCommitSeqno();
+
+        // Ensure we are not in auto-commit mode.
         try
         {
-            // Load driver if provided.
-            if (driver != null)
-            {
-                try
-                {
-                    Class.forName(driver);
-                }
-                catch (Exception e)
-                {
-                    throw new ReplicatorException("Unable to load driver: "
-                            + driver, e);
-                }
-            }
-
-            // Create the database.
-            if (!context.isPrivilegedSlaveUpdate())
-            {
-                logger.info("Assuming non-privileged JDBC login for apply");
-            }
-            conn = DatabaseFactory.createDatabase(url, user, password,
-                    context.isPrivilegedSlaveUpdate());
-            conn.connect(false);
-            statement = conn.createStatement();
-
-            // Get the table type. For MySQL databases this is important.
-            String tableType = context.getTungstenTableType();
-
-            // Set up heartbeat table.
-            heartbeatTable = new HeartbeatTable(
-                    context.getReplicatorSchemaName(), tableType);
-            heartbeatTable.initializeHeartbeatTable(conn);
-
-            // Create consistency table
-            Table consistency = ConsistencyTable
-                    .getConsistencyTableDefinition(metadataSchema);
-            conn.createTable(consistency, false, tableType);
-
-            // Fetch catalog instance and ensure tables are initialized.
-            CatalogManager cm = new CatalogManager();
-            tungstenCatalog = cm.find(catalog);
-            tungstenCatalog.initialize();
-
-            // Fetch the last processed event.
-            CommitSeqno commitSeqno = tungstenCatalog.getCommitSeqno();
-            CommitSeqnoAccessor commitSeqnoAccessor = commitSeqno.createAccessor(
-                    taskId, conn);
-            latestHeader = commitSeqnoAccessor.lastCommitSeqno();
-
-            // Ensure we are not in auto-commit mode.
             conn.setAutoCommit(false);
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
-            String message = String.format("Failed using url=%s, user=%s", url,
-                    user);
-            throw new ReplicatorException(message, e);
+            throw new ReplicatorException(
+                    "Unable to start transaction: message=" + e.getMessage(), e);
         }
 
         // If a start-up script is present, execute that now.
         if (startupScript != null)
         {
-            // Parse script.
-            SqlScriptGenerator generator = initializeGenerator(this.startupScript);
-            List<String> startCommands = generator
-                    .getParameterizedScript(new HashMap<String, String>());
-
-            // Execute commands.
-            for (String startCommand : startCommands)
-            {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Executing start command: " + startCommand);
-                }
-                try
-                {
-                    long start = System.currentTimeMillis();
-                    statement.execute(startCommand);
-                    double interval = (System.currentTimeMillis() - start) / 1000.0;
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Execution completed: duration="
-                                + interval + "s");
-                    }
-                }
-                catch (SQLException e)
-                {
-                    ReplicatorException re = new ReplicatorException(
-                            "Unable to execute load command", e);
-                    re.setExtraData(startCommand);
-                    throw re;
-                }
-            }
+            ScriptExecutor startupExecutor = this
+                    .createScriptExecutor(startupScript);
+            startupExecutor.execute();
         }
 
         // Initialize script for merge operations.
-        if (stageMergeScript.toLowerCase().endsWith(".sql"))
-            scriptExec = new NativeScriptExecutor();
-        else if (stageMergeScript.toLowerCase().endsWith(".js"))
-            scriptExec = new JavascriptExecutor();
+        mergeScriptExec = createScriptExecutor(stageMergeScript);
+    }
+
+    /**
+     * Creates a script executor for a particular script.
+     */
+    private ScriptExecutor createScriptExecutor(String script)
+            throws ReplicatorException, InterruptedException
+    {
+        ScriptExecutor exec;
+        if (script.toLowerCase().endsWith(".sql"))
+            exec = new NativeScriptExecutor();
+        else if (script.toLowerCase().endsWith(".js"))
+            exec = new JavascriptExecutor();
         else
         {
             throw new ReplicatorException(
                     "Unrecognized batch script suffix; only .js and .sql are supported: "
-                            + stageMergeScript);
+                            + script);
         }
 
         // Set parameters and prepare.
-        scriptExec.setConnection(conn);
-        scriptExec.setScript(stageMergeScript);
-        scriptExec.setShowCommands(showCommands);
-        scriptExec.prepare(context);
-    }
-
-    // Initializes a SqlScriptGenerator.
-    public static SqlScriptGenerator initializeGenerator(String script)
-            throws ReplicatorException
-    {
-        FileReader fileReader = null;
-        SqlScriptGenerator generator = new SqlScriptGenerator();
-        try
-        {
-            File loadScriptFile = new File(script);
-            fileReader = new FileReader(loadScriptFile);
-            generator.load(fileReader);
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new ReplicatorException("Unable to open load script file: "
-                    + script);
-        }
-        catch (IOException e)
-        {
-            throw new ReplicatorException("Unable to read load script file: "
-                    + script, e);
-        }
-        finally
-        {
-            if (fileReader != null)
-            {
-                try
-                {
-                    fileReader.close();
-                }
-                catch (IOException e)
-                {
-                }
-            }
-        }
-
-        return generator;
+        exec.setConnection(conn);
+        exec.setScript(script);
+        exec.setShowCommands(showCommands);
+        exec.prepare(context);
+        return exec;
     }
 
     /**
@@ -1021,39 +909,6 @@ public class SimpleBatchApplier implements RawApplier
         }
     }
 
-    // Load an open CSV file.
-    protected void clearStageTable(CsvInfo info) throws ReplicatorException
-    {
-        Table table = info.stageTableMetadata;
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Clearing stage table: " + table.fullyQualifiedName());
-        }
-
-        // Generate and submit SQL command.
-        String delete = "DELETE FROM " + table.fullyQualifiedName();
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Executing delete command: " + delete);
-        }
-        try
-        {
-            int rowsLoaded = statement.executeUpdate(delete);
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("Rows deleted: " + rowsLoaded);
-            }
-        }
-        catch (SQLException e)
-        {
-            ReplicatorException re = new ReplicatorException(
-                    "Unable to delete data from stage table: "
-                            + table.fullyQualifiedName(), e);
-            re.setExtraData(delete);
-            throw re;
-        }
-    }
-
     // Get full table metadata. Cache for table metadata is populated
     // automatically.
     private Table getTableMetadata(String schema, String name,
@@ -1232,16 +1087,11 @@ public class SimpleBatchApplier implements RawApplier
     }
 
     // Rolls back the current transaction.
-    private void rollbackTransaction() throws SQLException
+    private void rollbackTransaction() throws Exception
     {
         try
         {
             conn.rollback();
-        }
-        catch (SQLException e)
-        {
-            logger.error("Failed to rollback : " + e);
-            throw e;
         }
         finally
         {

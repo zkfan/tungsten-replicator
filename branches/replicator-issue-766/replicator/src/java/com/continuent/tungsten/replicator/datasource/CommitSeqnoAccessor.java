@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2007-2013 Continuent Inc.
+ * Copyright (C) 2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,23 +20,22 @@
  * Contributor(s): Stephane Giron
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
+import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 
 /**
- * Denotes a catalog entity (including the catalog itself or tables within it)
- * and specifies the contract for the catalog table life-cycle.
+ * Denotes an accessor for stage tasks to update metadata in the CommitSeqno
+ * table. This performs operations that may need to be integrated with
+ * transactions.
  */
-public interface CatalogEntity
+public interface CommitSeqnoAccessor
 {
     /**
-     * Complete configuration. This is called after setters are invoked.
-     * 
-     * @throws ReplicatorException Thrown if configuration is incomplete or
-     *             fails
+     * Set the task ID for this accessor.
      */
-    public void configure() throws ReplicatorException, InterruptedException;
+    public void setTaskId(int taskId);
 
     /**
      * Prepare for use. This method is assumed to allocate any required
@@ -47,22 +46,23 @@ public interface CatalogEntity
     public void prepare() throws ReplicatorException, InterruptedException;
 
     /**
-     * Release all resources. This is called before the table is deallocated.
+     * Release all resources. Clients must call this to avoid resource leaks.
      * 
      * @throws ReplicatorException Thrown if resource deallocation fails
      */
-    public void release() throws ReplicatorException, InterruptedException;
+    public void close() throws ReplicatorException, InterruptedException;
 
     /**
-     * Ensures all catalog data are present and properly initialized for use. If
-     * data are absent, this call creates them. If they are present, this call
-     * validates that they are ready for use.
+     * Updates the last committed seqno for a single channel. This is a client
+     * call used by appliers to mark the restart position.
      */
-    public void initialize() throws ReplicatorException, InterruptedException;
+    public void updateLastCommitSeqno(ReplDBMSHeader header, long appliedLatency)
+            throws ReplicatorException, InterruptedException;
 
     /**
-     * Removes any and all catalog data. This is a dangerous call as it will
-     * cause the replication service to lose all
+     * Fetches header data for last committed transaction for a particular
+     * channel. This is a client call to get the restart position.
      */
-    public void clear() throws ReplicatorException, InterruptedException;
+    public ReplDBMSHeader lastCommitSeqno() throws ReplicatorException,
+            InterruptedException;
 }

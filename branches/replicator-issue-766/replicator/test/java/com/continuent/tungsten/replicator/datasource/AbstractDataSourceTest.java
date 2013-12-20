@@ -20,7 +20,7 @@
  * Contributor(s): 
  */
 
-package com.continuent.tungsten.replicator.catalog;
+package com.continuent.tungsten.replicator.datasource;
 
 import java.sql.Timestamp;
 
@@ -31,35 +31,34 @@ import org.junit.Test;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
 import com.continuent.tungsten.replicator.ReplicatorException;
-import com.continuent.tungsten.replicator.database.Database;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeader;
 import com.continuent.tungsten.replicator.event.ReplDBMSHeaderData;
 
 /**
- * Runs tests on the catalog manager to ensure we can add, find, and remove
- * catalogs.
+ * Implements test cases that apply to any data source implementation.
  */
-public class AbstractCatalogTest
+public class AbstractDataSourceTest
 {
-    private static Logger        logger         = Logger.getLogger(AbstractCatalogTest.class);
+    private static Logger        logger            = Logger.getLogger(AbstractDataSourceTest.class);
 
-    // Properties for catalog test.
-    protected TungstenProperties catalogProps;
-    protected String             catalogClass;
-    protected CatalogManager     catalogManager = new CatalogManager();
+    // Properties for data source test.
+    protected TungstenProperties datasourceProps;
+    protected String             datasourceClass;
+    protected DataSourceManager  datasourceManager = new DataSourceManager();
 
     /**
-     * Verify that after initialization the catalog contents are available.
+     * Verify that after initialization the data source contents are available.
      */
     @Test
     public void testInitialization() throws Exception
     {
-        // Create a separate catalog for this test.
-        catalogProps.setString("serviceName", "test_initialization");
-        catalogManager.add("testInitialization", catalogClass, catalogProps);
+        // Create a separate data source for this test.
+        datasourceProps.setString("serviceName", "test_initialization");
+        datasourceManager.add("testInitialization", datasourceClass,
+                datasourceProps);
 
-        // Get the catalog and ensure tables are cleared.
-        Catalog c = catalogManager.find("testInitialization");
+        // Get the data source and ensure tables are cleared.
+        UniversalDataSource c = datasourceManager.find("testInitialization");
         c.clear();
 
         // Now initialize the tables.
@@ -72,16 +71,16 @@ public class AbstractCatalogTest
     }
 
     /**
-     * Verify that if we initialize a catalog we can update the commit seqno
+     * Verify that if we initialize a data source we can update the commit seqno
      * position and read the updated value back.
      */
     @Test
     public void testSeqno() throws Exception
     {
-        Catalog c = prepareCatalog("testSeqno");
+        UniversalDataSource c = prepareCatalog("testSeqno");
 
         // Retrieve the initial data.
-        Database conn = c.getConnection();
+        UniversalConnection conn = c.getConnection();
         CommitSeqnoAccessor accessor = c.getCommitSeqno().createAccessor(0,
                 conn);
         ReplDBMSHeader initial = accessor.lastCommitSeqno();
@@ -122,16 +121,16 @@ public class AbstractCatalogTest
     @Test
     public void testSeqnoManyAccessors() throws Exception
     {
-        Catalog c = prepareCatalog("testSeqnoManyAccessors");
+        UniversalDataSource c = prepareCatalog("testSeqnoManyAccessors");
         CommitSeqno commitSeqno = c.getCommitSeqno();
 
-        // Loop through many times.  
-        // TODO:  Raise # to 10000. 
+        // Loop through many times.
+        // TODO: Raise # to 10000.
         for (int i = 0; i < 100; i++)
         {
             if (i > 0 && (i % 1000) == 0)
                 logger.info("Iteration: " + i);
-            Database conn = c.getConnection();
+            UniversalConnection conn = c.getConnection();
             CommitSeqnoAccessor accessor = commitSeqno.createAccessor(0, conn);
 
             // Check the last position updated.
@@ -157,9 +156,9 @@ public class AbstractCatalogTest
     @Test
     public void testSeqnoChannels() throws Exception
     {
-        Catalog c = prepareCatalog("testSeqnoChannels");
+        UniversalDataSource c = prepareCatalog("testSeqnoChannels");
         int channels = c.getChannels();
-        Database conn = c.getConnection();
+        UniversalConnection conn = c.getConnection();
         CommitSeqno commitSeqno = c.getCommitSeqno();
         CommitSeqnoAccessor[] accessors = new CommitSeqnoAccessor[channels];
 
@@ -191,13 +190,13 @@ public class AbstractCatalogTest
     }
 
     /**
-     * Verify that seqno values are persistent even if we allocate the catalog a
-     * second time.
+     * Verify that seqno values are persistent even if we allocate the data
+     * source a second time.
      */
     @Test
     public void testSeqnoPersistence() throws Exception
     {
-        Catalog c = prepareCatalog("testSeqnoPersistence");
+        UniversalDataSource c = prepareCatalog("testSeqnoPersistence");
         int channels = c.getChannels();
 
         // Expand the commit sequence numbers out to the full number of
@@ -206,7 +205,7 @@ public class AbstractCatalogTest
         commitSeqno.expandTasks();
 
         // Allocate accessor and update for each channel.
-        Database conn = c.getConnection();
+        UniversalConnection conn = c.getConnection();
         for (int i = 0; i < channels; i++)
         {
             CommitSeqnoAccessor accessor = commitSeqno.createAccessor(i, conn);
@@ -218,14 +217,15 @@ public class AbstractCatalogTest
         }
         commitSeqno.release();
 
-        // Close the catalog and add a new one.
+        // Close the data source and add a new one.
         c.release();
-        catalogManager.remove("testSeqnoPersistence");
-        catalogManager.add("testSeqnoPersistence", catalogClass, catalogProps);
-        Catalog c2 = catalogManager.find("testSeqnoPersistence");
+        datasourceManager.remove("testSeqnoPersistence");
+        datasourceManager.add("testSeqnoPersistence", datasourceClass,
+                datasourceProps);
+        UniversalDataSource c2 = datasourceManager.find("testSeqnoPersistence");
 
         // Read back stored header and deallocate accessor for each channel.
-        Database conn2 = c2.getConnection();
+        UniversalConnection conn2 = c2.getConnection();
         CommitSeqno commitSeqno2 = c2.getCommitSeqno();
         for (int i = 0; i < channels; i++)
         {
@@ -243,16 +243,16 @@ public class AbstractCatalogTest
     }
 
     /**
-     * Prepares a catalog and returns same to caller.
+     * Prepares a data source and returns same to caller.
      */
-    private Catalog prepareCatalog(String name) throws ReplicatorException,
-            InterruptedException
+    private UniversalDataSource prepareCatalog(String name)
+            throws ReplicatorException, InterruptedException
     {
-        catalogProps.setString("serviceName", name);
-        catalogManager.add(name, catalogClass, catalogProps);
+        datasourceProps.setString("serviceName", name);
+        datasourceManager.add(name, datasourceClass, datasourceProps);
 
-        // Get the catalog and ensure tables are cleared.
-        Catalog c = catalogManager.find(name);
+        // Get the data source and ensure tables are cleared.
+        UniversalDataSource c = datasourceManager.find(name);
         c.clear();
         c.initialize();
 
