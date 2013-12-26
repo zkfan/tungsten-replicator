@@ -413,10 +413,14 @@ public class SimpleBatchApplier implements RawApplier
             flush(info);
         }
 
-        // Load each open CSV file.
+        // Load each open CSV file. We update the seqno of this commit in
+        // CsvInfo as that helps the batch load scripts generate unique file
+        // names that associate easily with the trep_commit_seqno position.
         int loadCount = 0;
+        long commitSeqno = latestHeader.getSeqno();
         for (CsvInfo info : openCsvFiles.values())
         {
+            info.seqno = commitSeqno;
             mergeScriptExec.execute(info);
             loadCount++;
         }
@@ -609,11 +613,11 @@ public class SimpleBatchApplier implements RawApplier
         dataSourceImpl = datasourceService.find(dataSource);
         conn = dataSourceImpl.getConnection();
 
-        // Prepare accessor(s) to data. 
+        // Prepare accessor(s) to data.
         CommitSeqno commitSeqno = dataSourceImpl.getCommitSeqno();
         commitSeqnoAccessor = commitSeqno.createAccessor(taskId, conn);
-        
-        // Fetch the last event. 
+
+        // Fetch the last event.
         latestHeader = commitSeqnoAccessor.lastCommitSeqno();
 
         // Ensure we are not in auto-commit mode.

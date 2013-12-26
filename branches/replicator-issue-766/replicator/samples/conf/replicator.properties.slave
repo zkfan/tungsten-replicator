@@ -371,14 +371,7 @@ replicator.datasources=sink
 replicator.datasource.source=com.continuent.tungsten.replicator.datasource.DummyDatasource
 
 # Default service for tail of pipeline.
-replicator.datasource.sink=com.continuent.tungsten.replicator.datasource.SqlDataSource
-replicator.datasource.sink=com.continuent.tungsten.replicator.datasource.SqlDataSource
-replicator.datasource.sink.host=logos1
-replicator.datasource.sink.port=3306
-replicator.datasource.sink.user=tungsten
-replicator.datasource.sink.password=secret
-replicator.datasource.sink.schema=${replicator.schema}
-replicator.datasource.sink.url=jdbc:mysql:thin://${replicator.datasource.sink.host}:${replicator.datasource.sink.port}/${replicator.schema}?createDB=true
+@{REPL_SVC_APPLIER_DATASOURCE_CONFIG}
 
 ################################
 # BACKUP/RESTORE CONFIGURATION #

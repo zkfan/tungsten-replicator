@@ -20,7 +20,8 @@ function apply(csvinfo)
   csv_file = sqlParams.get("%%CSV_FILE%%");
   schema = csvinfo.schema;
   table = csvinfo.table;
-  hadoop_file = schema + "." + table + ".csv";
+  seqno = csvinfo.seqno;
+  hadoop_file = schema + "-" + table + "-" + seqno + ".csv";
   logger.info("Writing file: " + csv_file + " to: " + hadoop_file);
 
   // Append data to a single file in HDFS. 

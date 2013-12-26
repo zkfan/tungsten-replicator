@@ -47,6 +47,7 @@ public class CsvInfo
     public Table     stageTableMetadata;
     public File      file;
     public CsvWriter writer;
+    public long      seqno = -1;
 
     /**
      * Instantiates a new instance.
@@ -81,10 +82,8 @@ public class CsvInfo
         parameters
                 .put("%%BASE_TABLE%%", baseTableMetadata.fullyQualifiedName());
         parameters.put("%%BASE_COLUMNS%%", colNames.toString());
-        parameters.put("%%STAGE_TABLE%%",
-                stageTableMetadata.getName());
-        parameters.put("%%STAGE_SCHEMA%%",
-                stageTableMetadata.getSchema());
+        parameters.put("%%STAGE_TABLE%%", stageTableMetadata.getName());
+        parameters.put("%%STAGE_SCHEMA%%", stageTableMetadata.getSchema());
         parameters.put("%%STAGE_TABLE_FQN%%",
                 stageTableMetadata.fullyQualifiedName());
         parameters.put("%%PKEY%%", pkey);
