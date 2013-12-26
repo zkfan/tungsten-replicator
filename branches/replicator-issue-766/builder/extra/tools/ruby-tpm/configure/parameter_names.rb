@@ -177,6 +177,7 @@ REPL_SVC_PARALLELIZATION_EXTRACTOR_CLASS = "repl_svc_parallelization_extractor_c
 REPL_SVC_CONFIG_FILE = "repl_svc_config_file"
 REPL_SVC_DYNAMIC_CONFIG = "repl_svc_dynamic_config"
 REPL_SVC_APPLIER_CONFIG = "repl_svc_applier_config"
+REPL_SVC_APPLIER_DATASOURCE_CONFIG = "repl_svc_applier_datasource_config"
 REPL_SVC_EXTRACTOR_CONFIG = "repl_svc_extractor_config"
 REPL_SVC_FILTER_CONFIG = "repl_svc_filter_config"
 REPL_SVC_BACKUP_CONFIG = "repl_svc_backup_config"
