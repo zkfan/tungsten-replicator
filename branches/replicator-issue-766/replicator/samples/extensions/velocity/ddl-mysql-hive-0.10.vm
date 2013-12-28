@@ -1,0 +1,98 @@
+#*
+  Tungsten Scale-Out Stack
+  Copyright (C) 2013 Continuent Inc.
+  Contact: tungsten@continuent.org
+ 
+  Initial developer(s): Robert Hodges, Linas Virbalas
+  Contributor(s):
+ 
+  Hive 0.10.0 template for Tungsten.
+
+*##parse("includes/table-counter.vm")
+## Print header or help above the first table.
+#if ( $counter == 1 )
+#if( $help )
+Transforms MySQL table definition (DDL) to equivalent Hive 0.10
+base tables.  Reports errors (ERROR) and warnings (WARN).  Column
+mappings generally map to those used by Tungsten Replicator.
+#else
+#parse("includes/ddl-header.vm")
+CREATE DATABASE $table.getSchema()##
+;
+#end
+#end
+## Stop processing if help requested.
+#if( $help )
+#stop
+#end
+
+DROP TABLE ##
+$table.getSchema().$table.getName()##
+;
+
+CREATE TABLE ##
+$table.getSchema().$table.getName()##
+#if ( $table.getName().substring(0, 1).matches("[0-9]") ) /* ERROR: table starts with a number, use rename option and a filter */ #end
+
+(
+#set ( $firstcol = false )
+#foreach ( $col in $table.getAllColumns() )
+## Print leading command if necessary. 
+#if ( !$firstcol )
+  #set ( $firstcol = true )
+#else
+,
+#end
+## Print column name. 
+  $col.getName() ##
+### Add datatype specification. 
+#if ( $col.getTypeDescription().contains("DATETIME"))
+TIMESTAMP##
+#elseif ( $col.getTypeDescription().contains("TIMESTAMP") )
+TIMESTAMP##
+#elseif ( $col.getTypeDescription().contains("DATE") )
+TIMESTAMP##
+#elseif ( $col.getTypeDescription().contains("TIME") )
+STRING##
+#elseif ( $col.getTypeDescription().contains("YEAR") )
+INT##
+#elseif ( $col.getTypeDescription().startsWith("TINYINT") )
+TINYINT##
+#elseif ( $col.getTypeDescription().startsWith("SMALLINT") )
+SMALLINT##
+#elseif ( $col.getTypeDescription().startsWith("MEDIUMINT") )
+INT##
+#elseif ( $col.getTypeDescription().startsWith("INT") )
+INT##
+#elseif ( $col.getTypeDescription().startsWith("BIGINT") )
+BIGINT##
+#elseif ( $col.getTypeDescription().startsWith("DECIMAL(") )
+STRING##
+#elseif ( $col.getTypeDescription().startsWith("VARCHAR") )
+STRING##
+#elseif ( $col.getTypeDescription().startsWith("CHAR") )
+STRING##
+#elseif ( $col.getTypeDescription().startsWith("BINARY") )
+BINARY##
+#elseif ( $col.getTypeDescription().startsWith("VARBINARY") )
+BINARY##
+#elseif ( $col.getTypeDescription().contains("TEXT") )
+STRING##
+#elseif ( $col.getTypeDescription().contains("BLOB") )
+BINARY##
+#elseif ( $col.getTypeDescription().startsWith("FLOAT") )
+FLOAT##
+#elseif ( $col.getTypeDescription().startsWith("DOUBLE") )
+DOUBLE##
+#elseif ( $col.getTypeDescription().startsWith("ENUM") )
+STRING##
+#elseif ( $col.getTypeDescription().startsWith("SET") )
+STRING##
+#elseif ( $col.getTypeDescription().startsWith("BIT") )
+STRING##
+#else
+$col.getTypeDescription() /* ERROR: unrecognized (type=$col.getType(), length=$col.getLength()) */##
+#end ## End of if-then-then...-else.
+#end ## End of column loop. 
+) ##
+;
