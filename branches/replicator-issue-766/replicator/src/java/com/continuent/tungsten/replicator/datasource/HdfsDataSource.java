@@ -22,24 +22,32 @@
 
 package com.continuent.tungsten.replicator.datasource;
 
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.apache.log4j.Logger;
 
-import com.continuent.tungsten.common.file.FileIO;
+import com.continuent.tungsten.common.config.TungstenProperties;
+import com.continuent.tungsten.common.config.TungstenPropertiesIO;
 import com.continuent.tungsten.common.file.FilePath;
-import com.continuent.tungsten.common.file.JavaFileIO;
+import com.continuent.tungsten.common.file.HdfsFileIO;
 import com.continuent.tungsten.replicator.ReplicatorException;
 
 /**
- * Implements a data source that stores data on a file system.
+ * Implements a data source that stores data in HDFS.
  */
-public class FileDataSource implements UniversalDataSource
+public class HdfsDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(FileDataSource.class);
+    private static Logger logger   = Logger.getLogger(HdfsDataSource.class);
 
     // Properties.
+    private String        hdfsUri;
+    private String        hdfsConfigProperties;
     private String        serviceName;
     private int           channels = 1;
     private String        directory;
+    URI                   uri;
 
     // Catalog tables.
     FileCommitSeqno       commitSeqno;
@@ -47,10 +55,10 @@ public class FileDataSource implements UniversalDataSource
     // File IO-related variables.
     FilePath              rootDir;
     FilePath              serviceDir;
-    JavaFileIO            javaFileIO;
+    HdfsFileIO            hdfsFileIO;
 
     /** Create new instance. */
-    public FileDataSource()
+    public HdfsDataSource()
     {
     }
 
@@ -62,6 +70,26 @@ public class FileDataSource implements UniversalDataSource
     public void setDirectory(String directory)
     {
         this.directory = directory;
+    }
+
+    public String getHdfsUri()
+    {
+        return hdfsUri;
+    }
+
+    public void setHdfsUri(String hdfsUri)
+    {
+        this.hdfsUri = hdfsUri;
+    }
+
+    public String getHdfsConfigProperties()
+    {
+        return hdfsConfigProperties;
+    }
+
+    public void setHdfsConfigProperties(String hdfsConfigProperties)
+    {
+        this.hdfsConfigProperties = hdfsConfigProperties;
     }
 
     /**
@@ -114,11 +142,37 @@ public class FileDataSource implements UniversalDataSource
         rootDir = new FilePath(directory);
         serviceDir = new FilePath(rootDir, serviceName);
 
-        // Create a new Java file IO instance.
-        javaFileIO = new JavaFileIO();
+        // Ensure HDFS URI is ok.
+        try
+        {
+            uri = new URI(hdfsUri);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new ReplicatorException("Invalid HDFS URI: uri=" + uri
+                    + " messsage=" + e.getMessage(), e);
+        }
+
+        // Load HDFS properties, if they exist.
+        TungstenProperties hdfsProps;
+        if (hdfsConfigProperties == null)
+        {
+            hdfsProps = new TungstenProperties();
+        }
+        else
+        {
+            File configPropFile = new File(hdfsConfigProperties);
+            TungstenPropertiesIO propsIO = new TungstenPropertiesIO(
+                    configPropFile);
+            propsIO.setFormat(TungstenPropertiesIO.JAVA_PROPERTIES);
+            hdfsProps = propsIO.read();
+        }
+
+        // Create HDFS FileIO instance.
+        hdfsFileIO = new HdfsFileIO(uri, hdfsProps);
 
         // Configure tables.
-        commitSeqno = new FileCommitSeqno(javaFileIO);
+        commitSeqno = new FileCommitSeqno(hdfsFileIO);
         commitSeqno.setServiceName(serviceName);
         commitSeqno.setChannels(channels);
         commitSeqno.setServiceDir(serviceDir);
@@ -130,23 +184,22 @@ public class FileDataSource implements UniversalDataSource
     @Override
     public void prepare() throws ReplicatorException, InterruptedException
     {
-        // Ensure the service directory is ready for use.
-        FileIO fileIO = new JavaFileIO();
-        if (!fileIO.exists(serviceDir))
+        // Make HDFS directory if it does not already exist.
+        if (!hdfsFileIO.exists(serviceDir))
         {
             logger.info("Service directory does not exist, creating: "
                     + serviceDir.toString());
-            fileIO.mkdirs(serviceDir);
+            hdfsFileIO.mkdirs(serviceDir);
         }
 
         // Ensure everything exists now.
-        if (!fileIO.readable(serviceDir))
+        if (!hdfsFileIO.readable(serviceDir))
         {
             throw new ReplicatorException(
                     "Service directory does not exist or is not readable: "
                             + serviceDir.toString());
         }
-        else if (!fileIO.writable(serviceDir))
+        else if (!hdfsFileIO.writable(serviceDir))
         {
             throw new ReplicatorException("Service directory is not writable: "
                     + serviceDir.toString());
@@ -200,7 +253,7 @@ public class FileDataSource implements UniversalDataSource
      */
     public UniversalConnection getConnection() throws ReplicatorException
     {
-        return new FileConnection();
+        return new HdfsConnection(hdfsFileIO);
     }
 
     /**

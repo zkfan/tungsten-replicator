@@ -49,11 +49,17 @@ public class FileCommitSeqno implements CommitSeqno
     private String        prefix   = "commitseqno";
 
     // Instances to handle file system operations.
-    private FileIO        fileIO   = new FileIO();
+    private final FileIO  fileIO;
 
-    /** Create a new instance. */
-    public FileCommitSeqno()
+    /**
+     * Create a new instance.
+     * 
+     * @param fileIO FileIO instance appropriately configured for the file
+     *            system type
+     */
+    public FileCommitSeqno(FileIO fileIO)
     {
+        this.fileIO = fileIO;
     }
 
     /**
@@ -118,7 +124,6 @@ public class FileCommitSeqno implements CommitSeqno
     public void prepare() throws ReplicatorException, InterruptedException
     {
         // Ensure everything exists now.
-        fileIO = new FileIO();
         if (!fileIO.readable(serviceDir))
         {
             throw new ReplicatorException(

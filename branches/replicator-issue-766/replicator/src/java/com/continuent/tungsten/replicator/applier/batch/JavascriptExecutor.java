@@ -39,6 +39,7 @@ import org.mozilla.javascript.Undefined;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.database.Database;
+import com.continuent.tungsten.replicator.datasource.HdfsConnection;
 import com.continuent.tungsten.replicator.datasource.UniversalConnection;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 
@@ -58,7 +59,8 @@ public class JavascriptExecutor implements ScriptExecutor
 
     // DBMS connection and statement.
     private UniversalConnection connection;
-    private SqlWrapper          connectionWrapper;
+    private SqlWrapper          sqlConnectionWrapper;
+    private HdfsWrapper         hdfsConnectionWrapper;
 
     // Compiled user's script.
     private Script              script        = null;
@@ -131,7 +133,7 @@ public class JavascriptExecutor implements ScriptExecutor
         {
             try
             {
-                connectionWrapper = new SqlWrapper((Database) connection);
+                sqlConnectionWrapper = new SqlWrapper((Database) connection);
             }
             catch (SQLException e)
             {
@@ -139,6 +141,11 @@ public class JavascriptExecutor implements ScriptExecutor
                         "Unable to initialize JDBC connection for load script: script="
                                 + script + " message=" + e.getMessage(), e);
             }
+        }
+        else if (connection instanceof HdfsConnection)
+        {
+            hdfsConnectionWrapper = new HdfsWrapper(
+                    (HdfsConnection) connection);
         }
 
         // Create JavaScript context which will be used for preparing script.
@@ -163,9 +170,17 @@ public class JavascriptExecutor implements ScriptExecutor
             ScriptableObject.putProperty(scope, "logger", logger);
 
             // Provide access to the SQL connection wrapper if defined.
-            if (connectionWrapper != null)
+            if (sqlConnectionWrapper != null)
             {
-                ScriptableObject.putProperty(scope, "sql", connectionWrapper);
+                ScriptableObject
+                        .putProperty(scope, "sql", sqlConnectionWrapper);
+            }
+
+            // Provide access to the HDFS connection wrapper if defined.
+            if (hdfsConnectionWrapper != null)
+            {
+                ScriptableObject.putProperty(scope, "hdfs",
+                        hdfsConnectionWrapper);
             }
 
             // Provide access to a runtime to help run processes and other
@@ -210,9 +225,14 @@ public class JavascriptExecutor implements ScriptExecutor
     public void release(PluginContext context)
     {
         // Release SQL resources.
-        if (connectionWrapper != null)
+        if (sqlConnectionWrapper != null)
         {
-            connectionWrapper.close();
+            sqlConnectionWrapper.close();
+        }
+        // Release HDFS resources.
+        if (hdfsConnectionWrapper != null)
+        {
+            hdfsConnectionWrapper.close();
         }
     }
 

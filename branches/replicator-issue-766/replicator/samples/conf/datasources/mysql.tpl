@@ -1,4 +1,4 @@
-# MySQL pipeline tail datasource. 
+# MySQL datasource. 
 replicator.datasource.sink=com.continuent.tungsten.replicator.datasource.SqlDataSource
 replicator.datasource.sink.serviceName=${service.name}
 replicator.datasource.sink.host=@{APPLIER.REPL_DBHOST}

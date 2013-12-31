@@ -365,12 +365,8 @@ replicator.service.channel-assignment.channels=${replicator.global.apply.channel
 replicator.service.datasource=com.continuent.tungsten.replicator.datasource.DataSourceService
 
 # Data sources we know about. 
-replicator.datasources=sink
+replicator.datasources=applier
 
-# Default service for head of pipeline.
-replicator.datasource.source=com.continuent.tungsten.replicator.datasource.DummyDatasource
-
-# Default service for tail of pipeline.
 @{REPL_SVC_APPLIER_DATASOURCE_CONFIG}
 
 ################################
