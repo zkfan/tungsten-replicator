@@ -22,43 +22,28 @@
 
 package com.continuent.tungsten.common.file;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+
 import junit.framework.Assert;
 
-import org.junit.After;
-import org.junit.Before;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.continuent.tungsten.common.file.FilePath;
-
 /**
- * Implements unit test for file IO operations designed to be invoked by
+ * Implements generic unit test for file IO operations designed to be invoked by
  * different implementations.
  */
-public class FileIOTest
+public abstract class AbstractFileIOTest
 {
-    // Must be provided by subclasses.
-    protected FileIO fileIO;
+    private static Logger logger = Logger.getLogger(AbstractFileIOTest.class);
 
-    /**
-     * Setup.
-     * 
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception
-    {
-        fileIO = new FileIO();
-    }
-
-    /**
-     * Teardown.
-     * 
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception
-    {
-    }
+    // Must be provided by subclasses or test cases will not run.
+    protected FileIO      fileIO;
 
     /**
      * Verify that every unit test has an empty test directory that exists, is
@@ -67,6 +52,9 @@ public class FileIOTest
     @Test
     public void testTestDir() throws Exception
     {
+        if (!assertFileIO())
+            return;
+
         FilePath testDir = prepareTestDir("testTestDir");
         Assert.assertTrue("Exists: " + testDir, fileIO.exists(testDir));
         Assert.assertTrue("Is directory: " + testDir,
@@ -79,14 +67,51 @@ public class FileIOTest
     }
 
     /**
-     * Verify that we can write a file and read it back.
-     * 
-     * @throws Exception
+     * Verify that we can write a file using a stream and read it back.
      */
     @Test
-    public void testWriteRead() throws Exception
+    public void testWriteReadStreams() throws Exception
     {
-        FilePath testDir = prepareTestDir("testWriteRead");
+        if (!assertFileIO())
+            return;
+
+        FilePath testDir = prepareTestDir("testWriteReadStreams");
+
+        // Ensure no file exists to begin with.
+        FilePath fp = new FilePath(testDir, "wrtest");
+        Assert.assertFalse("File does not exist: " + fp, fileIO.exists(fp));
+
+        // Write data to the file and close same.
+        OutputStream os = fileIO.getOutputStream(fp);
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(os));
+        pw.write("test data!");
+        pw.flush();
+        pw.close();
+
+        // Ensure the file now exists.
+        Assert.assertTrue("File exists: " + fp, fileIO.exists(fp));
+        Assert.assertTrue("Is a file: " + fp, fileIO.isFile(fp));
+
+        // Read back and compare.
+        InputStream is = fileIO.getInputStream(fp);
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String contents = br.readLine();
+        br.close();
+
+        Assert.assertEquals("File contents should match what we wrote",
+                "test data!", contents);
+    }
+
+    /**
+     * Verify that we can write a string value to a file and read it back.
+     */
+    @Test
+    public void testWriteReadValues() throws Exception
+    {
+        if (!assertFileIO())
+            return;
+
+        FilePath testDir = prepareTestDir("testWriteReadValues");
 
         // Write to the file and ensure it exists thereafter.
         FilePath fp = new FilePath(testDir, "foo");
@@ -109,6 +134,9 @@ public class FileIOTest
     @Test
     public void testDirectoryChildren() throws Exception
     {
+        if (!assertFileIO())
+            return;
+
         FilePath testDir = prepareTestDir("testDirectoryChildren");
 
         // Create a directory.
@@ -142,12 +170,12 @@ public class FileIOTest
 
         // Ensure that we delete everything if the dir1 delete is recursive.
         boolean deleted2 = fileIO.delete(dir1, true);
-        Assert.assertTrue("Unable to delete: " + dir1, deleted2);
-        Assert.assertFalse("Does not exists: " + dir1, fileIO.exists(dir1));
+        Assert.assertTrue("Able to delete: " + dir1, deleted2);
+        Assert.assertFalse("Does not exist: " + dir1, fileIO.exists(dir1));
     }
 
     // Sets up a test directory.
-    private FilePath prepareTestDir(String dirName) throws Exception
+    protected FilePath prepareTestDir(String dirName) throws Exception
     {
         FilePath testDir = new FilePath(dirName);
         fileIO.delete(testDir, true);
@@ -157,5 +185,18 @@ public class FileIOTest
         if (!fileIO.exists(testDir))
             throw new Exception("Unable to create test directory: " + dirName);
         return testDir;
+    }
+
+    // Returns false if the fileIO instances has not be set and test case should
+    // return immediately.
+    protected boolean assertFileIO()
+    {
+        if (fileIO == null)
+        {
+            logger.warn("FileIO is not set; test case will not be run");
+            return false;
+        }
+        else
+            return true;
     }
 }
