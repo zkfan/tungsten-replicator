@@ -15,5 +15,5 @@ function apply()
 {
   // Ensure target directory exists. 
   logger.info("Executing hadoop connect script to create data directory");
-  runtime.exec('hadoop fs -mkdir -p /user/rhodges/data');
+  runtime.exec('hadoop fs -mkdir -p /user/tungsten/fdata');
 }

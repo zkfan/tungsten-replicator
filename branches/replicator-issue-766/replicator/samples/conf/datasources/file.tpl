@@ -1,5 +1,5 @@
 # File datasource. 
-replicator.datasource.sink=com.continuent.tungsten.replicator.datasource.FileDataSource
-replicator.datasource.sink.serviceName=${service.name}
+replicator.datasource.applier=com.continuent.tungsten.replicator.datasource.FileDataSource
+replicator.datasource.applier.serviceName=${service.name}
 # Storage location for replication catalog data. 
-replicator.datasource.sink.directory=${replicator.home.dir}/data
+replicator.datasource.applier.directory=${replicator.home.dir}/data

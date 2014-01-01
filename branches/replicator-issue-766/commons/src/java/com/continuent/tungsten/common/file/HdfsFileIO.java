@@ -101,7 +101,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#exists(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#exists(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean exists(FilePath path)
@@ -121,7 +121,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#isFile(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#isFile(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean isFile(FilePath path)
@@ -150,7 +150,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#isDirectory(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#isDirectory(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean isDirectory(FilePath path)
@@ -162,7 +162,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#writable(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#writable(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean writable(FilePath path)
@@ -174,7 +174,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#readable(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#readable(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean readable(FilePath path)
@@ -186,7 +186,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#list(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#list(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public String[] list(FilePath path)
@@ -197,7 +197,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#list(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#list(com.continuent.tungsten.common.file.FilePath,
      *      java.lang.String)
      */
     @Override
@@ -235,7 +235,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#mkdir(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#mkdir(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean mkdir(FilePath path)
@@ -256,7 +256,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#mkdirs(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#mkdirs(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean mkdirs(FilePath path)
@@ -268,7 +268,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#delete(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#delete(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public boolean delete(FilePath path)
@@ -279,7 +279,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#delete(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#delete(com.continuent.tungsten.common.file.FilePath,
      *      boolean)
      */
     @Override
@@ -313,7 +313,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#write(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#write(com.continuent.tungsten.common.file.FilePath,
      *      java.lang.String)
      */
     @Override
@@ -325,7 +325,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#write(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#write(com.continuent.tungsten.common.file.FilePath,
      *      java.lang.String, java.lang.String)
      */
     @Override
@@ -338,7 +338,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#write(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#write(com.continuent.tungsten.common.file.FilePath,
      *      java.lang.String, java.lang.String, boolean)
      */
 
@@ -396,7 +396,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#read(com.continuent.tungsten.common.file.FilePath)
+     * @see com.continuent.tungsten.common.file.FileIO#read(com.continuent.tungsten.common.file.FilePath)
      */
     @Override
     public String read(FilePath path) throws FileIOException
@@ -407,7 +407,7 @@ public class HdfsFileIO implements FileIO
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.common.file.AbstractFileIO#read(com.continuent.tungsten.common.file.FilePath,
+     * @see com.continuent.tungsten.common.file.FileIO#read(com.continuent.tungsten.common.file.FilePath,
      *      java.lang.String)
      */
     @Override

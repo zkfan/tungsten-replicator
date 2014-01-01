@@ -25,7 +25,7 @@ function apply(csvinfo)
   logger.info("Writing file: " + csv_file + " to: " + hadoop_file);
 
   // Append data to a single file in HDFS. 
-  runtime.exec('hadoop fs -put ' + csv_file + ' /user/rhodges/data/' + 
+  runtime.exec('hadoop fs -put ' + csv_file + ' /user/tungsten/fdata/' + 
       hadoop_file);
 }
 
