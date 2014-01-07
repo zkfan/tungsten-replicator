@@ -22,15 +22,15 @@
 
 package com.continuent.tungsten.replicator.applier.batch;
 
-import java.sql.SQLException;
-
 import org.apache.log4j.Logger;
 
+import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.datasource.HdfsConnection;
 
 /**
  * Provides a simple wrapper for HDFS connections that is suitable for exposure
- * in scripted environments.
+ * in scripted environments. This is a delegate on the underlying HdfsConnection
+ * class.
  */
 public class HdfsWrapper
 {
@@ -44,21 +44,34 @@ public class HdfsWrapper
     }
 
     /**
-     * Moves a file from local file system to HDFS replacing previous contents,
-     * if any.
-     * 
-     * @param localFsPath Location of local file.
-     * @param hdfsPath Target location on HDFS
-     * @return
-     * @throws SQLException
+     * Delegate method on {@link HdfsConnection#put(String, String)}
      */
     public void put(String localFsPath, String hdfsPath)
+            throws ReplicatorException
     {
         if (logger.isDebugEnabled())
             logger.debug(String.format(
                     "Copying from local file: %s to HDFS file: %s",
                     localFsPath, hdfsPath));
         connection.put(localFsPath, hdfsPath);
+    }
+
+    /**
+     * Delegate method on {@link HdfsConnection#mkdir(String, boolean)}
+     */
+    public void mkdir(String path, boolean ignoreErrors)
+            throws ReplicatorException
+    {
+        connection.mkdir(path, ignoreErrors);
+    }
+
+    /**
+     * Delegate method on {@link HdfsConnection#rm(String, boolean, boolean)}
+     */
+    public void rm(String path, boolean recursive, boolean ignoreErrors)
+            throws ReplicatorException
+    {
+        connection.rm(path, recursive, ignoreErrors);
     }
 
     /**

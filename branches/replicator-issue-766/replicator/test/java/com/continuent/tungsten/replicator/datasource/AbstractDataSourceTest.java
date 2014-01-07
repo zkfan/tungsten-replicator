@@ -52,6 +52,9 @@ public class AbstractDataSourceTest
     @Test
     public void testInitialization() throws Exception
     {
+        if (!assertTestProperties())
+            return;
+
         // Create a separate data source for this test.
         datasourceProps.setString("serviceName", "test_initialization");
         datasourceManager.add("testInitialization", datasourceClass,
@@ -77,6 +80,9 @@ public class AbstractDataSourceTest
     @Test
     public void testSeqno() throws Exception
     {
+        if (!assertTestProperties())
+            return;
+
         UniversalDataSource c = prepareCatalog("testSeqno");
 
         // Retrieve the initial data.
@@ -121,6 +127,9 @@ public class AbstractDataSourceTest
     @Test
     public void testSeqnoManyAccessors() throws Exception
     {
+        if (!assertTestProperties())
+            return;
+
         UniversalDataSource c = prepareCatalog("testSeqnoManyAccessors");
         CommitSeqno commitSeqno = c.getCommitSeqno();
 
@@ -156,6 +165,9 @@ public class AbstractDataSourceTest
     @Test
     public void testSeqnoChannels() throws Exception
     {
+        if (!assertTestProperties())
+            return;
+
         UniversalDataSource c = prepareCatalog("testSeqnoChannels");
         int channels = c.getChannels();
         UniversalConnection conn = c.getConnection();
@@ -196,6 +208,9 @@ public class AbstractDataSourceTest
     @Test
     public void testSeqnoPersistence() throws Exception
     {
+        if (!assertTestProperties())
+            return;
+
         UniversalDataSource c = prepareCatalog("testSeqnoPersistence");
         int channels = c.getChannels();
 
@@ -258,4 +273,18 @@ public class AbstractDataSourceTest
 
         return c;
     }
+
+    // Returns false if the properties instance has not be set and test case
+    // should return immediately.
+    protected boolean assertTestProperties()
+    {
+        if (datasourceProps == null)
+        {
+            logger.warn("Data source properties are not defined; test case will not be run");
+            return false;
+        }
+        else
+            return true;
+    }
+
 }

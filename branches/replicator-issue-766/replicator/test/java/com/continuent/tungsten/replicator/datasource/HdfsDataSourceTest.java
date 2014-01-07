@@ -68,24 +68,32 @@ public class HdfsDataSourceTest extends AbstractDataSourceTest
         else
             logger.warn("Could not find test.properties file!");
 
-        // Create the data source definition.
-        datasourceProps = new TungstenProperties();
-        datasourceProps.setString("serviceName", "hdfscatalog");
-        datasourceProps.setLong("channels", 10);
-        datasourceProps.set("hdfsUri", tp.getString("hdfs.uri"));
-        datasourceProps.set("directory", tp.getString("hdfs.directory"));
+        // Find values used for test. If we don't have a URI for HDFS
+        // access, we don't generate any properties so test will not run.
+        String hdfsUri = tp.getString("hdfs.uri");
+        if (hdfsUri != null)
+        {
+            // Create the data source definition.
+            datasourceProps = new TungstenProperties();
+            datasourceProps.setString("serviceName", "hdfscatalog");
+            datasourceProps.setLong("channels", 10);
+            datasourceProps.set("hdfsUri", tp.getString("hdfs.uri"));
+            datasourceProps.set("directory", tp.getString("hdfs.directory"));
 
-        // Create an hdfs config properties file.
-        TungstenProperties hdfsProps = tp.subset("hdfs.config.", true);
-        hdfsPropFile = File.createTempFile("hdfs", ".properties");
-        TungstenPropertiesIO propsIO = new TungstenPropertiesIO(hdfsPropFile);
-        propsIO.setFormat(TungstenPropertiesIO.JAVA_PROPERTIES);
-        propsIO.write(hdfsProps, true);
+            // Create an hdfs config properties file.
+            TungstenProperties hdfsProps = tp.subset("hdfs.config.", true);
+            hdfsPropFile = File.createTempFile("hdfs", ".properties");
+            TungstenPropertiesIO propsIO = new TungstenPropertiesIO(
+                    hdfsPropFile);
+            propsIO.setFormat(TungstenPropertiesIO.JAVA_PROPERTIES);
+            propsIO.write(hdfsProps, true);
 
-        datasourceProps.set("hdfsConfigProperties", hdfsPropFile.getAbsolutePath());
+            datasourceProps.set("hdfsConfigProperties",
+                    hdfsPropFile.getAbsolutePath());
 
-        // Set the data source class.
-        datasourceClass = HdfsDataSource.class.getName();
+            // Set the data source class.
+            datasourceClass = HdfsDataSource.class.getName();
+        }
     }
 
     /**

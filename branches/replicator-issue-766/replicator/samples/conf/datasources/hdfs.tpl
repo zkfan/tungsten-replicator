@@ -5,5 +5,5 @@ replicator.datasource.applier.serviceName=${service.name}
 replicator.datasource.applier.directory=/user/tungsten/metadata
 
 # HDFS-specific information. 
-replicator.datasource.applier.hdfsUri=hdfs://cloudera44:8020/user/tungsten/metadata
+replicator.datasource.applier.hdfsUri=hdfs://@{APPLIER.REPL_DBHOST}:@{APPLIER.REPL_DBPORT}/user/tungsten/metadata
 replicator.datasource.applier.hdfsConfigProperties=${replicator.home.dir}/conf/hdfs-config.properties

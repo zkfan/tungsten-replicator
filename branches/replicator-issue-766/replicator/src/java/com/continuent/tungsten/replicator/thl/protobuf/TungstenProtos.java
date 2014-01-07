@@ -11822,7 +11822,7 @@ public final class TungstenProtos
         // optional bytes queryBytes = 6;
         boolean hasQueryBytes();
 
-        com.google.protobuf.ByteString getQueryBytes();
+        com.google.protobuf.ByteString getQueryAsBytes();
     }
     public static final class ProtobufStatementData
             extends com.google.protobuf.GeneratedMessage
@@ -11948,14 +11948,21 @@ public final class TungstenProtos
             }
         }
 
-        /*
-         * private com.google.protobuf.ByteString getQueryBytes() {
-         * java.lang.Object ref = query_; if (ref instanceof String) {
-         * com.google.protobuf.ByteString b =
-         * com.google.protobuf.ByteString.copyFromUtf8((String) ref); query_ =
-         * b; return b; } else { return (com.google.protobuf.ByteString) ref; }
-         * }
-         */
+        private com.google.protobuf.ByteString getQueryBytes()
+        {
+            java.lang.Object ref = query_;
+            if (ref instanceof String)
+            {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString
+                        .copyFromUtf8((String) ref);
+                query_ = b;
+                return b;
+            }
+            else
+            {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
 
         // repeated .TungstenProtobuf.ProtobufEventOption options = 4;
         public static final int                                                                                    OPTIONS_FIELD_NUMBER = 4;
@@ -12011,7 +12018,7 @@ public final class TungstenProtos
             return ((bitField0_ & 0x00000010) == 0x00000010);
         }
 
-        public com.google.protobuf.ByteString getQueryBytes()
+        public com.google.protobuf.ByteString getQueryAsBytes()
         {
             return queryBytes_;
         }
@@ -13027,7 +13034,7 @@ public final class TungstenProtos
                 return ((bitField0_ & 0x00000020) == 0x00000020);
             }
 
-            public com.google.protobuf.ByteString getQueryBytes()
+            public com.google.protobuf.ByteString getQueryAsBytes()
             {
                 return queryBytes_;
             }

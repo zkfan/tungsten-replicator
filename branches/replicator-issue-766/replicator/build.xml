@@ -70,7 +70,7 @@
 	<fileset dir="${project.common}/lib-test/">
         <include name="*.jar"/>
 	</fileset>
-    <fileset dir="${external.lib.dir}">
+    <fileset dir="${external.lib.dir}" erroronmissingdir="false">
         <include name="*.jar"/>
     </fileset>
 

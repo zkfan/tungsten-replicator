@@ -25,6 +25,8 @@ package com.continuent.tungsten.replicator.datasource;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+
 import com.continuent.tungsten.common.csv.CsvWriter;
 import com.continuent.tungsten.common.csv.NullPolicy;
 import com.continuent.tungsten.common.file.FileIOException;
@@ -32,14 +34,16 @@ import com.continuent.tungsten.common.file.FileIOUtils;
 import com.continuent.tungsten.common.file.FilePath;
 import com.continuent.tungsten.common.file.HdfsFileIO;
 import com.continuent.tungsten.common.file.JavaFileIO;
+import com.continuent.tungsten.replicator.ReplicatorException;
 
 /**
- * Implements a dummy connection for use with data sources that do not have
- * connections.
+ * Implements a connection for HDFS with methods that mimic the 'hadoop fs'
+ * command verbs.
  */
 public class HdfsConnection implements UniversalConnection
 {
-    private final HdfsFileIO hdfsFileIO;
+    private static final Logger logger = Logger.getLogger(HdfsConnection.class);
+    private final HdfsFileIO    hdfsFileIO;
 
     /**
      * Creates a new instance.
@@ -113,12 +117,72 @@ public class HdfsConnection implements UniversalConnection
     }
 
     /**
+     * Creates a directory.
+     * 
+     * @param path Directory path to create.
+     * @param ignoreErrors If true, ignore errors if directory exists.
+     */
+    public void mkdir(String path, boolean ignoreErrors)
+            throws ReplicatorException
+    {
+        FilePath remote = new FilePath(path);
+        try
+        {
+            if (ignoreErrors)
+                hdfsFileIO.mkdirs(remote);
+            else
+                hdfsFileIO.mkdir(remote);
+        }
+        catch (FileIOException e)
+        {
+            throw new ReplicatorException(
+                    "Unable to create directory: hdfs path=" + path
+                            + " message=" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Delete a file or directory.
+     * 
+     * @param path Directory path to remove.
+     * @param recursive If true, delete recursively
+     * @param ignoreErrors If true, ignore errors
+     */
+    public void rm(String path, boolean recursive, boolean ignoreErrors)
+            throws ReplicatorException
+    {
+        FilePath remote = new FilePath(path);
+        try
+        {
+            hdfsFileIO.delete(remote, recursive);
+        }
+        catch (FileIOException e)
+        {
+            if (ignoreErrors)
+            {
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Ignoring delete error: path=" + path, e);
+                }
+            }
+            else
+            {
+                throw new ReplicatorException(
+                        "Unable to delete file or directory: hdfs path=" + path
+                                + " recursive=" + recursive + " message="
+                                + e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
      * Move a local file to HDFS.
      * 
      * @param localPath Path of input file on local file system
      * @param hdfsPath Path of file in HDFS
      */
     public void put(String localPath, String hdfsPath)
+            throws ReplicatorException
     {
         JavaFileIO localFileIO = new JavaFileIO();
         FilePath local = new FilePath(localPath);
@@ -130,7 +194,7 @@ public class HdfsConnection implements UniversalConnection
         }
         catch (IOException e)
         {
-            throw new FileIOException("Unable to copy file: local path="
+            throw new ReplicatorException("Unable to copy file: local path="
                     + localPath + " hdfs path=" + hdfsPath + " message="
                     + e.getMessage(), e);
         }
