@@ -19,7 +19,8 @@ class HdfsDatabasePlatform < ConfigureDatabasePlatform
   end
 
   def get_default_port
-    nil
+    # Default port for communication with HDFS namenode. 
+    8020
   end
 
   def get_default_start_script
