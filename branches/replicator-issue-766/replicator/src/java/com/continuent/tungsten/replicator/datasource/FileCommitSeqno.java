@@ -166,6 +166,33 @@ public class FileCommitSeqno implements CommitSeqno
                             System.currentTimeMillis()), 0);
             store(fname, header, header.getAppliedLatency(), false);
         }
+
+        // Count again and check the number of files.
+        //
+        // a) If the number equals the number of channels, we leave it
+        // alone.
+        // b) If there is just one row, we expand to the number of channels.
+        //
+        // Any other number is an error.
+        seqnoFileNames = fileIO.list(serviceDir, prefix);
+        if (seqnoFileNames.length == channels)
+        {
+            logger.info("Validated that trep_commit_seqno file count matches channels: files="
+                    + seqnoFileNames.length + " channels=" + channels);
+        }
+        else if (seqnoFileNames.length == 1)
+        {
+            expandTasks();
+        }
+        else
+        {
+            String msg = String
+                    .format("Rows in trep_commit_seqno are inconsistent with channel count: channels=%d files=%d",
+                            channels, seqnoFileNames.length);
+            logger.error("Replication configuration error: table trep_commit_seqno does not match channels");
+            logger.info("This may be due to resetting the number of channels after an unclean replicator shutdown");
+            throw new ReplicatorException(msg);
+        }
     }
 
     /**

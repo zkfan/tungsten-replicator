@@ -23,11 +23,14 @@
 package com.continuent.tungsten.replicator.database;
 
 import java.io.BufferedWriter;
+import java.io.Serializable;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.continuent.tungsten.common.csv.CsvWriter;
 import com.continuent.tungsten.replicator.ReplicatorException;
@@ -104,6 +107,42 @@ public class DerbyDatabase extends AbstractDatabase
         }
     }
 
+    protected int executePrepare(Table table, List<Column> columns, String SQL,
+            boolean keep, int type) throws SQLException
+    {
+        int bindNo = 1;
+
+        PreparedStatement statement = null;
+        int affectedRows = 0;
+
+        try
+        {
+            statement = dbConn.prepareStatement(SQL);
+
+            for (Column c : columns)
+            {
+                Serializable val = c.getValue();
+                if (val == null)
+                    statement.setNull(bindNo++, c.getType());
+                else
+                    statement.setObject(bindNo++, val);
+            }
+            affectedRows = statement.executeUpdate();
+        }
+        finally
+        {
+            if (statement != null && !keep)
+            {
+                statement.close();
+                statement = null;
+            }
+        }
+        if (keep && type > -1)
+            table.setStatement(type, statement);
+
+        return affectedRows;
+    }
+
     /**
      * Derby does not support REPLACE. {@inheritDoc}
      * 
@@ -122,13 +161,15 @@ public class DerbyDatabase extends AbstractDatabase
     public ResultSet getColumnsResultSet(DatabaseMetaData md,
             String schemaName, String tableName) throws SQLException
     {
-        throw new UnsupportedOperationException("Not implemented.");
+        return md.getColumns(null, schemaName.toUpperCase(),
+                tableName.toUpperCase(), null);
     }
 
     protected ResultSet getPrimaryKeyResultSet(DatabaseMetaData md,
             String schemaName, String tableName) throws SQLException
     {
-        throw new UnsupportedOperationException("Not implemented.");
+        return md.getPrimaryKeys(null, schemaName.toUpperCase(),
+                tableName.toUpperCase());
     }
 
     protected ResultSet getTablesResultSet(DatabaseMetaData md,

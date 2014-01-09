@@ -62,7 +62,7 @@ public interface CatalogEntity
 
     /**
      * Removes any and all catalog data. This is a dangerous call as it will
-     * cause the replication service to lose all
+     * cause the replication service to lose all memory of its position.
      */
     public void clear() throws ReplicatorException, InterruptedException;
 }

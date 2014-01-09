@@ -207,10 +207,19 @@ public class SqlDataSource implements UniversalDataSource
     public void release() throws ReplicatorException, InterruptedException
     {
         // Release tables first...
-        commitSeqno.release();
+        if (commitSeqno != null)
+        {
+            commitSeqno.reduceTasks();
+            commitSeqno.release();
+            commitSeqno = null;
+        }
 
         // Followed by the connection manager.
-        connectionManager.release();
+        if (connectionManager != null)
+        {
+            connectionManager.release();
+            connectionManager = null;
+        }
     }
 
     /**

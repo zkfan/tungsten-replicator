@@ -162,7 +162,13 @@ public class FileDataSource implements UniversalDataSource
     @Override
     public void release() throws ReplicatorException, InterruptedException
     {
-        commitSeqno.release();
+        // Release tables.
+        if (commitSeqno != null)
+        {
+            commitSeqno.reduceTasks();
+            commitSeqno.release();
+            commitSeqno = null;
+        }
     }
 
     /**

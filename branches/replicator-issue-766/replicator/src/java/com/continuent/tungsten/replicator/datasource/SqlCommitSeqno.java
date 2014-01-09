@@ -196,9 +196,13 @@ public class SqlCommitSeqno implements CommitSeqno
             database = connectionManager.getWrappedConnection();
 
             // Create the table if it does not exist.
-            if (logger.isDebugEnabled())
-                logger.debug("Initializing " + TABLE_NAME + " table");
-            database.createTable(commitSeqnoTable, false, tableType);
+            if (database.findTable(commitSeqnoTable.getSchema(),
+                    commitSeqnoTable.getName()) == null)
+            {
+                if (logger.isDebugEnabled())
+                    logger.debug("Initializing " + TABLE_NAME + " table");
+                database.createTable(commitSeqnoTable, false, tableType);
+            }
 
             // Count rows to see if the table is empty and if so add a dummy
             // first row (taskID = 0).

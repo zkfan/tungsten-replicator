@@ -174,10 +174,6 @@ public class AbstractDataSourceTest
         CommitSeqno commitSeqno = c.getCommitSeqno();
         CommitSeqnoAccessor[] accessors = new CommitSeqnoAccessor[channels];
 
-        // Expand the commit sequence numbers out to the full number of
-        // channels.
-        commitSeqno.expandTasks();
-
         // Allocate accessor and update for each channel.
         for (int i = 0; i < channels; i++)
         {
@@ -202,6 +198,39 @@ public class AbstractDataSourceTest
     }
 
     /**
+     * Verify that we can change channel number when the catalog is released and
+     * restart the catalog without error. This test ensures that users do not
+     * change channels unexpectedly during operations, which can cause serious
+     * configuration errors.
+     */
+    @Test
+    public void testChangingChannels() throws Exception
+    {
+        if (!assertTestProperties())
+            return;
+
+        // Start with 10 channels.
+        this.datasourceProps.setInt("channels", 10);
+        UniversalDataSource c = prepareCatalog("testChangingChannels");
+
+        int channels = c.getChannels();
+        Assert.assertEquals("Expect initial number of channels", 10, channels);
+
+        // Shut down.
+        datasourceManager.remove("testChangingChannels");
+
+        // Start again with 20 channels.
+        datasourceProps.setInt("channels", 20);
+        UniversalDataSource c2 = prepareCatalog("testChangingChannels", false);
+
+        int channels2 = c2.getChannels();
+        Assert.assertEquals("Expect updated number of channels", 20, channels2);
+
+        // Shut down.
+        datasourceManager.remove("testChangingChannels");
+    }
+
+    /**
      * Verify that seqno values are persistent even if we allocate the data
      * source a second time.
      */
@@ -214,12 +243,8 @@ public class AbstractDataSourceTest
         UniversalDataSource c = prepareCatalog("testSeqnoPersistence");
         int channels = c.getChannels();
 
-        // Expand the commit sequence numbers out to the full number of
-        // channels.
-        CommitSeqno commitSeqno = c.getCommitSeqno();
-        commitSeqno.expandTasks();
-
         // Allocate accessor and update for each channel.
+        CommitSeqno commitSeqno = c.getCommitSeqno();
         UniversalConnection conn = c.getConnection();
         for (int i = 0; i < channels; i++)
         {
@@ -260,7 +285,7 @@ public class AbstractDataSourceTest
     /**
      * Prepares a data source and returns same to caller.
      */
-    private UniversalDataSource prepareCatalog(String name)
+    private UniversalDataSource prepareCatalog(String name, boolean clear)
             throws ReplicatorException, InterruptedException
     {
         datasourceProps.setString("serviceName", name);
@@ -268,10 +293,23 @@ public class AbstractDataSourceTest
 
         // Get the data source and ensure tables are cleared.
         UniversalDataSource c = datasourceManager.find(name);
-        c.clear();
+        if (clear)
+        {
+            c.clear();
+        }
         c.initialize();
 
         return c;
+    }
+
+    /**
+     * Convenience method to prepare catalog with automatic clearing of previous
+     * data.
+     */
+    private UniversalDataSource prepareCatalog(String name)
+            throws ReplicatorException, InterruptedException
+    {
+        return prepareCatalog(name, true);
     }
 
     // Returns false if the properties instance has not be set and test case
