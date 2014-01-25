@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,26 +33,29 @@ import com.continuent.tungsten.replicator.plugin.ReplicatorPlugin;
 public interface ScriptExecutor extends ReplicatorPlugin
 {
     /** Sets the data source connection. */
-    public abstract void setConnection(UniversalConnection connection);
+    public void setConnection(UniversalConnection connection);
 
     /** Sets the script name. */
-    public abstract void setScript(String script);
-
-    /** If set to true, show commands as they execute. */
-    public abstract void setShowCommands(boolean showCommands);
+    public void setScript(String script);
 
     /**
-     * Executes a script that is not specific to any table.
+     * Register a method name. This must be called prior to invoking any
+     * individual script method.
      * 
-     * @throws ReplicatorException Thrown if load operation fails
+     * @param method Name of the method in the script
+     * @return True if the method is found and registered, otherwise false
+     * @throws ReplicatorException Thrown if registration fails
      */
-    public abstract void execute() throws ReplicatorException;
+    public boolean register(String method) throws ReplicatorException;
 
     /**
-     * Executes the script for a specific table.
+     * Executes a registered script method including a single optional argument.
      * 
-     * @param info Information about the table to be loaded and source CSV file
-     * @throws ReplicatorException Thrown if load operation fails
+     * @param method Name of the method in the script
+     * @param argument Argument to pass in during method invocation
+     * @return An object or null if the method does not return a value
+     * @throws ReplicatorException Thrown if execute operation fails
      */
-    public abstract void execute(CsvInfo info) throws ReplicatorException;
+    public Object execute(String method, Object argument)
+            throws ReplicatorException;
 }

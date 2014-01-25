@@ -1,6 +1,6 @@
 /**
- * Tungsten: An Application Server for uni/cluster.
- * Copyright (C) 2013 Continuent Inc.
+ * Tungsten Scale-Out Stack
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@ package com.continuent.tungsten.replicator.datasource;
 import org.junit.Before;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.replicator.datasource.FileDataSource;
 
 /**
@@ -43,6 +44,9 @@ public class FileDataSourceTest extends AbstractDataSourceTest
         datasourceProps.setString("serviceName", "sqlcatalog");
         datasourceProps.setLong("channels", 10);
         datasourceProps.setString("directory", "fileCatalogTest");
+        datasourceProps.setString("csv", CsvSpecification.class.getName());
+        datasourceProps.setString("csv.fieldSeparator", "\t");
+        datasourceProps.setBeanSupportEnabled(true);
 
         // Set the data source class.
         datasourceClass = FileDataSource.class.getName();

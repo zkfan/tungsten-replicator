@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2011-12 Continuent Inc.
+ * Copyright (C) 2011-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,8 @@ public class CsvInfo
     public Table     stageTableMetadata;
     public File      file;
     public CsvWriter writer;
-    public long      seqno = -1;
+    public long      startSeqno = -1;
+    public long      endSeqno   = -1;
 
     /**
      * Instantiates a new instance.

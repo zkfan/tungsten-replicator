@@ -3,16 +3,22 @@
  * Copyright (C) 2013 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
- * Merge script for MySQL.  
+ * Load script for MySQL.  
  */
 
-/**
- * Called once for each table that must be loaded. 
- * 
- * @see com.continuent.tungsten.replicator.applier.batch.SqlWrapper
- * @see com.continuent.tungsten.replicator.applier.batch.CsvInfo
- * @see com.continuent.tungsten.replicator.applier.batch.JavascriptRuntime
- */
+// Called once when applier goes online. 
+function prepare()
+{
+  logger.info("Preparing load script for MySQL");
+}
+
+// Called at start of batch transaction. 
+function begin()
+{
+  // Does nothing. 
+}
+
+// Called once for each table that must be loaded. 
 function apply(csvinfo)
 {
   // Collect useful data. 
@@ -49,4 +55,16 @@ function apply(csvinfo)
   replace = runtime.parameterize(replace_template, sqlParams);
   logger.info(replace);
   rows = sql.execute(replace);
+}
+
+// Called at commit time for a batch. 
+function commit()
+{
+  // Does nothing. 
+}
+
+// Called when the applier goes offline. 
+function release()
+{
+  // Does nothing. 
 }

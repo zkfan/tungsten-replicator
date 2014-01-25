@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2011-2013 Continuent Inc.
+ * Copyright (C) 2011-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,6 +24,7 @@ package com.continuent.tungsten.replicator.datasource;
 
 import org.apache.log4j.Logger;
 
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.replicator.ReplicatorException;
 
 /**
@@ -31,12 +32,13 @@ import com.continuent.tungsten.replicator.ReplicatorException;
  */
 public class SampleDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(SampleDataSource.class);
+    private static Logger    logger   = Logger.getLogger(SampleDataSource.class);
 
     // Properties.
-    private String        serviceName;
-    private int           channels = 1;
-    private String        myParameter;
+    private String           serviceName;
+    private int              channels = 1;
+    private String           myParameter;
+    private CsvSpecification csv;
 
     /** Create new instance. */
     public SampleDataSource()
@@ -61,6 +63,16 @@ public class SampleDataSource implements UniversalDataSource
     public int getChannels()
     {
         return channels;
+    }
+
+    public CsvSpecification getCsv()
+    {
+        return csv;
+    }
+
+    public void setCsv(CsvSpecification csv)
+    {
+        this.csv = csv;
     }
 
     // CATALOG API

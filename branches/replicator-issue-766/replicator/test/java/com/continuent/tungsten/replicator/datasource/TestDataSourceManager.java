@@ -1,6 +1,6 @@
 /**
- * Tungsten: An Application Server for uni/cluster.
- * Copyright (C) 2013 Continuent Inc.
+ * Tungsten Scale-Out Stack
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,11 +28,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
-import com.continuent.tungsten.replicator.datasource.DataSourceManager;
+import com.continuent.tungsten.common.csv.CsvSpecification;
 
 /**
  * Runs tests on the data source manager to ensure we can add, find, and remove
- * catalogs.
+ * data sources.
  */
 public class TestDataSourceManager
 {
@@ -45,93 +45,139 @@ public class TestDataSourceManager
     }
 
     /**
-     * Verify that if you add a catalog it is possible to fetch the catalog back
-     * and get the same properties as originally added and also to remove the
-     * catalog.
+     * Verify that if you add a data source it is possible to fetch the data
+     * source back and get the same properties as originally added and also to
+     * remove the data source.
      */
     @Test
-    public void testAddRemoveCatalog() throws Exception
+    public void testAddRemoveDatasource() throws Exception
     {
-        // Create the catalog definition.
+        // Create the data source definition.
         TungstenProperties props = new TungstenProperties();
-        props.setString("catalogs.test", SampleDataSource.class.getName());
-        props.setString("catalogs.test.serviceName", "mytest");
-        props.setLong("catalogs.test.channels", 3);
-        props.setString("catalogs.test.myParameter", "some value");
+        props.setString("datasources.test", SampleDataSource.class.getName());
+        props.setString("serviceName", "mytest");
+        props.setLong("channels", 3);
+        props.setString("myParameter", "some value");
 
-        // Ensure that catalog does not already exist.
+        // Ensure that data source does not already exist.
         DataSourceManager cm = new DataSourceManager();
         cm.remove("test");
-        Assert.assertNull("Ensuring catalog does not exist prior to test",
+        Assert.assertNull("Ensuring data source does not exist prior to test",
                 cm.find("test"));
 
-        // Add new catalog, then fetch it back and confirm field values.
-        cm.add("test", props, "catalogs");
+        // Add new data source, then fetch it back and confirm field values.
+        cm.add("test", SampleDataSource.class.getName(), props);
         SampleDataSource c = (SampleDataSource) cm.find("test");
-        Assert.assertNotNull("Catalog should be available", c);
+        Assert.assertNotNull("Data source should be available", c);
         Assert.assertEquals("Comparing channels", 3, c.getChannels());
         Assert.assertEquals("Comparing service name", "mytest",
                 c.getServiceName());
 
-        // Remove the catalog and confirm that it succeeds.
-        Assert.assertEquals("Testing catalog removal", true, cm.remove("test"));
-
-        // Confirm that attempts to remove or get the catalog now fail.
-        Assert.assertNull("Ensuring catalog does not exist after removal",
-                cm.find("test"));
-        Assert.assertFalse("Ensuring catalog cannot be removed twice",
+        // Remove the data source and confirm that it succeeds.
+        Assert.assertEquals("Testing data source removal", true,
                 cm.remove("test"));
 
-        // Clean up catalog.
+        // Confirm that attempts to remove or get the data source now fail.
+        Assert.assertNull("Ensuring data source does not exist after removal",
+                cm.find("test"));
+        Assert.assertFalse("Ensuring data source cannot be removed twice",
+                cm.remove("test"));
+
+        // Clean up data source.
         cm.removeAll();
     }
 
     /**
-     * Verify that we can add two catalogs without errors and then remove them
-     * one by one.
+     * Verify that we can add two data sources without errors and then remove
+     * them one by one.
      */
     @Test
-    public void testAddTwoCatalogs() throws Exception
+    public void testAddTwoDataSources() throws Exception
     {
-        // Create the catalog definitions using a single properties file.
-        TungstenProperties props = new TungstenProperties();
-        props.setString("catalogs.test1", SampleDataSource.class.getName());
-        props.setString("catalogs.test1.serviceName", "mytest1");
-        props.setString("catalogs.test2", SampleDataSource.class.getName());
-        props.setString("catalogs.test2.serviceName", "mytest2");
+        // Create the data source definitions using a single properties file.
+        TungstenProperties props1 = new TungstenProperties();
+        props1.setString("serviceName", "mytest1");
+        TungstenProperties props2 = new TungstenProperties();
+        props2.setString("serviceName", "mytest2");
 
-        // Ensure that catalogs do not already exist.
+        // Ensure that data sources do not already exist.
         DataSourceManager cm = new DataSourceManager();
-        Assert.assertNull("Ensuring catalog does not exist prior to test",
+        Assert.assertNull("Ensuring data source does not exist prior to test",
                 cm.find("test1"));
-        Assert.assertNull("Ensuring catalog does not exist prior to test",
+        Assert.assertNull("Ensuring data source does not exist prior to test",
                 cm.find("test2"));
 
-        // Add catalogs and confirm that both names are present and that the
+        // Add data sources and confirm that both names are present and that the
         // count of names is 2.
-        cm.add("test1", props, "catalogs");
-        cm.add("test2", props, "catalogs");
+        cm.add("test1", SampleDataSource.class.getName(), props1);
+        cm.add("test2", SampleDataSource.class.getName(), props2);
         Assert.assertEquals("Checking number of names", 2, cm.names().size());
 
         SampleDataSource c1 = (SampleDataSource) cm.find("test1");
-        Assert.assertNotNull("Catalog should be available", c1);
+        Assert.assertNotNull("Data source should be available", c1);
         Assert.assertEquals("Comparing service name", "mytest1",
                 c1.getServiceName());
 
         SampleDataSource c2 = (SampleDataSource) cm.find("test2");
-        Assert.assertNotNull("Catalog should be available", c2);
+        Assert.assertNotNull("Data source should be available", c2);
         Assert.assertEquals("Comparing service name", "mytest2",
                 c2.getServiceName());
 
-        // Remove one catalog and confirm that it succeeds.
-        Assert.assertEquals("Testing catalog removal", true, cm.remove("test1"));
+        // Remove one data source and confirm that it succeeds.
+        Assert.assertEquals("Testing data source removal", true,
+                cm.remove("test1"));
         Assert.assertEquals("Checking number of names", 1, cm.names().size());
-        Assert.assertNull("Catalog not should be available", cm.find("test1"));
-        Assert.assertNotNull("Catalog should be available", cm.find("test2"));
+        Assert.assertNull("Data source not should be available",
+                cm.find("test1"));
+        Assert.assertNotNull("Data source should be available",
+                cm.find("test2"));
 
-        // Confirm that removeAll removes the remaining catalog.
+        // Confirm that removeAll removes the remaining data source.
         cm.removeAll();
         Assert.assertEquals("Checking number of names", 0, cm.names().size());
-        Assert.assertNull("Catalog should not be available", cm.find("test2"));
+        Assert.assertNull("Data source should not be available",
+                cm.find("test2"));
     }
+
+    /**
+     * Verify that if you add a data source with a CsvSpecification you can then
+     * get back that specification and generate properly configured CsvWriter
+     * and CsvReader instances.
+     */
+    @Test
+    public void testDataSourceWithCsvSpec() throws Exception
+    {
+        // Create the data source definition.
+        TungstenProperties props = new TungstenProperties();
+        props.setString("serviceName", "mytest");
+        props.setString("csv", CsvSpecification.class.getName());
+        props.setString("csv.fieldSeparator", ":");
+        props.setString("csv.recordSeparator", "\u0002");
+        props.setBoolean("csv.useQuotes", true);
+        props.setBeanSupportEnabled(true);
+
+        // Ensure that data source does not already exist.
+        DataSourceManager cm = new DataSourceManager();
+        cm.remove("test");
+        Assert.assertNull("Ensuring data source does not exist prior to test",
+                cm.find("test"));
+
+        // Add new data source, then fetch it back.
+        cm.add("test", SampleDataSource.class.getName(), props);
+        SampleDataSource c = (SampleDataSource) cm.find("test");
+        Assert.assertNotNull("Data source should be available", c);
+
+        // Confirm existence of CsvSpecification and validate properties.
+        CsvSpecification csv = c.getCsv();
+        Assert.assertNotNull("CsvSpecification should be available", csv);
+        Assert.assertEquals("Checking field separator", ":",
+                csv.getFieldSeparator());
+        Assert.assertEquals("Checking record separator", "\u0002",
+                csv.getRecordSeparator());
+        Assert.assertEquals("Checking use quotes", true, csv.isUseQuotes());
+
+        // Clean up data source.
+        cm.removeAll();
+    }
+
 }

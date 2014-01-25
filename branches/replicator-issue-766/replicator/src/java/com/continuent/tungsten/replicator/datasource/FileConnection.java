@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2007-2013 Continuent Inc.
+ * Copyright (C) 2007-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,8 +24,8 @@ package com.continuent.tungsten.replicator.datasource;
 
 import java.io.BufferedWriter;
 
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.common.csv.CsvWriter;
-import com.continuent.tungsten.common.csv.NullPolicy;
 
 /**
  * Implements a dummy connection for use with data sources that do not have
@@ -33,31 +33,32 @@ import com.continuent.tungsten.common.csv.NullPolicy;
  */
 public class FileConnection implements UniversalConnection
 {
+    private CsvSpecification csvSpecification;
+
     /**
-     * Returns a properly configured CsvWriter to generate CSV according to the
-     * preferred conventions of this data source type.
+     * Creates a new <code>FileConnection</code> object
      * 
-     * @param writer A buffered writer to receive CSV output
-     * @return A property configured CsvWriter instance
+     * @param csvSpecification
      */
-    public CsvWriter getCsvWriter(BufferedWriter writer)
+    public FileConnection(CsvSpecification csvSpecification)
     {
-        CsvWriter csv = new CsvWriter(writer);
-        csv.setQuoteChar('"');
-        csv.setQuoted(true);
-        csv.setEscapeChar('\\');
-        csv.setEscapedChars("\\");
-        csv.setNullPolicy(NullPolicy.nullValue);
-        csv.setNullValue("\\N");
-        csv.setWriteHeaders(false);
-        return csv;
+        this.csvSpecification = csvSpecification;
     }
 
     /**
-     * Commit the current transaction, which means to make a best effort to
-     * ensure any data written to the connection are durable.
+     * {@inheritDoc}
      * 
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#getCsvWriter(java.io.BufferedWriter)
+     */
+    public CsvWriter getCsvWriter(BufferedWriter writer)
+    {
+        return csvSpecification.createCsvWriter(writer);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#commit()
      */
     public void commit() throws Exception
     {
@@ -65,11 +66,9 @@ public class FileConnection implements UniversalConnection
     }
 
     /**
-     * Roll back the current transaction, which means to make a best effort to
-     * ensure any data written to the connection since the last commit are
-     * cleaned up.
+     * {@inheritDoc}
      * 
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#rollback()
      */
     public void rollback() throws Exception
     {
@@ -77,11 +76,9 @@ public class FileConnection implements UniversalConnection
     }
 
     /**
-     * Sets the commit semantics operations on the connection.
+     * {@inheritDoc}
      * 
-     * @param autoCommit If true each operation commits automatically; if false
-     *            any further operations are enclosed in a transaction
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#setAutoCommit(boolean)
      */
     public void setAutoCommit(boolean autoCommit) throws Exception
     {
@@ -89,7 +86,9 @@ public class FileConnection implements UniversalConnection
     }
 
     /**
-     * Closes the connection and releases resource.
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#close()
      */
     public void close()
     {

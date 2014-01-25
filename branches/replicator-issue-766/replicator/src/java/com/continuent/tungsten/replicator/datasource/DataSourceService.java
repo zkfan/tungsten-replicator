@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,7 @@ public class DataSourceService implements PipelineService
             String className = replicatorProps.get(dsPrefix);
             TungstenProperties attributes = replicatorProps.subset(dsPrefix
                     + ".", true);
+            attributes.setBeanSupportEnabled(true);
             UniversalDataSource ds = manager.add(name, className, attributes);
             ds.initialize();
         }

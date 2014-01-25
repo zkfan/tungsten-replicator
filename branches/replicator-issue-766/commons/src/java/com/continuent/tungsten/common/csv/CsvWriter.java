@@ -1,6 +1,6 @@
 /**
  * Tungsten: An Application Server for uni/cluster.
- * Copyright (C) 2011 Continuent Inc.
+ * Copyright (C) 2011-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,13 +41,14 @@ import java.util.Map;
 public class CsvWriter
 {
     // Properties.
-    private char                 separator       = ',';
+    private String               fieldSeparator = ",";
+    private String               recordSeparator = "\n";
     private boolean              writeHeaders    = true;
     private boolean              quoted          = false;
     private NullPolicy           nullPolicy      = NullPolicy.skip;
     private String               nullValue       = null;
     private boolean              nullAutofill    = false;
-    private char                 quoteChar       = '"';
+    private char                 quoteChar       = '\"';
     private char                 escapeChar      = '\\';
     private String               escapedChars    = "";
     private String               suppressedChars = "";
@@ -86,19 +87,35 @@ public class CsvWriter
     }
 
     /**
-     * Sets the separator characters.
+     * Sets the field separator characters.
      */
-    public void setSeparator(char separator)
+    public void setFieldSeparator(String fieldSeparators)
     {
-        this.separator = separator;
+        this.fieldSeparator = fieldSeparators;
     }
 
     /**
-     * Returns separator character.
+     * Returns field separator character.
      */
-    public char getSeparator()
+    public String getFieldSeparator()
     {
-        return separator;
+        return this.fieldSeparator;
+    }
+
+    /**
+     * Sets the record separator characters.
+     */
+    public void setRecordSeparator(String recordSeparator)
+    {
+        this.recordSeparator = recordSeparator;
+    }
+
+    /**
+     * Returns record separator character.
+     */
+    public String getRecordSeparator()
+    {
+        return this.recordSeparator;
     }
 
     /** Returns true if values will be enclosed by a quote character. */
@@ -169,13 +186,29 @@ public class CsvWriter
     }
 
     /**
+     * Sets the quote character from string input.
+     */
+    public synchronized void setQuoteChar(String quoteString)
+    {
+        if (quoteString != null && quoteString.length() > 0)
+            this.escapeChar = quoteString.charAt(0);
+    }
+
+    /**
      * Sets character used to escape quotes and other escaped characters.
-     * 
-     * @see #setQuoteChar(char)
      */
     public synchronized void setEscapeChar(char quoteEscapeChar)
     {
         this.escapeChar = quoteEscapeChar;
+    }
+
+    /**
+     * Sets the escape character from string input.
+     */
+    public synchronized void setEscapeChar(String escapeString)
+    {
+        if (escapeString != null && escapeString.length() > 0)
+            this.escapeChar = escapeString.charAt(0);
     }
 
     /** Returns the escape character. */
@@ -270,9 +303,9 @@ public class CsvWriter
     }
 
     /**
-     * Add a row id name. Row IDs are a numeric counter that can be inserted
-     * in any column.  By defining the row id name, the matching column always
-     * has the batch row number automatically added to it. 
+     * Add a row id name. Row IDs are a numeric counter that can be inserted in
+     * any column. By defining the row id name, the matching column always has
+     * the batch row number automatically added to it.
      * 
      * @param name Row ID name
      * @throws CsvException Thrown if the row ID has already been set.
@@ -516,7 +549,7 @@ public class CsvWriter
         for (int i = 0; i < row.size(); i++)
         {
             if (i > 0)
-                writer.append(separator);
+                writer.append(fieldSeparator);
             String value = row.get(i);
             if (value == null)
             {
@@ -531,6 +564,6 @@ public class CsvWriter
             else
                 writer.append(row.get(i));
         }
-        writer.newLine();
+        writer.append(recordSeparator);
     }
 }

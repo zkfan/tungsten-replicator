@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2011-13 Continuent Inc.
+ * Copyright (C) 2011-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -100,8 +100,7 @@ public class SimpleBatchApplier implements RawApplier
     // Properties.
     protected String                    dataSource;
     protected String                    stageDirectory;
-    protected String                    startupScript;
-    protected String                    stageMergeScript;
+    protected String                    loadScript;
     protected String                    stageSchemaPrefix;
     protected String                    stageTablePrefix;
     protected String                    stageColumnPrefix    = "tungsten_";
@@ -109,7 +108,6 @@ public class SimpleBatchApplier implements RawApplier
     protected boolean                   cleanUpFiles         = true;
     protected String                    charset              = "UTF-8";
     protected String                    timezone             = "GMT-0:00";
-    protected LoadMismatch              onLoadMismatch       = LoadMismatch.fail;
     protected boolean                   showCommands;
 
     // Replication context
@@ -125,10 +123,15 @@ public class SimpleBatchApplier implements RawApplier
     private Map<String, CsvInfo>        openCsvFiles         = new TreeMap<String, CsvInfo>();
 
     // Script executor.
-    private ScriptExecutor              mergeScriptExec;
+    private ScriptExecutor              loadScriptExec;
+    private boolean                     hasBeginMethod;
+    private boolean                     hasCommitMethod;
 
     // Latest event.
     private ReplDBMSHeader              latestHeader;
+
+    // First sequence number in current transaction.
+    private long                        startSeqno           = -1;
 
     // Table metadata for base tables.
     private TableMetadataCache          fullMetadataCache;
@@ -155,16 +158,10 @@ public class SimpleBatchApplier implements RawApplier
         this.dataSource = dataSource;
     }
 
-    /** Set the name of the connect script. */
-    public void setStartupScript(String startupScript)
+    /** Set the name of the load script. */
+    public void setLoadScript(String loadScript)
     {
-        this.startupScript = startupScript;
-    }
-
-    /** Set the name of the merge script. */
-    public void setStageMergeScript(String stageMergeScript)
-    {
-        this.stageMergeScript = stageMergeScript;
+        this.loadScript = loadScript;
     }
 
     /** Set the schema prefix for staging tables. */
@@ -214,12 +211,6 @@ public class SimpleBatchApplier implements RawApplier
         this.timezone = timezone;
     }
 
-    /** Sets the proper handling of a load mismatch. */
-    public void setOnLoadMismatch(String onLoadMismatchString)
-    {
-        this.onLoadMismatch = LoadMismatch.valueOf(onLoadMismatchString);
-    }
-
     /** If true, show commands in the log when loading batches. */
     public void setShowCommands(boolean showCommands)
     {
@@ -241,6 +232,10 @@ public class SimpleBatchApplier implements RawApplier
     {
         long seqno = header.getSeqno();
         ArrayList<DBMSData> dbmsDataValues = event.getData();
+
+        // Update the starting sequence number in the range.
+        if (startSeqno < 0)
+            startSeqno = seqno;
 
         // Apply heartbeat directly, skipping batch loading.
         String hbName = event
@@ -406,6 +401,15 @@ public class SimpleBatchApplier implements RawApplier
             return;
         }
 
+        // Make sure we have set the starting sequence number in the transaction
+        // batch.
+        if (startSeqno < 0)
+            startSeqno = latestHeader.getSeqno();
+
+        // Invoke being method on load script to show transaction is starting.
+        if (hasBeginMethod)
+            loadScriptExec.execute("begin", null);
+
         // Flush open CSV files now so that data become visible in case we
         // abort.
         for (CsvInfo info : openCsvFiles.values())
@@ -417,11 +421,12 @@ public class SimpleBatchApplier implements RawApplier
         // CsvInfo as that helps the batch load scripts generate unique file
         // names that associate easily with the trep_commit_seqno position.
         int loadCount = 0;
-        long commitSeqno = latestHeader.getSeqno();
+        long endSeqno = latestHeader.getSeqno();
         for (CsvInfo info : openCsvFiles.values())
         {
-            info.seqno = commitSeqno;
-            mergeScriptExec.execute(info);
+            info.startSeqno = startSeqno;
+            info.endSeqno = endSeqno;
+            loadScriptExec.execute("apply", info);
             loadCount++;
         }
 
@@ -429,16 +434,18 @@ public class SimpleBatchApplier implements RawApplier
         if (loadCount != openCsvFiles.size())
         {
             throw new ReplicatorException(
-                    "Load file counts do not match total: insert+delete="
+                    "Load file counts do not match total: loadCount="
                             + loadCount + " total=" + openCsvFiles.size());
         }
 
         // Update trep_commit_seqno.
         commitSeqnoAccessor.updateLastCommitSeqno(this.latestHeader, 0);
 
-        // SQL commit here.
+        // Commit on data source.
         try
         {
+            if (hasCommitMethod)
+                loadScriptExec.execute("commit", null);
             conn.commit();
             conn.setAutoCommit(false);
         }
@@ -446,6 +453,10 @@ public class SimpleBatchApplier implements RawApplier
         {
             throw new ReplicatorException("Unable to commit transaction", e);
         }
+
+        // Clear the starting sequence number in anticipation of the next
+        // transaction.
+        startSeqno = -1;
 
         // Clear the CSV file cache.
         openCsvFiles.clear();
@@ -534,7 +545,7 @@ public class SimpleBatchApplier implements RawApplier
         assertNotNull(stageDirectory, "stageDirectory");
         assertNotNull(stageTablePrefix, "stageTablePrefix");
         assertNotNull(stageColumnPrefix, "stageRowIdColumn");
-        assertNotNull(stageMergeScript, "stageMergeScript");
+        assertNotNull(loadScript, "loadScript");
 
         // Get metadata schema.
         metadataSchema = context.getReplicatorSchemaName();
@@ -631,16 +642,10 @@ public class SimpleBatchApplier implements RawApplier
                     "Unable to start transaction: message=" + e.getMessage(), e);
         }
 
-        // If a start-up script is present, execute that now.
-        if (startupScript != null)
-        {
-            ScriptExecutor startupExecutor = this
-                    .createScriptExecutor(startupScript);
-            startupExecutor.execute();
-        }
-
-        // Initialize script for merge operations.
-        mergeScriptExec = createScriptExecutor(stageMergeScript);
+        // Initialize load script.
+        loadScriptExec = createScriptExecutor(loadScript);
+        hasBeginMethod = loadScriptExec.register("begin");
+        hasCommitMethod = loadScriptExec.register("commit");
     }
 
     /**
@@ -650,21 +655,18 @@ public class SimpleBatchApplier implements RawApplier
             throws ReplicatorException, InterruptedException
     {
         ScriptExecutor exec;
-        if (script.toLowerCase().endsWith(".sql"))
-            exec = new NativeScriptExecutor();
-        else if (script.toLowerCase().endsWith(".js"))
+        if (script.toLowerCase().endsWith(".js"))
             exec = new JavascriptExecutor();
         else
         {
             throw new ReplicatorException(
-                    "Unrecognized batch script suffix; only .js and .sql are supported: "
+                    "Unrecognized batch script suffix; only .js is supported: "
                             + script);
         }
 
         // Set parameters and prepare.
         exec.setConnection(conn);
         exec.setScript(script);
-        exec.setShowCommands(showCommands);
         exec.prepare(context);
         return exec;
     }

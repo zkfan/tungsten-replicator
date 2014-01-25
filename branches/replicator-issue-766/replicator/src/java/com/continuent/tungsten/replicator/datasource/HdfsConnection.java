@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,8 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.common.csv.CsvWriter;
-import com.continuent.tungsten.common.csv.NullPolicy;
 import com.continuent.tungsten.common.file.FileIOException;
 import com.continuent.tungsten.common.file.FileIOUtils;
 import com.continuent.tungsten.common.file.FilePath;
@@ -42,42 +42,33 @@ import com.continuent.tungsten.replicator.ReplicatorException;
  */
 public class HdfsConnection implements UniversalConnection
 {
-    private static final Logger logger = Logger.getLogger(HdfsConnection.class);
-    private final HdfsFileIO    hdfsFileIO;
+    private static final Logger    logger = Logger.getLogger(HdfsConnection.class);
+    private final HdfsFileIO       hdfsFileIO;
+    private final CsvSpecification csvSpecification;
 
     /**
      * Creates a new instance.
      */
-    public HdfsConnection(HdfsFileIO fileIO)
+    public HdfsConnection(HdfsFileIO fileIO, CsvSpecification csvSpecification)
     {
         this.hdfsFileIO = fileIO;
+        this.csvSpecification = csvSpecification;
     }
 
     /**
-     * Returns a properly configured CsvWriter to generate CSV according to the
-     * preferred conventions of this data source type.
+     * {@inheritDoc}
      * 
-     * @param writer A buffered writer to receive CSV output
-     * @return A property configured CsvWriter instance
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#getCsvWriter(java.io.BufferedWriter)
      */
     public CsvWriter getCsvWriter(BufferedWriter writer)
     {
-        CsvWriter csv = new CsvWriter(writer);
-        csv.setSeparator('\001');
-        csv.setQuoted(false);
-        csv.setEscapeChar('\\');
-        csv.setEscapedChars("\\");
-        csv.setNullPolicy(NullPolicy.nullValue);
-        csv.setNullValue("\\N");
-        csv.setWriteHeaders(false);
-        return csv;
+        return csvSpecification.createCsvWriter(writer);
     }
 
     /**
-     * Commit the current transaction, which means to make a best effort to
-     * ensure any data written to the connection are durable.
+     * {@inheritDoc}
      * 
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#commit()
      */
     public void commit() throws Exception
     {
@@ -85,11 +76,9 @@ public class HdfsConnection implements UniversalConnection
     }
 
     /**
-     * Roll back the current transaction, which means to make a best effort to
-     * ensure any data written to the connection since the last commit are
-     * cleaned up.
+     * {@inheritDoc}
      * 
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#rollback()
      */
     public void rollback() throws Exception
     {
@@ -97,11 +86,9 @@ public class HdfsConnection implements UniversalConnection
     }
 
     /**
-     * Sets the commit semantics operations on the connection.
+     * {@inheritDoc}
      * 
-     * @param autoCommit If true each operation commits automatically; if false
-     *            any further operations are enclosed in a transaction
-     * @throws Exception Thrown if the operation fails
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#setAutoCommit(boolean)
      */
     public void setAutoCommit(boolean autoCommit) throws Exception
     {
@@ -109,7 +96,9 @@ public class HdfsConnection implements UniversalConnection
     }
 
     /**
-     * Closes the connection and releases resource.
+     * {@inheritDoc}
+     * 
+     * @see com.continuent.tungsten.replicator.datasource.UniversalConnection#close()
      */
     public void close()
     {

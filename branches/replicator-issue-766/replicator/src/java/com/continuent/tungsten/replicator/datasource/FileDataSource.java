@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,6 +24,7 @@ package com.continuent.tungsten.replicator.datasource;
 
 import org.apache.log4j.Logger;
 
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.common.file.FileIO;
 import com.continuent.tungsten.common.file.FilePath;
 import com.continuent.tungsten.common.file.JavaFileIO;
@@ -34,20 +35,21 @@ import com.continuent.tungsten.replicator.ReplicatorException;
  */
 public class FileDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(FileDataSource.class);
+    private static Logger    logger   = Logger.getLogger(FileDataSource.class);
 
     // Properties.
-    private String        serviceName;
-    private int           channels = 1;
-    private String        directory;
+    private String           serviceName;
+    private int              channels = 1;
+    private String           directory;
+    private CsvSpecification csv;
 
     // Catalog tables.
-    FileCommitSeqno       commitSeqno;
+    FileCommitSeqno          commitSeqno;
 
     // File IO-related variables.
-    FilePath              rootDir;
-    FilePath              serviceDir;
-    JavaFileIO            javaFileIO;
+    FilePath                 rootDir;
+    FilePath                 serviceDir;
+    JavaFileIO               javaFileIO;
 
     /** Create new instance. */
     public FileDataSource()
@@ -62,6 +64,16 @@ public class FileDataSource implements UniversalDataSource
     public void setDirectory(String directory)
     {
         this.directory = directory;
+    }
+
+    public CsvSpecification getCsv()
+    {
+        return csv;
+    }
+
+    public void setCsv(CsvSpecification csv)
+    {
+        this.csv = csv;
     }
 
     /**
@@ -116,6 +128,13 @@ public class FileDataSource implements UniversalDataSource
 
         // Create a new Java file IO instance.
         javaFileIO = new JavaFileIO();
+
+        // If we do not have a CsvSpecification set, create one now with default
+        // values.
+        if (csv == null)
+        {
+            csv = new CsvSpecification();
+        }
 
         // Configure tables.
         commitSeqno = new FileCommitSeqno(javaFileIO);
@@ -206,7 +225,7 @@ public class FileDataSource implements UniversalDataSource
      */
     public UniversalConnection getConnection() throws ReplicatorException
     {
-        return new FileConnection();
+        return new FileConnection(csv);
     }
 
     /**

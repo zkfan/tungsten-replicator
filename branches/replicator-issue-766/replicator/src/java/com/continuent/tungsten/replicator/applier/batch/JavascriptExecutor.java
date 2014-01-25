@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.mozilla.javascript.Context;
@@ -44,33 +46,43 @@ import com.continuent.tungsten.replicator.datasource.UniversalConnection;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 
 /**
- * Represents a class to execute a Javascript batch load script. This class is a
- * partial copy/paste from logic in class JavaScriptFilter, which integrates
- * Rhino Javascript for filters.
+ * Represents a class to execute a Javascript batch load script. Batch load
+ * scripts have the following methods:
+ * <p/>
+ * <ul>
+ * <li>prepare (optional) - Prepare the script to run.
+ * <li>begin (optional) - Called at the beginning of new transaction
+ * <li>apply (required) - Called to apply data for a single table within a
+ * transaction
+ * <li>commit (optional) - Called when transaction commits
+ * </ul>
+ * This class is a partial copy/paste from logic in class JavaScriptFilter,
+ * which integrates Rhino Javascript for filters.
+ * <p/>
  * 
  * @see com.continuent.tungsten.replicator.filter.JavaScriptFilter
  */
 public class JavascriptExecutor implements ScriptExecutor
 {
-    private static Logger       logger        = Logger.getLogger(JavascriptExecutor.class);
+    private static Logger         logger     = Logger.getLogger(JavascriptExecutor.class);
 
     // Location of script.
-    private String              scriptFile    = null;
+    private String                scriptFile = null;
 
     // DBMS connection and statement.
-    private UniversalConnection connection;
-    private SqlWrapper          sqlConnectionWrapper;
-    private HdfsWrapper         hdfsConnectionWrapper;
+    private UniversalConnection   connection;
+    private SqlWrapper            sqlConnectionWrapper;
+    private HdfsWrapper           hdfsConnectionWrapper;
 
     // Compiled user's script.
-    private Script              script        = null;
+    private Script                script     = null;
 
     // JavaScript scope containing all objects including functions of the user's
     // script and our exported objects.
-    private Scriptable          scope         = null;
+    private Scriptable            scope      = null;
 
-    // Pointer to the script's apply function.
-    private Function            applyFunction = null;
+    // Pointer to the script function map.
+    private Map<String, Function> functions  = new HashMap<String, Function>();
 
     /**
      * {@inheritDoc}
@@ -97,17 +109,6 @@ public class JavascriptExecutor implements ScriptExecutor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#setShowCommands(boolean)
-     */
-    @Override
-    public void setShowCommands(boolean showCommands)
-    {
-        // Does nothing for now...
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see com.continuent.tungsten.replicator.plugin.ReplicatorPlugin#configure(com.continuent.tungsten.replicator.plugin.PluginContext)
      */
     public void configure(PluginContext context) throws ReplicatorException,
@@ -116,7 +117,7 @@ public class JavascriptExecutor implements ScriptExecutor
         // Determine which JS script to use.
         if (scriptFile == null)
             throw new ReplicatorException(
-                    "scriptFile property must be set for JavaScript applier to work");
+                    "Missing name of Javascript file to execute");
     }
 
     /**
@@ -124,7 +125,6 @@ public class JavascriptExecutor implements ScriptExecutor
      * 
      * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#prepare(com.continuent.tungsten.replicator.plugin.PluginContext)
      */
-    @Override
     public void prepare(PluginContext context) throws ReplicatorException
     {
         // Create a connection wrapper to provide SQL capabilities if we have
@@ -144,8 +144,7 @@ public class JavascriptExecutor implements ScriptExecutor
         }
         else if (connection instanceof HdfsConnection)
         {
-            hdfsConnectionWrapper = new HdfsWrapper(
-                    (HdfsConnection) connection);
+            hdfsConnectionWrapper = new HdfsWrapper((HdfsConnection) connection);
         }
 
         // Create JavaScript context which will be used for preparing script.
@@ -154,8 +153,7 @@ public class JavascriptExecutor implements ScriptExecutor
         // Create script's scope.
         scope = jsContext.initStandardObjects();
 
-        // Compile user's JavaScript files for future usage, so they wouldn't
-        // require compilation on every filtered event.
+        // Compile user's JavaScript file for future usage.
         try
         {
             // Read and compile the script.
@@ -188,14 +186,6 @@ public class JavascriptExecutor implements ScriptExecutor
             ScriptableObject.putProperty(scope, "runtime",
                     new JavascriptRuntime());
 
-            // Get a pointer to function "apply()", which may accept an optional
-            // argument to an info object.
-            Object filterObj = scope.get("apply", scope);
-            if (!(filterObj instanceof Function))
-                logger.error("apply() function is undefined in " + scriptFile);
-            else
-                applyFunction = (Function) filterObj;
-
             // Get a pointer to function "prepare()" and call it.
             getFunctionAndCall(jsContext, "prepare");
         }
@@ -213,7 +203,6 @@ public class JavascriptExecutor implements ScriptExecutor
             // Exit JavaScript context.
             Context.exit();
         }
-
     }
 
     /**
@@ -224,6 +213,22 @@ public class JavascriptExecutor implements ScriptExecutor
     @Override
     public void release(PluginContext context)
     {
+        try
+        {
+            // We are in a method which might be called from a different thread
+            // than the one that called previous methods. Thus we need to
+            // enter JavaScript context.
+            Context jsContext = ContextFactory.getGlobal().enterContext();
+
+            // Get a pointer to function "release()" and call it.
+            getFunctionAndCall(jsContext, "release");
+        }
+        finally
+        {
+            // Exit JavaScript context.
+            Context.exit();
+        }
+
         // Release SQL resources.
         if (sqlConnectionWrapper != null)
         {
@@ -239,43 +244,51 @@ public class JavascriptExecutor implements ScriptExecutor
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#execute(com.continuent.tungsten.replicator.applier.batch.CsvInfo)
+     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#register(java.lang.String)
      */
-    @Override
-    public void execute(CsvInfo info) throws ReplicatorException
+    public boolean register(String method)
     {
-        // Call script if it was successfully prepared.
-        if (applyFunction != null)
+        Object filterObj = scope.get(method, scope);
+        if (filterObj instanceof Function)
         {
-            // We are in a method which might be called from a different thread
-            // than the one that called the prepare() method. Thus we need to
-            // enter JavaScript context.
-            Context jsContext = ContextFactory.getGlobal().enterContext();
-
-            // Provide access to current thread object.
-            ScriptableObject.putProperty(scope, "thread",
-                    Thread.currentThread());
-
-            // Call function "filter(event)" and log its result if one was
-            // returned.
-            Object functionArgs[] = {info};
-            applyFunction.call(jsContext, scope, scope, functionArgs);
-
-            // Exit JavaScript context.
-            Context.exit();
+            functions.put(method, (Function) filterObj);
+            return true;
+        }
+        else
+        {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Method not found: script=" + script + " method="
+                        + method);
+            }
+            return false;
         }
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#execute()
+     * @see com.continuent.tungsten.replicator.applier.batch.ScriptExecutor#execute(com.continuent.tungsten.replicator.applier.batch.CsvInfo)
      */
-    @Override
-    public void execute() throws ReplicatorException
+    public Object execute(String method, Object value)
+            throws ReplicatorException
     {
-        // Call script if it was successfully prepared.
-        if (applyFunction != null)
+        // Find our method. If not present, try to register it and look again.
+        Function jsFunction = functions.get(method);
+        if (jsFunction == null)
+        {
+            register(method);
+            jsFunction = functions.get(method);
+        }
+
+        // Execute the method if we found it.
+        if (jsFunction == null)
+        {
+            throw new ReplicatorException(
+                    "Attempt to call unregistered or non-existent Javascript function: script="
+                            + script + " function=" + method);
+        }
+        else
         {
             // We are in a method which might be called from a different thread
             // than the one that called the prepare() method. Thus we need to
@@ -288,11 +301,15 @@ public class JavascriptExecutor implements ScriptExecutor
 
             // Call function "filter(event)" and log its result if one was
             // returned.
-            Object functionArgs[] = {};
-            applyFunction.call(jsContext, scope, scope, functionArgs);
+            Object functionArgs[] = {value};
+            Object returnValue = jsFunction.call(jsContext, scope, scope,
+                    functionArgs);
 
             // Exit JavaScript context.
             Context.exit();
+
+            // Return the value to caller.
+            return returnValue;
         }
     }
 

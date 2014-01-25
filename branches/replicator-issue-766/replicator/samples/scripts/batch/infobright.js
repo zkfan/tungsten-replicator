@@ -1,20 +1,27 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
- * Merge script for Infobright.  This script is designed to ensure that
+ * Load script for Infobright.  This script is designed to ensure that
  * the number of rows deleted and inserted exactly matches the number of 
  * deletes and inserts in the CSV file. 
  */
 
-/**
- * Called once for each table that must be loaded. 
- * 
- * @see com.continuent.tungsten.replicator.applier.batch.SqlWrapper
- * @see com.continuent.tungsten.replicator.applier.batch.CsvInfo
- * @see com.continuent.tungsten.replicator.applier.batch.JavascriptRuntime
- */
+// Called once when applier goes online. 
+function prepare()
+{
+  logger.info("Preparing load script for Infobright");
+}
+
+
+// Called at start of batch transaction. 
+function begin()
+{
+  // Does nothing. 
+}
+
+// Called once for each table that must be loaded. 
 function apply(csvinfo)
 {
   // Collect useful data. 
@@ -80,4 +87,16 @@ function apply(csvinfo)
     logger.error(message);
     throw new com.continuent.tungsten.replicator.ReplicatorException(message);
   }
+}
+
+// Called at commit time for a batch. 
+function commit()
+{
+  // Does nothing. 
+}
+
+// Called when the applier goes offline. 
+function release()
+{
+  // Does nothing. 
 }

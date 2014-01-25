@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,69 +54,12 @@ public class DataSourceManager
      * Configures and adds a new data source.
      * 
      * @param name Name of the data source
-     * @param attributes TungstenProperties instance containing attributes of
-     *            the data source instance
-     * @param prefix The prefix for TungstenProperties when seeking data source
-     *            definitions. The prefix should not have a trailing period.
-     */
-    public void add(String name, TungstenProperties attributes, String prefix)
-            throws ReplicatorException, InterruptedException
-    {
-        // Check for a duplicate data source, then find the class name.
-        name = name.trim();
-        String fullName = prefix.trim() + "." + name;
-        String className = attributes.get(fullName);
-        if (datasources.get(name) != null)
-        {
-            throw new ReplicatorException(
-                    "Foiled attempt to load duplicate data source: name="
-                            + name + " property=" + fullName);
-        }
-        if (className == null)
-        {
-            throw new ReplicatorException(
-                    "Data source class name not found in properties: name="
-                            + name + " property=" + fullName);
-        }
-
-        // Instantiate the data source class and apply properties. If successful
-        // add result to the data source table.
-        try
-        {
-            logger.info("Loading data source: name=" + name + " className="
-                    + className);
-            UniversalDataSource datasource = (UniversalDataSource) Class
-                    .forName(className).newInstance();
-            TungstenProperties subset = attributes.subset(fullName + ".", true);
-            subset.applyProperties(datasource);
-            datasource.configure();
-            datasource.prepare();
-            datasources.put(name, datasource);
-        }
-        catch (ReplicatorException e)
-        {
-            // Data source operations will throw this, so we don't need to wrap
-            // it.
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Any other exception is bad and must be wrapped.
-            throw new ReplicatorException(
-                    "Unable to instantiate and configure data source: name="
-                            + name + " className=" + className + " message="
-                            + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Configures and adds a new data source.
-     * 
-     * @param name Name of the data source
      * @param className Name of the implementing class.
      * @param attributes TungstenProperties instance containing values to assign
-     *            to data source instance
+     *            to data source instance. If the instance uses embedded beans,
+     *            the properties should have bean property support enabled
      * @return Returns instantiated and prepared data source
+     * @see TungstenProperties#setBeanSupportEnabled(boolean)
      */
     public UniversalDataSource add(String name, String className,
             TungstenProperties attributes) throws ReplicatorException,

@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2013 Continuent Inc.
+ * Copyright (C) 2013-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.common.config.TungstenProperties;
 import com.continuent.tungsten.common.config.TungstenPropertiesIO;
+import com.continuent.tungsten.common.csv.CsvSpecification;
 import com.continuent.tungsten.common.file.FilePath;
 import com.continuent.tungsten.common.file.HdfsFileIO;
 import com.continuent.tungsten.replicator.ReplicatorException;
@@ -39,23 +40,24 @@ import com.continuent.tungsten.replicator.ReplicatorException;
  */
 public class HdfsDataSource implements UniversalDataSource
 {
-    private static Logger logger   = Logger.getLogger(HdfsDataSource.class);
+    private static Logger    logger   = Logger.getLogger(HdfsDataSource.class);
 
     // Properties.
-    private String        hdfsUri;
-    private String        hdfsConfigProperties;
-    private String        serviceName;
-    private int           channels = 1;
-    private String        directory;
-    URI                   uri;
+    private String           hdfsUri;
+    private String           hdfsConfigProperties;
+    private String           serviceName;
+    private int              channels = 1;
+    private String           directory;
+    private URI              uri;
+    private CsvSpecification csv;
 
     // Catalog tables.
-    FileCommitSeqno       commitSeqno;
+    FileCommitSeqno          commitSeqno;
 
     // File IO-related variables.
-    FilePath              rootDir;
-    FilePath              serviceDir;
-    HdfsFileIO            hdfsFileIO;
+    FilePath                 rootDir;
+    FilePath                 serviceDir;
+    HdfsFileIO               hdfsFileIO;
 
     /** Create new instance. */
     public HdfsDataSource()
@@ -90,6 +92,16 @@ public class HdfsDataSource implements UniversalDataSource
     public void setHdfsConfigProperties(String hdfsConfigProperties)
     {
         this.hdfsConfigProperties = hdfsConfigProperties;
+    }
+
+    public CsvSpecification getCsv()
+    {
+        return csv;
+    }
+
+    public void setCsv(CsvSpecification csv)
+    {
+        this.csv = csv;
     }
 
     /**
@@ -151,6 +163,17 @@ public class HdfsDataSource implements UniversalDataSource
         {
             throw new ReplicatorException("Invalid HDFS URI: uri=" + uri
                     + " messsage=" + e.getMessage(), e);
+        }
+
+        // If we do not have a CsvSpecification set, create one now with default
+        // values, which means x'01' and x'02' for field and record separators,
+        // respectively, with no quoting.
+        if (csv == null)
+        {
+            csv = new CsvSpecification();
+            csv.setFieldSeparator("\u0001");
+            csv.setRecordSeparator("\n");
+            csv.setUseQuotes(false);
         }
 
         // Load HDFS properties, if they exist.
@@ -259,7 +282,7 @@ public class HdfsDataSource implements UniversalDataSource
      */
     public UniversalConnection getConnection() throws ReplicatorException
     {
-        return new HdfsConnection(hdfsFileIO);
+        return new HdfsConnection(hdfsFileIO, csv);
     }
 
     /**
