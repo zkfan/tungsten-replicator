@@ -42,7 +42,7 @@ ${table.getSchema()}.stage_xxx_$table.getName()##
 #set ( $firstcol = false )
 #parse("includes/ddl-mysql-hive-0.10-columns.vm")
 ) 
-ROW FORMAT DELIMITED FIELDS TERMINATED BY '\001' 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\001' ESCAPED BY '\\'
 LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION '/user/tungsten/staging/$table.getSchema()/$table.getName()' ##
 ;

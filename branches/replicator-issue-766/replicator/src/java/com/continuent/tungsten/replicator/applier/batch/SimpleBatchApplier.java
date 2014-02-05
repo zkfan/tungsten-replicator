@@ -104,7 +104,7 @@ public class SimpleBatchApplier implements RawApplier
     protected String                    stageSchemaPrefix;
     protected String                    stageTablePrefix;
     protected String                    stageColumnPrefix    = "tungsten_";
-    protected String                    stagePkeyColumn;
+    protected boolean                   requirePrimaryKey;
     protected boolean                   cleanUpFiles         = true;
     protected String                    charset              = "UTF-8";
     protected String                    timezone             = "GMT-0:00";
@@ -175,10 +175,10 @@ public class SimpleBatchApplier implements RawApplier
         this.stageTablePrefix = stageTablePrefix;
     }
 
-    /** Set the default name of the staging table primary key. */
-    public void setStagePkeyColumn(String stagePkeyColumn)
+    /** If true, table data must have primary key(s). */
+    public void setRequirePrimaryKey(boolean requirePrimaryKey)
     {
-        this.stagePkeyColumn = stagePkeyColumn;
+        this.requirePrimaryKey = requirePrimaryKey;
     }
 
     /** Set the prefix for staging table columns. */
@@ -803,7 +803,7 @@ public class SimpleBatchApplier implements RawApplier
                 }
 
                 // Create and cache writer information.
-                info = new CsvInfo(this.stagePkeyColumn);
+                info = new CsvInfo(this.requirePrimaryKey);
                 info.schema = tableMetadata.getSchema();
                 info.table = tableMetadata.getName();
                 info.baseTableMetadata = tableMetadata;

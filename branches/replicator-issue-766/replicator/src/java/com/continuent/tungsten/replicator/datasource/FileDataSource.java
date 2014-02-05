@@ -42,6 +42,7 @@ public class FileDataSource implements UniversalDataSource
     private int              channels = 1;
     private String           directory;
     private CsvSpecification csv;
+    private String           csvType;
 
     // Catalog tables.
     FileCommitSeqno          commitSeqno;
@@ -74,6 +75,16 @@ public class FileDataSource implements UniversalDataSource
     public void setCsv(CsvSpecification csv)
     {
         this.csv = csv;
+    }
+
+    public String getCsvType()
+    {
+        return csvType;
+    }
+
+    public void setCsvType(String csvType)
+    {
+        this.csvType = csvType;
     }
 
     /**
@@ -129,11 +140,27 @@ public class FileDataSource implements UniversalDataSource
         // Create a new Java file IO instance.
         javaFileIO = new JavaFileIO();
 
-        // If we do not have a CsvSpecification set, create one now with default
-        // values.
-        if (csv == null)
+        // Check out the type of csv specification we have and proceed
+        // accordingly.
+        if (csvType == null)
         {
+            logger.info("No cvsType provided; using default settings");
             csv = new CsvSpecification();
+        }
+        else if ("custom".equals(csvType))
+        {
+            logger.info("Using custom csvType defined by property settings");
+            if (csv == null)
+                throw new ReplicatorException(
+                        "Custom CSV type settings missing for datasource");
+        }
+        else
+        {
+            logger.info("Using predefined csvType: name=" + csvType);
+            csv = CsvSpecification.getSpecification(csvType);
+            if (csv == null)
+                throw new ReplicatorException("Unknown csvType: name="
+                        + csvType);
         }
 
         // Configure tables.

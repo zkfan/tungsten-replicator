@@ -45,9 +45,45 @@ public class CsvSpecification
     private String     escape                  = "\\";
     private String     escapedChars            = "";
     private String     suppressedChars         = "";
-    private NullPolicy nullPolicy              = NullPolicy.skip;
+    private NullPolicy nullPolicy              = NullPolicy.nullValue;
     private String     nullValue               = null;
     private boolean    nullAutofill            = false;
+
+    /**
+     * Returns a specification suitable for a particular DBMS store type.
+     * Supported types include the following:
+     * <p/>
+     * <ul>
+     * <li>default - Default settings</li>
+     * <li>hive - Standard settings for Hadoop Hive external table</li>
+     * </ul>
+     * (Other settings will be added in due time.)
+     * 
+     * @param type
+     * @return The specified type or a null if the type is unknown
+     */
+    public static CsvSpecification getSpecification(String type)
+    {
+        CsvSpecification spec = null;
+        if ("default".equals(type))
+        {
+            spec = new CsvSpecification();
+        }
+        else if ("hive".equals(type))
+        {
+            spec = new CsvSpecification();
+            spec.setFieldSeparator("\u0001");
+            spec.setRecordSeparator("\n");
+            spec.setEscape("\\");
+            spec.setEscapedChars("\u0001");
+            spec.setNullPolicy(NullPolicy.nullValue);
+            spec.setNullValue("\\N");
+            spec.setUseHeaders(false);
+            spec.setUseQuotes(false);
+            spec.setSuppressedChars("\n");
+        }
+        return spec;
+    }
 
     /**
      * Sets the field separator character.

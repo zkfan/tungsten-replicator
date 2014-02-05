@@ -41,7 +41,7 @@ import java.util.Map;
 public class CsvWriter
 {
     // Properties.
-    private String               fieldSeparator = ",";
+    private String               fieldSeparator  = ",";
     private String               recordSeparator = "\n";
     private boolean              writeHeaders    = true;
     private boolean              quoted          = false;
@@ -191,7 +191,7 @@ public class CsvWriter
     public synchronized void setQuoteChar(String quoteString)
     {
         if (quoteString != null && quoteString.length() > 0)
-            this.escapeChar = quoteString.charAt(0);
+            this.quoteChar = quoteString.charAt(0);
     }
 
     /**
@@ -475,15 +475,15 @@ public class CsvWriter
         {
             // Nulls are handled according to the null value policy.
             if (this.nullPolicy == NullPolicy.emptyString)
-                value = addQuotes("");
+                value = processString("");
             else if (nullPolicy == NullPolicy.skip)
                 value = null;
             else
                 value = nullValue;
         }
-        else if (quoted)
+        else
         {
-            value = addQuotes(value);
+            value = processString(value);
         }
         row.set(arrayIndex, value);
         colCount++;
@@ -500,12 +500,13 @@ public class CsvWriter
         return put(index, value);
     }
 
-    // Utility routine to escape string contents and enclose in
-    // quotes.
-    private String addQuotes(String base)
+    // Utility routine to escape characters and enclose string in
+    // quotes if so desired.
+    private String processString(String base)
     {
         StringBuffer sb = new StringBuffer();
-        sb.append(quoteChar);
+        if (quoted)
+            sb.append(quoteChar);
         for (int i = 0; i < base.length(); i++)
         {
             // Fetch character and look up its disposition.
@@ -513,7 +514,7 @@ public class CsvWriter
             Disposition disp = disposition.get(next);
 
             // Emit the character according to CSV formatting rules.
-            if (next == quoteChar)
+            if (next == quoteChar && quoted)
             {
                 // Escape any quote character.
                 sb.append(escapeChar).append(quoteChar);
@@ -534,7 +535,8 @@ public class CsvWriter
                 sb.append(next);
             }
         }
-        sb.append(quoteChar);
+        if (quoted)
+            sb.append(quoteChar);
         return sb.toString();
     }
 
@@ -555,7 +557,7 @@ public class CsvWriter
             {
                 // Nulls are handled according to the null value policy.
                 if (this.nullPolicy == NullPolicy.emptyString)
-                    writer.append(addQuotes(""));
+                    writer.append(processString(""));
                 else if (nullPolicy == NullPolicy.skip)
                     writer.append(null);
                 else
