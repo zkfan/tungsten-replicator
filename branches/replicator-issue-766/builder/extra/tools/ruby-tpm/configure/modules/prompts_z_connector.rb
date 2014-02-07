@@ -331,24 +331,7 @@ class ConnectorDBVersion < ConfigurePrompt
   include HiddenValueModule
   
   def initialize
-    super(CONN_DB_VERSION, "DB version for the connector to display", PV_ANY)
-  end
-  
-  def load_default_value
-    ds_alias = get_dataservice()
-    @config.getPropertyOr([REPL_SERVICES], {}).each_key{
-      |rs_alias|
-      if rs_alias == DEFAULTS
-        next
-      end
-      
-      if @config.getProperty([REPL_SERVICES, rs_alias, DEPLOYMENT_DATASERVICE]) == ds_alias
-        @default = @config.getProperty([REPL_SERVICES, rs_alias, REPL_DBVERSION]).to_s() + "-tungsten"
-        return
-      end
-    }
-    
-    @default = @config.getProperty([REPL_SERVICES, DEFAULTS, REPL_DBVERSION]).to_s() + "-tungsten"
+    super(CONN_DB_VERSION, "DB version for the connector to display", PV_ANY, "autodetect")
   end
 end
 
@@ -359,10 +342,6 @@ class ConnectorOverwriteUserMap < ConfigurePrompt
   
   def initialize
     super(CONN_DELETE_USER_MAP, "Overwrite an existing user.map file", PV_BOOLEAN, "false")
-  end
-  
-  def get_command_line_argument_value
-    "true"
   end
 end
 

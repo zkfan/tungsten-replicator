@@ -98,6 +98,10 @@ class ConfigureDatabasePlatform
     raise "Undefined function: #{self.class.name}.getJdbcUrl"
   end
   
+  def getExtractorJdbcUrl
+    getJdbcUrl()
+  end
+  
   def getJdbcDriver()
     raise "Undefined function: #{self.class.name}.getJdbcDriver"
   end
@@ -199,6 +203,10 @@ class ConfigureDatabasePlatform
   end
   
   def applier_supports_parallel_apply?()
+    false
+  end
+  
+  def applier_supports_reset?
     false
   end
   

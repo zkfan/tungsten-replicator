@@ -224,8 +224,10 @@ module TungstenScript
     TU.run_option_parser(opts)
     
     if @command_definitions.size() > 0 && TU.remaining_arguments.size() > 0
-      if @command_definitions.has_key?(TU.remaining_arguments[0].to_sym())
-        @command = TU.remaining_arguments.shift()
+      if TU.remaining_arguments[0] != nil
+        if @command_definitions.has_key?(TU.remaining_arguments[0].to_sym())
+          @command = TU.remaining_arguments.shift()
+        end
       end
     end
   end
@@ -267,7 +269,16 @@ module TungstenScript
     end
   end
   
+  def script_name
+    nil
+  end
+  
   def display_help
+    if script_name().to_s() != ""
+      TU.output("Usage: #{script_name()} [global-options] [script-options]")
+      TU.output("")
+    end
+
     unless description() == nil
       description().split("<br>").each{
         |section|
@@ -611,16 +622,21 @@ module OfflineServicesScript
                 begin
                   status = TI.status(ds)
                   unless status.is_replication?() == true
-                    get_manager_api.call("#{ds}/#{TI.hostname()}", 'recover')
+                    TU.cmd_result("echo 'datasource #{TI.hostname()} recover' | #{TI.cctrl()}")
+                    #get_manager_api.call("#{ds}/#{TI.hostname()}", 'recover')
                   else
                     TU.cmd_result("#{TI.trepctl(ds)} online")
                   end
                 rescue => e
                   TU.exception(e)
-                  raise("Unable to put replication services online")
+                  raise("The #{ds} replication service did not come online")
                 end
               else
                 TU.cmd_result("#{TI.trepctl(ds)} online")
+              end
+              
+              unless TI.trepctl_value(ds, "state") == "ONLINE"
+                raise("Unable to put the #{ds} replication service online")
               end
             end
           }

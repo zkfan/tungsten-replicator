@@ -45,7 +45,12 @@ MGR_JAVA_ENABLE_CONCURRENT_GC = "mgr_java_enable_concurrent_gc"
 MGR_API = "mgr_api"
 MGR_API_PORT = "mgr_api_port"
 MGR_API_ADDRESS = "mgr_api_address"
+MGR_VALIDATE_WITNESS = "mgr_validate_witness"
 MGR_IS_WITNESS = "mgr_is_witness"
+MGR_REPL_DBLOGIN = "mgr_repl_user"
+MGR_REPL_DBPASSWORD = "mgr_repl_password"
+MGR_REPL_DBPORT = "mgr_repl_port"
+MGR_REPL_SCHEMA = "mgr_repl_schema"
 
 class Managers < GroupConfigurePrompt
   def initialize
@@ -678,10 +683,6 @@ class ManagerEnableInstrumentation < ConfigurePrompt
   def load_default_value
     @default = @config.getProperty(get_dataservice_key(DATASERVICE_ENABLE_INSTRUMENTATION))
   end
-  
-  def get_command_line_argument_value
-    "true"
-  end
 end
 
 class ManagerAPI < ConfigurePrompt
@@ -690,10 +691,6 @@ class ManagerAPI < ConfigurePrompt
   
   def initialize
     super(MGR_API, "Enable the Manager API", PV_BOOLEAN, "true")
-  end
-  
-  def get_command_line_argument_value
-    "true"
   end
 end
 
@@ -717,6 +714,16 @@ class ManagerAPIAddress < ConfigurePrompt
   end
 end
 
+class ManagerValidateWitness < ConfigurePrompt
+  include ManagerPrompt
+  include HiddenValueModule
+  
+  def initialize
+    super(MGR_VALIDATE_WITNESS, "Validate the subnet for dataservice witnesses", PV_BOOLEAN, "true")
+  end
+end
+
+
 class ManagerIsWitness < ConfigurePrompt
   include ManagerPrompt
   include HiddenValueModule
@@ -735,5 +742,65 @@ class ManagerIsWitness < ConfigurePrompt
     else
       @default = "false"
     end
+  end
+end
+
+class ManagerReplicationDBUser < ConfigurePrompt
+  include ManagerPrompt
+  include HiddenValueModule
+  
+  def initialize
+    super(MGR_REPL_DBLOGIN, "Database login for the manager to check replication hosts", PV_IDENTIFIER)
+  end
+  
+  def load_default_value
+    master = @config.getProperty(get_dataservice_key(DATASERVICE_MASTER_MEMBER)).split(",")[0]
+    rs_alias = to_identifier("#{get_dataservice()}_#{master}")
+    @default = @config.getProperty([REPL_SERVICES, rs_alias, REPL_DBLOGIN])
+  end
+end
+
+class ManagerReplicationDBPassword < ConfigurePrompt
+  include ManagerPrompt
+  include HiddenValueModule
+  
+  def initialize
+    super(MGR_REPL_DBPASSWORD, "Database password for the manager to check replication hosts", PV_ANY)
+  end
+  
+  def load_default_value
+    master = @config.getProperty(get_dataservice_key(DATASERVICE_MASTER_MEMBER)).split(",")[0]
+    rs_alias = to_identifier("#{get_dataservice()}_#{master}")
+    @default = @config.getProperty([REPL_SERVICES, rs_alias, REPL_DBPASSWORD])
+  end
+end
+
+class ManagerReplicationDBPort < ConfigurePrompt
+  include ManagerPrompt
+  include HiddenValueModule
+  
+  def initialize
+    super(MGR_REPL_DBPORT, "Database port for the manager to check replication hosts", PV_INTEGER)
+  end
+  
+  def load_default_value
+    master = @config.getProperty(get_dataservice_key(DATASERVICE_MASTER_MEMBER)).split(",")[0]
+    rs_alias = to_identifier("#{get_dataservice()}_#{master}")
+    @default = @config.getProperty([REPL_SERVICES, rs_alias, REPL_DBPORT])
+  end
+end
+
+class ManagerReplicationDBSchema < ConfigurePrompt
+  include ManagerPrompt
+  include HiddenValueModule
+  
+  def initialize
+    super(MGR_REPL_SCHEMA, "Database schema for the manager to check replication hosts", PV_IDENTIFIER)
+  end
+  
+  def load_default_value
+    master = @config.getProperty(get_dataservice_key(DATASERVICE_MASTER_MEMBER)).split(",")[0]
+    rs_alias = to_identifier("#{get_dataservice()}_#{master}")
+    @default = @config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_SCHEMA])
   end
 end
