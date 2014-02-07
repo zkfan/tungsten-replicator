@@ -971,11 +971,15 @@ public abstract class AbstractDatabase implements Database
             long colLength = rsc.getLong("COLUMN_SIZE");
             boolean isNotNull = rsc.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls;
             String valueString = rsc.getString("COLUMN_DEF");
+            String typeDesc = rsc.getString("TYPE_NAME").toUpperCase();
+            // Issue 798. Mimicking MySQLApplier.
+            boolean isSigned = !typeDesc.contains("UNSIGNED");
 
             Column column = new Column(colName, colType, colLength, isNotNull,
                     valueString);
             column.setPosition(rsc.getInt("ORDINAL_POSITION"));
-            column.setTypeDescription(rsc.getString("TYPE_NAME").toUpperCase());
+            column.setTypeDescription(typeDesc);
+            column.setSigned(isSigned);
             columns.add(column);
         }
         rsc.close();
@@ -992,7 +996,7 @@ public abstract class AbstractDatabase implements Database
             table.AddColumn(col);
             cm.put(col.getName(), col);
         }
-
+ 
         // Look for primary key columns.
         ResultSet rsk = getPrimaryKeyResultSet(md, schemaName, tableName);
         Key pKey = new Key(Key.Primary);
@@ -1330,4 +1334,16 @@ public abstract class AbstractDatabase implements Database
         dropSchema(schemaName);
     }
 
+    /**
+     * {@inheritDoc}
+     * @see com.continuent.tungsten.replicator.database.Database#isSystemSchema(java.lang.String)
+     */
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    
 }

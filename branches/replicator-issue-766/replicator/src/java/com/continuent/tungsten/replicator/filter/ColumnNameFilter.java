@@ -1,6 +1,6 @@
 /**
  * Tungsten Scale-Out Stack
- * Copyright (C) 2011 Continuent Inc.
+ * Copyright (C) 2011-2014 Continuent Inc.
  * Contact: tungsten@continuent.org
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
  * Initial developer(s): Stephane Giron
- * Contributor(s):
+ * Contributor(s): Linas Virbalas
  */
 
 package com.continuent.tungsten.replicator.filter;
@@ -46,8 +46,9 @@ import com.continuent.tungsten.replicator.event.ReplDBMSEvent;
 import com.continuent.tungsten.replicator.plugin.PluginContext;
 
 /**
- * This class defines a ColumnNameFilter. It adds column name information to
- * events on the extractor side.
+ * ColumnNameFilter adds column meta information (eg. name, signed/unsigned
+ * flag) to the events, which is otherwise unavailable to the extractor, by
+ * querying underlying DBMS.
  * 
  * @author <a href="mailto:stephane.giron@continuent.com">Stephane Giron</a>
  * @version 1.0
@@ -63,11 +64,12 @@ public class ColumnNameFilter implements Filter
     // updated only when a table is used for the first time by a row event.
     private Hashtable<String, Hashtable<String, Table>> metadataCache;
 
-    Database                                            conn       = null;
+    Database                                            conn          = null;
 
     private String                                      user;
     private String                                      url;
     private String                                      password;
+    private boolean                                     addSignedFlag = true;
 
     // SQL parser.
     SqlOperationMatcher                                 sqlMatcher = new MySQLOperationMatcher();
@@ -88,6 +90,13 @@ public class ColumnNameFilter implements Filter
      */
     public void prepare(PluginContext context) throws ReplicatorException
     {
+        // Greeting message.
+        String msg = "Column names ";
+        if (addSignedFlag)
+            msg += "and signed flag ";
+        logger.info(msg += "will be queried from the DBMS");
+        
+        // Initialize cache for tables.
         metadataCache = new Hashtable<String, Hashtable<String, Table>>();
 
         // Load defaults for connection
@@ -281,6 +290,8 @@ public class ColumnNameFilter implements Filter
         {
             ColumnSpec type = iterator.next();
             type.setName(columns.get(index).getName());
+            if (addSignedFlag)
+                type.setSigned(columns.get(index).isSigned()); // Issue 798.
             index++;
         }
 
@@ -290,6 +301,8 @@ public class ColumnNameFilter implements Filter
         {
             ColumnSpec type = iterator.next();
             type.setName(columns.get(index).getName());
+            if (addSignedFlag)
+                type.setSigned(columns.get(index).isSigned()); // Issue 798.
             index++;
         }
         // We could retrieve primary keys at this point
@@ -308,5 +321,14 @@ public class ColumnNameFilter implements Filter
     public void setPassword(String password)
     {
         this.password = password;
+    }
+
+    /**
+     * In addition to the column names, should the add filter signed/unsigned
+     * flag too?
+     */
+    public void setAddSignedFlag(boolean addSignedFlag)
+    {
+        this.addSignedFlag = addSignedFlag;
     }
 }

@@ -37,6 +37,8 @@ import org.apache.log4j.Logger;
 
 import com.continuent.tungsten.replicator.ReplicatorException;
 import com.continuent.tungsten.replicator.database.Column;
+import com.continuent.tungsten.replicator.datatypes.MySQLUnsignedNumeric;
+import com.continuent.tungsten.replicator.datatypes.Numeric;
 import com.continuent.tungsten.replicator.dbms.LoadDataFileQuery;
 import com.continuent.tungsten.replicator.dbms.OneRowChange.ColumnSpec;
 import com.continuent.tungsten.replicator.dbms.OneRowChange.ColumnVal;
@@ -55,13 +57,6 @@ import com.continuent.tungsten.replicator.plugin.PluginContext;
 public class MySQLApplier extends JdbcApplier
 {
     private static Logger             logger              = Logger.getLogger(MySQLApplier.class);
-
-    private static final int          TINYINT_MAX_VALUE   = 255;
-    private static final int          SMALLINT_MAX_VALUE  = 65535;
-    private static final int          MEDIUMINT_MAX_VALUE = 16777215;
-    private static final long         INTEGER_MAX_VALUE   = 4294967295L;
-    protected static final BigInteger BIGINT_MAX_VALUE    = new BigInteger(
-                                                                  "18446744073709551615");
 
     protected String                  host                = "localhost";
     protected int                     port                = 3306;
@@ -206,7 +201,7 @@ public class MySQLApplier extends JdbcApplier
     {
 
         int type = columnSpec.getType();
-        
+
         if (type == Types.TIMESTAMP && value.getValue() instanceof Integer)
         {
             prepStatement.setInt(bindLoc, 0);
@@ -217,47 +212,12 @@ public class MySQLApplier extends JdbcApplier
         }
         else if (type == Types.INTEGER)
         {
-            boolean isNegative = false;
             Object valToInsert = null;
-            Long extractedVal = null;
-            if (value.getValue() instanceof Integer)
+            Numeric numeric = new Numeric(columnSpec, value);
+            if (columnSpec.isUnsigned() && numeric.isNegative())
             {
-                int val = (Integer) value.getValue();
-                isNegative = val < 0;
-                extractedVal = Long.valueOf(val);
-            }
-            else if (value.getValue() instanceof Long)
-            {
-                long val = (Long) value.getValue();
-                isNegative = val < 0;
-                extractedVal = Long.valueOf(val);
-            }
-
-            if (columnSpec.isUnsigned() && isNegative)
-            {
-                switch (columnSpec.getLength())
-                {
-                    case 1 :
-                        valToInsert = TINYINT_MAX_VALUE + 1 + extractedVal;
-                        if (logger.isDebugEnabled())
-                            logger.debug("Inserting " + valToInsert);
-                        break;
-                    case 2 :
-                        valToInsert = SMALLINT_MAX_VALUE + 1 + extractedVal;
-                        break;
-                    case 3 :
-                        valToInsert = MEDIUMINT_MAX_VALUE + 1 + extractedVal;
-                        break;
-                    case 4 :
-                        valToInsert = INTEGER_MAX_VALUE + 1 + extractedVal;
-                        break;
-                    case 8 :
-                        valToInsert = BIGINT_MAX_VALUE.add(BigInteger
-                                .valueOf(1 + extractedVal));
-                        break;
-                    default :
-                        break;
-                }
+                valToInsert = MySQLUnsignedNumeric
+                        .negativeToMeaningful(numeric);
                 setInteger(prepStatement, bindLoc, valToInsert);
             }
             else
@@ -349,24 +309,28 @@ public class MySQLApplier extends JdbcApplier
             ((com.mysql.jdbc.Statement) statement)
                     .setLocalInfileInputStream(null);
         }
-        
+
         // Clean up the temp file as we may not get a delete file event.
         if (logger.isDebugEnabled())
         {
-            logger.debug("Deleting temp file: " + temporaryFile.getAbsolutePath());
+            logger.debug("Deleting temp file: "
+                    + temporaryFile.getAbsolutePath());
         }
         temporaryFile.delete();
     }
 
+    private static final char[] hexArray = "0123456789abcdef".toCharArray();
+
     protected String hexdump(byte[] buffer)
     {
-        StringBuffer dump = new StringBuffer();
-        for (int i = 0; i < buffer.length; i++)
+        char[] hexChars = new char[buffer.length * 2];
+        for (int j = 0; j < buffer.length; j++)
         {
-            dump.append(String.format("%02x", buffer[i]));
+            int v = buffer[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
-
-        return dump.toString();
+        return new String(hexChars);
     }
 
 }

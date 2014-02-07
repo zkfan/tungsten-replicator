@@ -480,7 +480,11 @@ public class JdbcApplier implements RawApplier
                 if (cv.getIndex() == column.getPosition())
                 {
                     cv.setName(column.getName());
-                    cv.setSigned(column.isSigned());
+                    // Issue 798. Set the signed flag only if specific applier
+                    // has set it during the addColumn(...) call. Otherwise,
+                    // leave the value found in THL.
+                    if (column.isSignedSet())
+                        cv.setSigned(column.isSigned());
                     cv.setTypeDescription(column.getTypeDescription());
                     if (cv.getLength() == 0)
                         cv.setLength((int) column.getLength());
@@ -500,7 +504,11 @@ public class JdbcApplier implements RawApplier
                 if (cv.getIndex() == column.getPosition())
                 {
                     cv.setName(column.getName());
-                    cv.setSigned(column.isSigned());
+                    // Issue 798. Set the signed flag only if specific applier
+                    // has set it during the addColumn(...) call. Otherwise,
+                    // leave the value found in THL.
+                    if (column.isSignedSet())
+                        cv.setSigned(column.isSigned());
                     cv.setTypeDescription(column.getTypeDescription());
                     if (cv.getLength() == 0)
                         cv.setLength((int) column.getLength());
@@ -1182,7 +1190,7 @@ public class JdbcApplier implements RawApplier
                 OneRowChange.ColumnVal value = values.get(c);
                 log.append('\n');
                 log.append(THLManagerCtrl.formatColumn(colSpec, value, "COL",
-                        "utf8", false));
+                        "utf8", false, true));
             }
         }
         // Print key values.
@@ -1195,7 +1203,7 @@ public class JdbcApplier implements RawApplier
                 OneRowChange.ColumnVal value = values.get(k);
                 log.append('\n');
                 log.append(THLManagerCtrl.formatColumn(colSpec, value, "KEY",
-                        "utf8", false));
+                        "utf8", false, true));
             }
         }
         return log.toString();

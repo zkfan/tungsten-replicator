@@ -621,4 +621,6 @@ public interface Database extends UniversalConnection
      */
     public void dropTungstenCatalog(String schemaName,
             String tungstenTableType, String serviceName) throws SQLException;
+
+    public boolean isSystemSchema(String schemaName);
 }

@@ -29,7 +29,6 @@ import java.sql.Connection;
 import java.sql.Types;
 import java.sql.Timestamp;
 import java.io.Writer;
-
 import oracle.jdbc.OraclePreparedStatement;
 import oracle.sql.CLOB;
 
@@ -40,6 +39,8 @@ import com.continuent.tungsten.replicator.database.Column;
 import com.continuent.tungsten.replicator.database.DBMS;
 import com.continuent.tungsten.replicator.database.AdditionalTypes;
 import com.continuent.tungsten.replicator.database.JdbcURL;
+import com.continuent.tungsten.replicator.datatypes.MySQLUnsignedNumeric;
+import com.continuent.tungsten.replicator.datatypes.Numeric;
 import com.continuent.tungsten.replicator.dbms.OneRowChange.ColumnSpec;
 import com.continuent.tungsten.replicator.dbms.OneRowChange.ColumnVal;
 import com.continuent.tungsten.replicator.extractor.mysql.SerialBlob;
@@ -203,6 +204,22 @@ public class OracleApplier extends JdbcApplier
                                 (int) blob.length()));
                     prepStatement.setString(bindLoc, toString);
                 }
+            }
+            else if (type == Types.INTEGER)
+            { // Issue 798 - MySQLExtractor extracts UNSIGNED numbers in a not
+              // platform-indendent way.
+                Object valToInsert = null;
+                Numeric numeric = new Numeric(columnSpec, value);
+                if (columnSpec.isUnsigned() && numeric.isNegative())
+                {
+                    // We assume that if column is unsigned - it's MySQL on the
+                    // master side, as Oralce doesn't have UNSIGNED modifier.
+                    valToInsert = MySQLUnsignedNumeric
+                            .negativeToMeaningful(numeric);
+                    prepStatement.setObject(bindLoc, valToInsert);
+                }
+                else
+                    prepStatement.setObject(bindLoc, value.getValue());
             }
             else
                 prepStatement.setObject(bindLoc, value.getValue());
