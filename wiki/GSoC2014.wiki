@@ -1,0 +1,22 @@
+#summary Google Summer of Code 2014 Idea List
+#labels GSoC
+
+= Introduction =
+
+[http://code.google.com/p/tungsten-replicator/ Tungsten Replicator] is a high performance, open source, data replication engine for MySQL, Oracle, Hadoop, Vertica and other databases. At Tungsten Replicator we love database replication! And we'd like students to participate in making open-source replication even better. It's a topic that is both complex and fun to work on.
+
+= Project Ideas =
+
+Mentors: [http://flyingclusters.blogspot.com Linas Virbalas] and [http://datacharmer.blogspot.com Giuseppe Maxia]
+
+* Real-time Database Replication Filters *
+
+Brief description: the goal of this project is to add a number of advanced real-time filters, which transform transactions, replicated between different databases, on the fly. Each filter will help to solve a specific use case in replication.
+
+Skills required: JAVA, JavaScript, databases.
+
+* Tests for Real-time Database Replication Engine *
+
+Brief description: the aim of this project is to extend code coverage by creating an array of unit tests. They would extend existing ones and ensure there is more code protected from possible regressions.
+
+Skills required: JAVA, testing, databases.
