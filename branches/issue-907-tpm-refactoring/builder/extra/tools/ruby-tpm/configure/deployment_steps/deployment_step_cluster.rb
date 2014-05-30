@@ -196,7 +196,7 @@ EOF
       }
       f.puts(commands.join("\n"))
     }
-    Configurator.instance.watch_file("#{get_deployment_basedir()}/cookbook/INSTALLED.tmpl", @config)
+    WatchFiles.watch_file("#{get_deployment_basedir()}/cookbook/INSTALLED.tmpl", @config)
   end
   
   def commit_release

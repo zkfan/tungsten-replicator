@@ -272,7 +272,7 @@ class Transformer
       }
       
       if watch_file?()
-        Configurator.instance.watch_file(@outfile, @config)
+        WatchFiles.watch_file(@outfile, @config)
       end
     else
       return self.to_s

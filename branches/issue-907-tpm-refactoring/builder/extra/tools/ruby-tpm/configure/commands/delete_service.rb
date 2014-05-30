@@ -162,8 +162,8 @@ module DeleteReplicationServiceDeploymentStep
         if File.exist?(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE]))
           FileUtils.rm_f(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE]))
         end
-        if File.exist?(get_original_watch_file(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE])))
-          FileUtils.rm_f(get_original_watch_file(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE])))
+        if File.exist?(WatchFiles.get_original_watch_file(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE])))
+          FileUtils.rm_f(WatchFiles.get_original_watch_file(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_CONFIG_FILE])))
         end
         if File.exist?(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_DYNAMIC_CONFIG]))
           FileUtils.rm_f(@config.getProperty([REPL_SERVICES, rs_alias, REPL_SVC_DYNAMIC_CONFIG]))

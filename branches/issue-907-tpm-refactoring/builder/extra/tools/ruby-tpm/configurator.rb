@@ -1444,32 +1444,6 @@ class Configurator
       block.call()
     end
   end
-  
-  def watch_file(file, cfg)
-    prepare_dir = cfg.getProperty(PREPARE_DIRECTORY)
-    FileUtils.cp(file, get_original_watch_file(file))
-    if file =~ /#{prepare_dir}/
-      file_to_watch = file.sub(prepare_dir, "")
-      if file_to_watch[0, 1] == "/"
-        file_to_watch.slice!(0)
-      end 
-    else
-      file_to_watch = file
-    end
-    File.open("#{prepare_dir}/.watchfiles", "a") {
-      |out|
-      out.puts file_to_watch
-    }
-
-    if cfg.getProperty(PROTECT_CONFIGURATION_FILES) == "true"
-      cmd_result("chmod o-rwx #{file}")
-      cmd_result("chmod o-rwx #{get_original_watch_file(file)}")
-    end
-  end
-end
-
-def get_original_watch_file(file)
-  File.dirname(file) + "/." + File.basename(file) + ".orig"
 end
 
 def is_port_available?(ip, port)

@@ -83,7 +83,7 @@ module ConfigureDeploymentStepReplicator
     out.close
     
     info "GENERATED FILE: " + svc_properties
-    Configurator.instance.watch_file(svc_properties, @config)
+    WatchFiles.watch_file(svc_properties, @config)
   end
   
   def get_dynamic_properties_file()
