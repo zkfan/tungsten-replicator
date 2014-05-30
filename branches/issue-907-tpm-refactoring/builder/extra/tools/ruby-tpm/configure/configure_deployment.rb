@@ -10,11 +10,6 @@ MANAGER_POLICY = "manager_policy"
 MANAGER_COORDINATOR = "manager_coordinator"
 
 module ConfigureDeployment
-  FIRST_GROUP_ID = -100
-  FIRST_STEP_WEIGHT = -100
-  FINAL_GROUP_ID = 100
-  FINAL_STEP_WEIGHT = 100
-  
   def initialize
     @validation_handler = nil
     @deployment_handler = nil
@@ -419,22 +414,14 @@ module ConfigureDeployment
     obj.prepare(get_deployment_object_modules(config))
     return obj
   end
-  
-  def get_weight
-    0
-  end
-  
-  def self.inherited(subclass)
-    @subclasses ||= []
-    @subclasses << subclass
-  end
-
-  def self.subclasses
-    @subclasses
-  end
 end
 
 class ConfigureDeploymentStepMethod
+  FIRST_GROUP_ID = -100
+  FIRST_STEP_WEIGHT = -100
+  FINAL_GROUP_ID = 100
+  FINAL_STEP_WEIGHT = 100
+  
   attr_reader :method_name, :weight, :group_id, :allow_parallel
   def initialize(method_name, group_id = 0, weight = 0, allow_parallel = true)
     @method_name=method_name

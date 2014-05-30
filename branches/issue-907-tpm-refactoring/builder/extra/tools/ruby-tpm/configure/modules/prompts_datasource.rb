@@ -1,5 +1,3 @@
-# Prompts that include this module will be collected for each datasource 
-# across interactive mode, the tungsten-installer script
 module DatasourcePrompt
   include GroupConfigurePromptMember
   include HashPromptDefaultsModule

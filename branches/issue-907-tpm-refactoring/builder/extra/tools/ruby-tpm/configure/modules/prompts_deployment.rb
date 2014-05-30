@@ -18,27 +18,8 @@ class ClusterHosts < GroupConfigurePrompt
     
     super()
   end
-  
-  def get_new_alias_prompt
-    TemporaryPrompt.new("What host would you like to configure?  Enter nothing to stop entering #{@plural}.")
-  end
-  
-  def validate_new_alias(new_alias)
-    super(to_identifier(new_alias))
-  end
-  
-  def add_alias(new_alias)
-    fixed_alias = to_identifier(new_alias)
-    
-    super(fixed_alias)
-    
-    @config.setProperty([get_name(), fixed_alias, HOST], new_alias)
-  end
 end
 
-# Prompts that include this module will be collected for each host 
-# across interactive mode, the configure script and the
-# tungsten-installer script
 module ClusterHostPrompt
   include GroupConfigurePromptMember
   include HashPromptDefaultsModule

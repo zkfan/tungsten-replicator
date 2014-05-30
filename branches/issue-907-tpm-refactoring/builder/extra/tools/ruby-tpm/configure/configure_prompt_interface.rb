@@ -106,17 +106,6 @@ module ConfigurePromptInterface
     true
   end
   
-  # Return to this prompt if the user specifies 'previous' during
-  # interactive configuration.
-  def allow_previous?
-    enabled?()
-  end
-  
-  # Get the sorting weight
-  def get_weight
-    @weight || 0
-  end
-  
   # Read the prompt response from the terminal
   def input_value(prompt, default)
     default = default.to_s

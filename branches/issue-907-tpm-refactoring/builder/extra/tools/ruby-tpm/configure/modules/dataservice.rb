@@ -14,9 +14,6 @@ class ReplicationServices < GroupConfigurePrompt
   end
 end
 
-# Prompts that include this module will be collected for each dataservice 
-# across interactive mode, the configure-service script and the
-# tungsten-installer script
 module ReplicationServicePrompt
   include GroupConfigurePromptMember
   include HashPromptDefaultsModule
@@ -114,7 +111,6 @@ class ReplicationServiceDeploymentHost < ConfigurePrompt
     super(DEPLOYMENT_HOST, 
       "On what host would you like to deploy this replication service?", 
       PV_IDENTIFIER)
-    @weight = -1
   end
   
   def get_disabled_value

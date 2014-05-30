@@ -272,12 +272,12 @@ module ConfigureDeploymentCore
 	def transform_host_values(matches)
 	  case matches.at(0)
     when "HOST"
-      v = @config.getTemplateValue(get_host_key(Kernel.const_get(matches[1])), method(:transform_host_values))
+      v = @config.getTemplateValue(get_host_key(Kernel.const_get(matches[1])))
     else
       v = @config.getTemplateValue(matches.map{
         |match|
         Kernel.const_get(match)
-      }, method(:transform_host_values))
+      })
     end
     
     return v
@@ -286,18 +286,18 @@ module ConfigureDeploymentCore
 	def transform_service_values(matches)
 	  case matches.at(0)
     when "APPLIER"
-      v = @config.getTemplateValue(get_service_key(Kernel.const_get(matches[1])), method(:transform_service_values))
+      v = @config.getTemplateValue(get_service_key(Kernel.const_get(matches[1])))
     when "EXTRACTOR"
-      v = @config.getTemplateValue(get_service_key(Kernel.const_get("EXTRACTOR_" + matches[1])), method(:transform_service_values))
+      v = @config.getTemplateValue(get_service_key(Kernel.const_get("EXTRACTOR_" + matches[1])))
     when "SERVICE"
-      v = @config.getTemplateValue(get_service_key(Kernel.const_get(matches[1])), method(:transform_service_values))
+      v = @config.getTemplateValue(get_service_key(Kernel.const_get(matches[1])))
     when "HOST"
-      v = @config.getTemplateValue(get_host_key(Kernel.const_get(matches[1])), method(:transform_service_values))
+      v = @config.getTemplateValue(get_host_key(Kernel.const_get(matches[1])))
     else
       v = @config.getTemplateValue(matches.map{
         |match|
         Kernel.const_get(match)
-      }, method(:transform_service_values))
+      })
     end
     
     return v

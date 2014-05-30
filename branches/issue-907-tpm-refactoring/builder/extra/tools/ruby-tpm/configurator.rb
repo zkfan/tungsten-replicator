@@ -1186,10 +1186,6 @@ class Configurator
     @command.advanced?()
   end
   
-  def is_interactive?
-    @command.interactive?()
-  end
-  
   def forced?
     if @command
       @command.forced?()

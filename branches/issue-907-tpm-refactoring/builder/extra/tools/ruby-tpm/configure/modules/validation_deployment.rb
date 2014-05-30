@@ -33,7 +33,6 @@ class OpensslLibraryCheck < ConfigureValidationCheck
     @title = "OpenSSL Library Check"
     @description = "Look for the Ruby OpenSSL library needed to connecto to remote hosts"
     @fatal_on_error = true
-    @weight = -10
   end
   
   def validate
@@ -59,7 +58,6 @@ class SSHLoginCheck < ConfigureValidationCheck
     @description = "Ensure that the configuration host can login to each member of the dataservice via SSH"
     @properties << USERID
     @fatal_on_error = true
-    @weight = -5
   end
   
   def validate

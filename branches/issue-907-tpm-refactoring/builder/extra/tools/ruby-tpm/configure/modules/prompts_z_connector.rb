@@ -123,7 +123,6 @@ class ConnectorDeploymentHost < ConfigurePrompt
     super(DEPLOYMENT_HOST, 
       "On what host would you like to deploy this connector?", 
       PV_IDENTIFIER)
-    @weight = -1
   end
   
   def load_default_value

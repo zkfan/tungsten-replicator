@@ -5,7 +5,6 @@ module ConfigureCommand
   def initialize(config)
     super()
     set_config(config)
-    @interactive = false
     @force = false
     @batch = false
     @distribute_log = false
@@ -89,22 +88,6 @@ module ConfigureCommand
     end
     
     return @advanced
-  end
-  
-  def interactive?(v = nil)
-    if v != nil
-      if v == true && allow_interactive?() != true
-        raise "Unable to run #{self.class.get_command_name} in interactive mode"
-      end
-      
-      @interactive = v
-    end
-    
-    return @interactive
-  end
-  
-  def allow_interactive?
-    false
   end
   
   def use_remote_package?
