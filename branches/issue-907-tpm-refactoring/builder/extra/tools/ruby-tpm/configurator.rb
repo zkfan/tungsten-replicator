@@ -31,7 +31,6 @@ system_require 'properties'
 system_require 'stringio'
 system_require 'open-uri'
 system_require 'open4'
-system_require 'configure/is_tools_package'
 system_require 'configure/parameter_names'
 system_require 'configure/configure_messages'
 system_require 'configure/configure_prompt_handler'
@@ -991,11 +990,7 @@ class Configurator
   end
   
   def get_base_path
-    if is_full_tungsten_package?()
-      File.expand_path(File.dirname(__FILE__) + "/../../")
-    else
-      File.expand_path(File.dirname(__FILE__) + "/../")
-    end
+    File.expand_path(File.dirname(__FILE__) + "/../../")
   end
   
   def get_log_filename
@@ -1027,25 +1022,8 @@ class Configurator
     end
   end
   
-  def get_package_path
-    if is_full_tungsten_package?()
-      get_base_path()
-    else
-      runtime_path = File.expand_path(get_base_path() + "/.runtime/" + get_release_name())
-      if File.exists?(runtime_path)
-        return runtime_path
-      else
-        return nil
-      end
-    end
-  end
-  
   def get_ruby_prefix
-    if is_full_tungsten_package?()
-      "tools/ruby"
-    else
-      "ruby"
-    end
+    "tools/ruby"
   end
   
   def get_basename
@@ -1078,10 +1056,6 @@ class Configurator
   
   def get_lock_filename
     "#{get_base_path()}/#{DIRECTORY_LOCK_FILENAME}"
-  end
-  
-  def is_full_tungsten_package?
-    (IS_TOOLS_PACKAGE==false)
   end
   
   def get_manifest_file_path
@@ -1475,6 +1449,32 @@ class Configurator
       block.call()
     end
   end
+  
+  def watch_file(file, cfg)
+    prepare_dir = cfg.getProperty(PREPARE_DIRECTORY)
+    FileUtils.cp(file, get_original_watch_file(file))
+    if file =~ /#{prepare_dir}/
+      file_to_watch = file.sub(prepare_dir, "")
+      if file_to_watch[0, 1] == "/"
+        file_to_watch.slice!(0)
+      end 
+    else
+      file_to_watch = file
+    end
+    File.open("#{prepare_dir}/.watchfiles", "a") {
+      |out|
+      out.puts file_to_watch
+    }
+
+    if cfg.getProperty(PROTECT_CONFIGURATION_FILES) == "true"
+      cmd_result("chmod o-rwx #{file}")
+      cmd_result("chmod o-rwx #{get_original_watch_file(file)}")
+    end
+  end
+end
+
+def get_original_watch_file(file)
+  File.dirname(file) + "/." + File.basename(file) + ".orig"
 end
 
 def is_port_available?(ip, port)

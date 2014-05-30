@@ -1196,21 +1196,12 @@ class ReplicationServiceApplierConfig < ConfigurePrompt
   
   def get_template_value(transform_values_method)
     if @config.getProperty(PREFETCH_ENABLED) == "true"
-      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
-        "tungsten-replicator/samples/conf/appliers/prefetch.tpl"
+      "tungsten-replicator/samples/conf/appliers/prefetch.tpl"
     elsif @config.getProperty(BATCH_ENABLED) == "true"
-      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
-        "tungsten-replicator/samples/conf/appliers/batch.tpl"
+      "tungsten-replicator/samples/conf/appliers/batch.tpl"
     else
-      template = @config.getProperty(PREPARE_DIRECTORY) + "/" + 
-        get_applier_datasource().get_applier_template()
+      get_applier_datasource().get_applier_template()
     end
-    
-    transformer = Transformer.new(template)
-    transformer.set_fixed_properties(@config.getProperty(get_member_key(FIXED_PROPERTY_STRINGS)))
-    transformer.transform_values(transform_values_method)
-    
-    return transformer.to_s
   end
 end
 
@@ -1223,12 +1214,7 @@ class ReplicationServiceExtractorConfig < ConfigurePrompt
   end
   
   def get_template_value(transform_values_method)
-    transformer = Transformer.new(@config.getProperty(PREPARE_DIRECTORY) + "/" + 
-      get_extractor_datasource().get_extractor_template())
-    transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-    transformer.transform_values(transform_values_method)
-    
-    return transformer.to_s
+    get_extractor_datasource().get_extractor_template()
   end
 end
 
@@ -1241,35 +1227,15 @@ class ReplicationServiceFilterConfig < ConfigurePrompt
   end
   
   def get_template_value(transform_values_method)
-    output_lines = []
-    
-    Dir[@config.getProperty(PREPARE_DIRECTORY) + '/tungsten-replicator/samples/conf/filters/default/*.tpl'].sort().each do |file| 
-      transformer = Transformer.new(file)
-      transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-      transformer.transform_values(transform_values_method)
-      
-      output_lines = output_lines + transformer.to_a + [""]
-    end
+    patterns = []
+    patterns << "tungsten-replicator/samples/conf/filters/default/*.tpl"
     
     if get_applier_datasource().class != get_extractor_datasource.class
-      Dir[@config.getProperty(PREPARE_DIRECTORY) + "/tungsten-replicator/samples/conf/filters/#{get_extractor_datasource().get_uri_scheme()}/*.tpl"].sort().each do |file| 
-        transformer = Transformer.new(file)
-        transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-        transformer.transform_values(transform_values_method)
-      
-        output_lines = output_lines + transformer.to_a + [""]
-      end
+      patterns << "tungsten-replicator/samples/conf/filters/#{get_extractor_datasource().get_uri_scheme()}/*.tpl"
     end
     
-    Dir[@config.getProperty(PREPARE_DIRECTORY) + "/tungsten-replicator/samples/conf/filters/#{get_applier_datasource().get_uri_scheme()}/*.tpl"].sort().each do |file| 
-      transformer = Transformer.new(file)
-      transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-      transformer.transform_values(transform_values_method)
-      
-      output_lines = output_lines + transformer.to_a + [""]
-    end
-    
-    return output_lines.join("\n")
+    patterns << "tungsten-replicator/samples/conf/filters/#{get_applier_datasource().get_uri_scheme()}/*.tpl"
+    patterns
   end
 end
 
@@ -1282,25 +1248,10 @@ class ReplicationServiceBackupConfig < ConfigurePrompt
   end
   
   def get_template_value(transform_values_method)
-    output_lines = []
-    
-    Dir[@config.getProperty(PREPARE_DIRECTORY) + '/tungsten-replicator/samples/conf/backup_methods/default/*.tpl'].sort().each do |file| 
-      transformer = Transformer.new(file)
-      transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-      transformer.transform_values(transform_values_method)
-      
-      output_lines = output_lines + transformer.to_a + [""]
-    end
-    
-    Dir[@config.getProperty(PREPARE_DIRECTORY) + "/tungsten-replicator/samples/conf/backup_methods/#{get_applier_datasource().get_uri_scheme()}/*.tpl"].sort().each do |file| 
-      transformer = Transformer.new(file)
-      transformer.set_fixed_properties(@config.getTemplateValue(get_member_key(FIXED_PROPERTY_STRINGS)))
-      transformer.transform_values(transform_values_method)
-      
-      output_lines = output_lines + transformer.to_a + [""]
-    end
-    
-    return output_lines.join("\n")
+    patterns = []
+    patterns << "tungsten-replicator/samples/conf/backup_methods/default/*.tpl"
+    patterns << "tungsten-replicator/samples/conf/backup_methods/#{get_applier_datasource().get_uri_scheme()}/*.tpl"
+    patterns
   end
 end
 

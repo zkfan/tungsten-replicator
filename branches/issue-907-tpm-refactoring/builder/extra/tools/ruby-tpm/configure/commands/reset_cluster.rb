@@ -157,58 +157,7 @@ module ResetClusterDeploymentStep
     end
     
     if is_manager?()
-      @config.getPropertyOr(DATASERVICES, {}).keys().each{
-        |comp_ds_alias|
-
-        if comp_ds_alias == DEFAULTS
-          next
-        end
-
-        if @config.getProperty([DATASERVICES, comp_ds_alias, DATASERVICE_IS_COMPOSITE]) == "false"
-          next
-        end
-
-        unless include_dataservice?(comp_ds_alias)
-          next
-        end
-
-        mkdir_if_absent("#{@config.getProperty(CURRENT_RELEASE_DIRECTORY)}/cluster-home/conf/cluster/#{comp_ds_alias}/service")
-        mkdir_if_absent("#{@config.getProperty(CURRENT_RELEASE_DIRECTORY)}/cluster-home/conf/cluster/#{comp_ds_alias}/datasource")
-        mkdir_if_absent("#{@config.getProperty(CURRENT_RELEASE_DIRECTORY)}/cluster-home/conf/cluster/#{comp_ds_alias}/extension")
-
-        @config.getProperty([DATASERVICES, comp_ds_alias, DATASERVICE_COMPOSITE_DATASOURCES]).to_s().split(",").each{
-          |ds_alias|
-          
-          path = "#{@config.getProperty(CURRENT_RELEASE_DIRECTORY)}/cluster-home/conf/cluster/#{comp_ds_alias}/datasource/#{ds_alias}.properties"
-          unless File.exist?(path)
-            if @config.getProperty([DATASERVICES, ds_alias, DATASERVICE_RELAY_SOURCE]).to_s() != ""
-              ds_role = "slave"
-            else
-              ds_role = "master"
-            end
-            
-            File.open(path, "w") {
-              |f|
-              f.puts "
-appliedLatency=-1.0
-precedence=1
-name=#{ds_alias}
-state=OFFLINE
-url=jdbc\:t-router\://#{ds_alias}/${DBNAME}
-alertMessage=
-isAvailable=true
-role=#{ds_role}
-isComposite=true
-alertStatus=OK
-alertTime=#{Time.now().strftime("%s000")}
-dataServiceName=#{comp_ds_alias}
-vendor=continuent
-driver=com.continuent.tungsten.router.jdbc.TSRDriver
-host=#{ds_alias}"
-            }
-          end
-        }
-      }
+      initiate_composite_dataservices()
     end
   end
 end

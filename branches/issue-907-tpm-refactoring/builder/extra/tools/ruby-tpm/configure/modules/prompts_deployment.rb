@@ -203,82 +203,6 @@ class RemotePackagePath < ConfigurePrompt
   end
 end
 
-class DeployCurrentPackagePrompt < ConfigurePrompt
-  include AdvancedPromptModule
-  include NoTemplateValuePrompt
-  include NoStoredServerConfigValue
-  
-  def initialize
-    super(DEPLOY_CURRENT_PACKAGE, "Deploy the current Tungsten package", PV_BOOLEAN, "true")
-    self.extend(NotTungstenUpdatePrompt)
-  end
-end
-
-class DeployPackageURIPrompt < ConfigurePrompt
-  include AdvancedPromptModule
-  include NoTemplateValuePrompt
-  include NoStoredServerConfigValue
-
-  def initialize
-    super(DEPLOY_PACKAGE_URI, "URL for the Tungsten package to deploy", PV_URI)
-    self.extend(NotTungstenUpdatePrompt)
-  end
-
-  def enabled?
-    @config.getProperty(DEPLOY_CURRENT_PACKAGE) != "true"
-  end
-  
-  def load_default_value
-    if enabled?
-      @default = "https://s3.amazonaws.com/releases.continuent.com/#{Configurator.instance.get_release_name()}.tar.gz"
-    else
-      @default = nil
-    end
-  end
-  
-  def accept?(raw_value)
-    value = super(raw_value)
-    if value.to_s == ""
-      return value
-    end
-    
-    uri = URI::parse(value)
-    if uri.scheme == "http" || uri.scheme == "https"
-      unless value =~ /.tar.gz/
-        raise "Only files ending in .tar.gz may be fetched using #{uri.scheme.upcase}"
-      end
-      
-      return value
-    elsif uri.scheme == "file"
-      if (uri.host == "localhost")
-        package_basename = File.basename(uri.path)
-        if package_basename =~ /.tar.gz$/
-          return value
-        elsif package_basename =~ /.tar$/
-          return value
-        elsif File.extname(uri.path) == ""
-          return value
-        else
-          raise "#{package_basename} is not a directory or recognized archive file"
-        end
-      elsif (uri.host == "remote")
-        package_basename = File.basename(uri.path)
-        if package_basename =~ /.tar.gz$/
-          return value
-        elsif package_basename =~ /.tar$/
-          return value
-        elsif File.extname(uri.path) == ""
-          return value
-        else
-          raise "#{package_basename} is not a directory or recognized archive file"
-        end
-      end
-    else
-      raise "#{uri.scheme.upcase()} is an unrecognized scheme for the deployment package"
-    end
-  end
-end
-
 class ConfigTargetBasenamePrompt < ConfigurePrompt
   include ConstantValueModule
   include NoTemplateValuePrompt
@@ -511,25 +435,7 @@ class TargetBasenamePrompt < ConfigurePrompt
       return
     end
     
-    if @config.getProperty(get_member_key(HOME_DIRECTORY)) == Configurator.instance.get_base_path()
-      @default = File.basename(Configurator.instance.get_base_path())
-    elsif "#{@config.getProperty(get_member_key(HOME_DIRECTORY))}/#{RELEASES_DIRECTORY_NAME}/#{Configurator.instance.get_basename()}" == Configurator.instance.get_base_path()
-      @default = File.basename(Configurator.instance.get_base_path())
-    else
-      if @config.getProperty(DEPLOY_CURRENT_PACKAGE) == "true"
-        @default = File.basename(Configurator.instance.get_package_path())
-      else
-        uri = URI::parse(@config.getProperty(get_member_key(DEPLOY_PACKAGE_URI)))
-        package_basename = File.basename(uri.path)          
-        if package_basename =~ /.tar.gz$/
-          package_basename = File.basename(package_basename, ".tar.gz")
-        elsif package_basename =~ /.tar$/
-          package_basename = File.basename(package_basename, ".tar")
-        end
-        
-        @default = package_basename
-      end
-    end
+    @default = File.basename(Configurator.instance.get_base_path())
   end
 end
 
@@ -1458,6 +1364,15 @@ class HostPreferredPath < ConfigurePrompt
   
   def initialize
     super(PREFERRED_PATH, "Additional command path", PV_ANY, "")
+  end
+end
+
+class TemplateSearchPath < ConfigurePrompt
+  include ClusterHostPrompt
+  include AdvancedPromptModule
+  
+  def initialize
+    super(TEMPLATE_SEARCH_PATH, "Additional path to find configuration templates", PV_ANY, "")
   end
 end
 
