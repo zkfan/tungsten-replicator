@@ -202,10 +202,6 @@ class ConfigTargetBasenamePrompt < ConfigurePrompt
       @default = Configurator.instance.get_unique_basename()
     end
   end
-  
-  def save_value?(v)
-    true
-  end
 end
 
 class HostPrompt < ConfigurePrompt
@@ -271,10 +267,6 @@ class HomeDirectoryPrompt < ConfigurePrompt
     if value == Configurator.instance.get_base_path()
       error("You must specify a separate location to deploy Continuent Tungsten")
     end
-  end
-  
-  def save_value?(v)
-    true
   end
 end
 

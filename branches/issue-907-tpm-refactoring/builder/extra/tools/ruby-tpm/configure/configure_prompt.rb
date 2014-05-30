@@ -43,10 +43,6 @@ class ConfigurePrompt
     end
   end
   
-  def get_prompt_value
-    get_value()
-  end
-  
   def get_stored_value()
     @config.getNestedProperty(get_name())
   end
@@ -64,31 +60,6 @@ class ConfigurePrompt
   
   def get_template_value
     get_value()
-  end
-  
-  # Save the current value back to the config object or the default 
-  # value if none is set
-  def save_current_value
-    value = get_value()
-    if save_value?(value)
-      @config.setProperty(get_name(), value)
-    else
-      @config.setProperty(get_name(), nil)
-    end
-  end
-
-  # Save the disabled value back to the config object
-  def save_disabled_value
-    value = get_disabled_value()
-    if save_value?(value)
-      @config.setProperty(get_name(), value)
-    else
-      @config.setProperty(get_name(), nil)
-    end
-  end
-  
-  def save_value?(v)
-    (v != get_default_value())
   end
   
   def save_system_default

@@ -42,26 +42,6 @@ class GroupConfigurePrompt
     (get_name() != "" && get_prompts().size() > 0)
   end
   
-  def save_current_value
-    each_member_prompt{
-      |member, prompt|
-      
-      if prompt.enabled?
-        prompt.save_current_value()
-      else
-        prompt.save_disabled_value()
-      end
-    }
-  end
-  
-  def save_disabled_value
-    each_member_prompt{
-      |member, prompt|
-      
-      prompt.save_disabled_value()
-    }
-  end
-  
   def save_system_default
     each_member_prompt(true) {
       |member, prompt|
@@ -441,11 +421,6 @@ module GroupConfigurePromptMember
   # Does this prompt support a group-wide default value to be specified
   def allow_group_default
     false
-  end
-  
-  # Build the help filename based on the basic config key
-  def get_prompt_help_filename()
-    "#{get_interface_text_directory()}/help_#{@name}"
   end
   
   # Build the description filename based on the basic config key
