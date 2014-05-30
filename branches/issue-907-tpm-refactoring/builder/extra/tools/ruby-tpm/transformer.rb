@@ -178,16 +178,30 @@ class Transformer
         # Replace this line with the content of a template 
         # returned by the template variable
         if functionMarker == "include("
-          r = transform_file(find_template(r))
+          pattern = r
+          r = []
+          find_templates([pattern]).each {
+            |template_files|
+            template_files.each{
+              |template|
+              r << transform_file(template)
+              r << ""
+            }
+          }
+          
+          r = r.join("\n")
         # Replace this line with the content of all templates found based
         # on a list of search patterns returned by the template variable
         elsif functionMarker == "includeAll("
           patterns = r
           r = []
           find_templates(patterns).each {
-            |template|
-            r << transform_file(template)
-            r << ""
+            |template_files|
+            template_files.each{
+              |template|
+              r << transform_file(template)
+              r << ""
+            }
           }
           
           r = r.join("\n")
@@ -282,32 +296,33 @@ class Transformer
   # Find a template matching the given pattern and store the contents
   # to be evaluated later
   def set_template(pattern)
-    path = find_template(pattern)
-    File.open(path) do |file|
-      @output = []
-      while line = file.gets
-        @output << line.chomp()
-      end
-    end
+    @output = []
+    find_templates([pattern]).each{
+      |template_files|
+      template_files.each{
+        |path|
+        File.open(path) do |file|
+          while line = file.gets
+            @output << line.chomp()
+          end
+        end
+      }
+    }
   end
   
-  # Find a physical file that matches the given pattern in the available
-  # template search directories
-  def find_template(pattern)
-    template_path = nil
+  # Find additional template content that should be added to the final file
+  def find_template_addons(pattern)
+    addons = []
+    
     get_search_directories().each {
       |dir|
-      path = File.expand_path(pattern, dir)
-      if File.exists?(path)
-        template_path = path
-        break
-      end
+      Dir.glob("#{dir}/#{pattern}.addon*").each {
+        |file|
+        addons << file
+      }
     }
     
-    if template_path == nil
-      raise MessageError.new("Unable to find a template file for '#{pattern}'")
-    end
-    template_path
+    addons
   end
   
   # Find a list of files matching the given search patterns among the available
@@ -326,7 +341,7 @@ class Transformer
           
           # Do not store the file if it is a duplicate of another template
           unless templates.has_key?(base)
-            templates[base] = file
+            templates[base] = [file] + find_template_addons(file[dir.length+1, file.length])
           end
         }
       }
@@ -338,6 +353,11 @@ class Transformer
       |k|
       template_files << templates[k]
     }
+    
+    if template_files.size() == 0
+      raise MessageError.new("Unable to find a template file for '#{search}'")
+    end
+    
     template_files
   end
   

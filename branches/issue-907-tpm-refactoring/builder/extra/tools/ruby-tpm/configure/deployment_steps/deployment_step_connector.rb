@@ -37,7 +37,7 @@ module ConfigureDeploymentStepConnector
     
     add_service("tungsten-connector/bin/connector")
     add_log_file("tungsten-connector/log/connector.log")
-    set_run_as_user("#{get_deployment_basedir()}/tungsten-connector/bin/connector")
+    set_run_as_user("tungsten-connector/bin/connector")
     transform_host_template("tungsten-connector/conf/wrapper.conf",
       "tungsten-connector/samples/conf/wrapper.conf")
     
