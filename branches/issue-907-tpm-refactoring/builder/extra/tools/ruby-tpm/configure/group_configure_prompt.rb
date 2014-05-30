@@ -498,7 +498,7 @@ class GroupConfigurePrompt
     raise IgnoreError
   end
   
-  def find_template_value(attrs, transform_values_method)
+  def find_template_value(attrs)
     if attrs[0] != @name
       raise IgnoreError
     end
@@ -516,7 +516,7 @@ class GroupConfigurePrompt
       begin
         curr_member = prompt.get_member()
         prompt.set_member(attrs[1])
-        value = prompt.find_template_value(attrs.slice(2, attrs.length), transform_values_method)
+        value = prompt.find_template_value(attrs.slice(2, attrs.length))
         prompt.set_member(curr_member)
         
         return value

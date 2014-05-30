@@ -262,7 +262,7 @@ class ConnectorListenPort < ConfigurePrompt
     override_command_line_argument("application-port")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if @config.getTemplateValue(get_member_key(ENABLE_CONNECTOR_RO)) == "true"
       @config.getPropertyOr(get_member_key(CONN_RO_LISTEN_PORT), get_value())
     else
@@ -353,7 +353,7 @@ class ConnectorUserMapPasswordLines < ConfigurePrompt
     super(CONN_PASSWORD_LINES, "Connector user.map password lines", PV_ANY, "")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     ds_alias = get_dataservice()
     composite_ds_alias = nil
     @config.getPropertyOr(DATASERVICES, {}).keys().each{
@@ -392,7 +392,7 @@ class ConnectorUserMapDirectLines < ConfigurePrompt
     super(CONN_DIRECT_LINES, "Connector user.map @direct lines", PV_ANY, "")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if @config.getProperty(get_member_key(CONN_RWSPLITTING)) == "true"
       prefix = ""
     else
@@ -414,7 +414,7 @@ class ConnectorRWAddresses < ConfigurePrompt
     super(CONN_RW_ADDRESSES, "Connector addresses that should receive a r/w connection", PV_ANY, "")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     lines = []
     
     get_value().to_s().split(",").each{
@@ -437,7 +437,7 @@ class ConnectorROAddresses < ConfigurePrompt
     super(CONN_RO_ADDRESSES, "Connector addresses that should receive a r/o connection", PV_ANY, "")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     lines = []
     
     get_value().to_s().split(",").each{
@@ -468,11 +468,11 @@ class ConnectorSmartScale < ConfigurePrompt
     super(CONN_SMARTSCALE, "Enable SmartScale R/W splitting in the connector", PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if @config.getTemplateValue(get_member_key(ENABLE_CONNECTOR_RO)) == "true"
       "false"
     else
-      super(transform_values_method)
+      super()
     end
   end
 end
@@ -610,7 +610,7 @@ class ConnectorJavaGarbageCollection < ConfigurePrompt
       PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       ""
     else
@@ -657,7 +657,7 @@ class ConnectorDriverOptions < ConfigurePrompt
     end
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     v = get_value()
     if @config.getTemplateValue(get_member_key(ENABLE_CONNECTOR_RO)) == "true"
       if v == ""
@@ -731,7 +731,7 @@ class ConnectorJavaKeystorePath < ConfigurePrompt
     super(JAVA_CONNECTOR_KEYSTORE_PATH, "Local path to the Java Connector Keystore file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_host_key(SECURITY_DIRECTORY)) + "/tungsten_connector_keystore.jks"
   end
   
@@ -772,7 +772,7 @@ class ConnectorJavaTruststorePath < ConfigurePrompt
     super(JAVA_CONNECTOR_TRUSTSTORE_PATH, "Local path to the Java Connector Truststore file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_host_key(SECURITY_DIRECTORY)) + "/tungsten_connector_truststore.ts"
   end
   
@@ -813,7 +813,7 @@ class ConnectorEnableReadOnly < ConfigurePrompt
     override_command_line_argument("connector-readonly")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true" || ConfigureDeploymentStepConnector.connector_ro_mode?() == true
       "true"
     else
@@ -830,7 +830,7 @@ class ConnectorEnableBridgeMode < ConfigurePrompt
     override_command_line_argument("connector-bridge-mode")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       if @config.getTemplateValue(get_member_key(ENABLE_CONNECTOR_RO)) == "true"
         "RO_RELAXED"
@@ -852,7 +852,7 @@ class ConnectorReadOnlyPropertiesExists < ConfigurePrompt
     super(CONN_RO_PROPERTIES_EXISTS, "Enable the second Tungsten Connector listeners", PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if File.exist?("#{@config.getProperty(PREPARE_DIRECTORY)}/tungsten-connector/conf/connector.ro.properties") == true
       "true"
     else
@@ -891,9 +891,9 @@ class ConnectorAffinity < ConfigurePrompt
     end
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if @config.getTemplateValue(get_member_key(ENABLE_CONNECTOR_RO)) == "true"
-      super(transform_values_method)
+      super()
     else
       ""
     end

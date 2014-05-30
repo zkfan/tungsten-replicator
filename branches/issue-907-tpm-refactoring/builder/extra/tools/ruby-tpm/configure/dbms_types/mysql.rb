@@ -382,7 +382,7 @@ class MySQLDriver < ConfigurePrompt
     end
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "drizzle"
       "mysql:thin"
     elsif get_value() == "mariadb"

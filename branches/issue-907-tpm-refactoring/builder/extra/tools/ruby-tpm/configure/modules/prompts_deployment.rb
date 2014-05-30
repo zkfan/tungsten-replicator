@@ -533,7 +533,7 @@ class ReplicationAPI < ConfigurePrompt
     super(REPL_API, "Enable the replication API", PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       ""
     else
@@ -901,7 +901,7 @@ class RootCommandPrefixPrompt < ConfigurePrompt
     end
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       "sudo -n"
     else
@@ -928,7 +928,7 @@ class JavaGarbageCollection < ConfigurePrompt
       PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       ""
     else
@@ -1479,7 +1479,7 @@ class HostJavaKeystorePath < ConfigurePrompt
     super(JAVA_KEYSTORE_PATH, "Local path to the Java Keystore file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_member_key(SECURITY_DIRECTORY)) + "/tungsten_keystore.jks"
   end
   
@@ -1520,7 +1520,7 @@ class HostJavaTruststorePath < ConfigurePrompt
     super(JAVA_TRUSTSTORE_PATH, "Local path to the Java Truststore file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_member_key(SECURITY_DIRECTORY)) + "/tungsten_truststore.ts"
   end
   
@@ -1561,7 +1561,7 @@ class HostJavaJMXRemoteAccessPath < ConfigurePrompt
     super(JAVA_JMXREMOTE_ACCESS_PATH, "Local path to the Java JMX Remote Access file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_member_key(SECURITY_DIRECTORY)) + "/jmxremote.access"
   end
   
@@ -1602,7 +1602,7 @@ class HostJavaPasswordStorePath < ConfigurePrompt
     super(JAVA_PASSWORDSTORE_PATH, "Local path to the Java Password Store file.", PV_FILENAME)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     @config.getProperty(get_member_key(SECURITY_DIRECTORY)) + "/passwords.store"
   end
   

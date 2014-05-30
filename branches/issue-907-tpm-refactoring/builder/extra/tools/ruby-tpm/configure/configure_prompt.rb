@@ -133,7 +133,7 @@ class ConfigurePrompt
     value
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_value()
   end
   
@@ -407,7 +407,7 @@ class ConfigurePrompt
     return value
   end
   
-  def find_template_value(attrs, transform_values_method)
+  def find_template_value(attrs)
     if attrs[0] != @name
       raise IgnoreError
     end
@@ -416,7 +416,7 @@ class ConfigurePrompt
       raise "Unable to find_template_value:#{attrs.join('.')} for #{self.class.name}"
     end
     
-    get_template_value(transform_values_method)
+    get_template_value()
   end
   
   def replace_deprecated_key(deprecated_key)

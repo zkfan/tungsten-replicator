@@ -292,11 +292,7 @@ class Properties
   end
   
   # Get the config file value for a property. 
-  def getTemplateValue(key, transform_values_method = nil)
-    if transform_values_method == nil
-      transform_values_method = method(:blank_transform_values_method)
-    end
-    
+  def getTemplateValue(key)
     if key.is_a?(String)
       key_string = key
       key = key.split('.')
@@ -313,7 +309,7 @@ class Properties
         begin
           @in_template_value_prompt_handler[key_string] = true
 
-          value = getPromptHandler().find_template_value(keys, transform_values_method)
+          value = getPromptHandler().find_template_value(keys)
 
           @in_template_value_prompt_handler[key_string] = false
         rescue IgnoreError
@@ -361,10 +357,6 @@ class Properties
     end
     
     value
-  end
-  
-  def blank_transform_values_method(matches)
-    ""
   end
   
   # Get the property value or return the default if nil

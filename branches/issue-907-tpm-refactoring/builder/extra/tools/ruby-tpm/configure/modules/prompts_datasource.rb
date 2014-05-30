@@ -298,8 +298,8 @@ class DatasourceDisableRelayLogs < ConfigurePrompt
     end
   end
   
-  def get_template_value(transform_values_method)
-    v = super(transform_values_method)
+  def get_template_value
+    v = super()
     
     if v == "false"
       "true"
@@ -440,8 +440,8 @@ class DirectDatasourceDisableRelayLogs < ConfigurePrompt
       PV_BOOLEAN)
   end
   
-  def get_template_value(transform_values_method)
-    @config.getTemplateValue(get_member_key(REPL_DISABLE_RELAY_LOGS), transform_values_method)
+  def get_template_value
+    @config.getTemplateValue(get_member_key(REPL_DISABLE_RELAY_LOGS))
   end
 end
 
@@ -453,7 +453,7 @@ class DatasourceTHLURL < ConfigurePrompt
     super(REPL_DBTHLURL, "Datasource THL URL")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().get_thl_uri()
   end
 end
@@ -466,7 +466,7 @@ class DatasourceJDBCURL < ConfigurePrompt
     super(REPL_DBJDBCURL, "Datasource JDBC URL")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().getJdbcUrl()
   end
 end
@@ -479,7 +479,7 @@ class DatasourceExtractorJDBCURL < ConfigurePrompt
     super(EXTRACTOR_REPL_DBJDBCURL, "Datasource Extraction JDBC URL")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().getExtractorJdbcUrl()
   end
 end
@@ -492,7 +492,7 @@ class DatasourceJDBCDriver < ConfigurePrompt
     super(REPL_DBJDBCDRIVER, "Datasource JDBC Driver")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().getJdbcDriver()
   end
 end
@@ -505,7 +505,7 @@ class DatasourceVendor < ConfigurePrompt
     super(REPL_DBJDBCVENDOR, "Datasource Vendor")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().getVendor()
   end
 end
@@ -518,7 +518,7 @@ class DatasourceJDBCScheme < ConfigurePrompt
     super(REPL_DBJDBCSCHEME, "Datasource JDBC Scheme")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().getJdbcScheme()
   end
 end
@@ -531,7 +531,7 @@ class DatasourceBackupAgents < ConfigurePrompt
     super(REPL_DBBACKUPAGENTS, "Datasource Backup Agents")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().get_backup_agents().join(",")
   end
 end
@@ -544,7 +544,7 @@ class DatasourceDefaultBackupAgent < ConfigurePrompt
     super(REPL_DBDEFAULTBACKUPAGENT, "Datasource Default Backup Agent")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     get_datasource().get_default_backup_agent().split(",").at(0).to_s()
   end
 end

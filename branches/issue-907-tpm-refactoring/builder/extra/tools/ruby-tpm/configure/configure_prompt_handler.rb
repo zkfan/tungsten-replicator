@@ -280,11 +280,11 @@ class ConfigurePromptHandler
     nil
   end
   
-  def find_template_value(attrs, transform_values_method)
+  def find_template_value(attrs)
     prompt = @key_index[attrs[0]]
     if prompt != nil
       begin
-        return prompt.find_template_value(attrs, transform_values_method)
+        return prompt.find_template_value(attrs)
       rescue IgnoreError
         #Do Nothing
       end

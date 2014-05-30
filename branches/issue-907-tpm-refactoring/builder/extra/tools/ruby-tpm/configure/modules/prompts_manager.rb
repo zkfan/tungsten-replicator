@@ -612,7 +612,7 @@ class ManagerGroupCommunicationInitialHosts < ConfigurePrompt
     super(MGR_GROUP_COMMUNICATION_INITIAL_HOSTS, "Initial hosts for seeding group communication", PV_ANY)
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     fill_ports_near_hosts(@config.getProperty(get_dataservice_key(DATASERVICE_MEMBERS)), @config.getProperty(get_member_key(MGR_GROUP_COMMUNICATION_PORT)))
   end
 end
@@ -652,7 +652,7 @@ class ManagerJavaGarbageCollection < ConfigurePrompt
       PV_BOOLEAN, "false")
   end
   
-  def get_template_value(transform_values_method)
+  def get_template_value
     if get_value() == "true"
       ""
     else
