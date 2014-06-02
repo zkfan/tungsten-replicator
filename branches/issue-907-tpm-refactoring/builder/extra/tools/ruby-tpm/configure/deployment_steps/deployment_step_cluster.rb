@@ -69,7 +69,7 @@ module ConfigureDeploymentStepDeployment
     	end
     }
     
-    # Create share/env.sh script.
+    # Create the share/env.sh script
     script = "#{@config.getProperty(HOME_DIRECTORY)}/#{CONTINUENT_ENVIRONMENT_SCRIPT}"
     debug("Generate environment at #{script}")
     host_transformer(script) {
@@ -77,6 +77,20 @@ module ConfigureDeploymentStepDeployment
       t.set_template("cluster-home/samples/conf/env.sh.tpl")
       t.mode(0755)
     }
+    
+    # Create the share/aliases.sh script
+    script = "#{@config.getProperty(HOME_DIRECTORY)}/share/aliases.sh"
+    if @config.getProperty(EXECUTABLE_PREFIX) != ""
+      host_transformer(script) {
+        |t|
+        t.set_template("cluster-home/samples/conf/aliases.sh.tpl")
+        t.mode(0755)
+      }
+    else
+      if File.exists?(script)
+        FileUtils.rm_f(script)
+      end
+    end
     
     # Write the cluster-home/conf/security.properties file
     transform_host_template("cluster-home/conf/security.properties",

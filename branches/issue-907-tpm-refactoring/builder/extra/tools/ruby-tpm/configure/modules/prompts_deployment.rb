@@ -1079,6 +1079,21 @@ class ProfileScriptPrompt < ConfigurePrompt
   end
 end
 
+class ExecutablePrefixPrompt < ConfigurePrompt
+  include ClusterHostPrompt
+  include NoConnectorRestart
+  include NoReplicatorRestart
+  include NoManagerRestart
+  
+  def initialize
+    super(EXECUTABLE_PREFIX, "Declare aliases for all scripts with this prefix to support multiple installations per host", PV_ANY, "")
+  end
+  
+  def required?
+    false
+  end
+end
+
 class HostServicePathReplicator < ConfigurePrompt
   include ClusterHostPrompt
   include ConstantValueModule

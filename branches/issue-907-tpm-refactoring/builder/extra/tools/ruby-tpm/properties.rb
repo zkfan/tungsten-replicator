@@ -11,17 +11,25 @@ system_require 'date'
 
 # Defines a properties object. 
 class Properties
-  attr_accessor :props,:use_prompt_handler, :force_json
+  attr_accessor :props,:use_prompt_handler,:force_json
   
   # Initialize with some base values. 
   def initialize
     @props = {}
+    
+    # These hashes are used to prevent loops where the prompt handler needs
+    # to get additional information from the configuration
     @in_prompt_handler = {}
     @in_template_value_prompt_handler = {}
+    
+    # The prompt handler provides a structuring for finding values
+    # that do no exist in the props Hash. The prompt handler will calculate
+    # default values or values based on parent defaults.
     @use_prompt_handler = true
     @prompt_handler = nil
+    
+    # This is used for translating the configuration from 1.3 deployments
     @force_json = true
-    @debug = false
   end
   
   def initialize_copy(source)
@@ -103,14 +111,6 @@ class Properties
   
   def reset
     self.props = {}
-  end
-  
-  def debug(v = nil)
-    if v != nil
-      @debug = v
-    end
-    
-    v
   end
   
   def import(properties_obj = {})

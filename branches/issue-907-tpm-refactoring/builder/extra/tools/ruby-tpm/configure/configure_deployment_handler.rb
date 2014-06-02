@@ -282,7 +282,7 @@ class ConfigureDeploymentHandler
       Configurator.instance.write ""
       Configurator.instance.debug "Local deploy #{deployment_method_class_name}:#{deployment_method_group_id} methods in #{@config.getProperty(HOME_DIRECTORY)}"
       
-      result = get_deployment_object(config).run(deployment_method_class_name, deployment_method_group_id, @additional_properties)
+      result = Configurator.instance.command.get_deployment_object(config).run(deployment_method_class_name, deployment_method_group_id, @additional_properties)
       add_remote_result(result)
     else
       Configurator.instance.write ""
