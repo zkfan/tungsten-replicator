@@ -789,15 +789,29 @@ module ConfigureCommand
       if Configurator.instance.is_locked?()
         error("The --ini argument is not supported on installed directories. Try running the command from a staging directory.")
       else
+        # Use OLDPWD as the search path because the tpm script does a cd into
+        # the tools directory. This is the directory where the command was run
+        if ENV.has_key?("OLDPWD")
+          search_dir = ENV["OLDPWD"]
+        else
+          search_dir = nil
+        end
+        
         found_files = false
-        Dir.glob(val) {
-          |ini_path|
-          @config_ini_paths << ini_path
-          found_files = true
+        val.split(",").each{
+          |pattern|
+          Dir.glob(File.expand_path(pattern, search_dir)) {
+            |ini_path|
+            @config_ini_paths << ini_path
+            found_files = true
+          }
         }
         if found_files == false
-          error("No files were found at #{val}")
+          error("No files were found at #{val}. Provide the full path to the INI file or make sure that it exists.")
         end
+        
+        # Make sure there aren't any duplicate entries in the array
+        @config_ini_paths.uniq!()
       end
     }
     opts.on("--dataservice-name String")        { |val| command_dataservices(val) }
