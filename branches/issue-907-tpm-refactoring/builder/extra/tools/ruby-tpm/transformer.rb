@@ -296,6 +296,10 @@ class Transformer
   # Find a template matching the given pattern and store the contents
   # to be evaluated later
   def set_template(pattern)
+    if File.expand_path(pattern) == pattern
+      raise MessageError.new("Unable to use '#{pattern}' as a template because it is an absolute path.")
+    end
+    
     @output = []
     find_templates([pattern]).each{
       |template_files|

@@ -66,7 +66,7 @@ module ConfigureDeploymentStepConnector
       host_transformer("bristlecone/config/evaluator/#{File.basename(file)}") {
         |t|
         t.timestamp?(false)
-        t.set_template(file)
+        t.set_template("bristlecone/samples/config/evaluator/#{File.basename(file)}")
       }
     end
   end
