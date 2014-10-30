@@ -3,7 +3,7 @@
 
 = Binary and Source Releases =
 
-Tungsten Replicator 3.0.0 Release Candidate is now available! We appreciate your feedback. If you're looking for a production-ready version, please use the latest GA release (2.2.1).
+Tungsten Replicator 3.0.0 Release Candidate is now available! We welcome your feedback. If you're looking for a production-ready version, please use the latest GA release (2.2.1).
 
 || *Filename* || *Summary* || *Release* || *Date* || *Size* ||
 || [http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-3.0.0-500.tar.gz tungsten-replicator-3.0.0-500.tar.gz] || Tungsten Replicator 3.0.0 Binary Build  || RC || 2014-10-30 || 26.9 MB ||
