@@ -3,11 +3,11 @@
 
 = Binary and Source Releases =
 
-We are offering an early preview of the 3.0.0 release with Hadoop support! If you're looking for a production-ready version, please use the latest GA release (2.2.1).
+Tungsten Replicator 3.0.0 Release Candidate is now available! We appreciate your feedback. If you're looking for a production-ready version, please use the latest GA release (2.2.1).
 
 || *Filename* || *Summary* || *Release* || *Date* || *Size* ||
-|| [http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-3.0.0-90.tar.gz tungsten-replicator-3.0.0-90.tar.gz] || Tungsten Replicator 3.0.0 Binary Build  || Preview || 2014-07-05 || 27.6 MB ||
-|| [http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-3.0.0-90-src.tar.gz tungsten-replicator-3.0.0-90-src.tar.gz] || Tungsten Replicator 3.0.0 Source Build  || Preview || 2014-07-05 || 32.1 MB ||
+|| [http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-3.0.0-500.tar.gz tungsten-replicator-3.0.0-500.tar.gz] || Tungsten Replicator 3.0.0 Binary Build  || RC || 2014-10-30 || 26.9 MB ||
+|| [http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-3.0.0-500-src.tar.gz tungsten-replicator-3.0.0-500-src.tar.gz] || Tungsten Replicator 3.0.0 Source Build  || RC || 2014-10-30 || 30.4 MB ||
 || *[http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-2.2.1-403.tar.gz tungsten-replicator-2.2.1-403.tar.gz]*         || Tungsten Replicator 2.2.1 Binary Build  || *GA* || 2014-04-29 || 29.2 MB ||
 || *[http://downloads.tungsten-replicator.org/download.php?file=tungsten-replicator-2.2.1-403-src.tar.gz tungsten-replicator-2.2.1-403-src.tar.gz]* || Tungsten Replicator 2.2.1 Source Build  || *GA* || 2014-04-29 || 32.0 MB ||
 || [http://tungsten-replicator.googlecode.com/files/tungsten-replicator-2.2.0-292.tar.gz tungsten-replicator-2.2.0-292.tar.gz]         || Tungsten Replicator 2.2.0 Binary Build  || Old || 2013-12-31 || 28.8 MB ||
